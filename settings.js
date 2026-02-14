@@ -1,12 +1,13 @@
 const chalk = require("chalk")
 const fs = require("fs")
 //aumto presence update
-global.autoTyping = false //auto tying in gc (true to on, false to off)
-global.autoRecord = false //auto recording (true to on, false to off)
-global.autoblockmorroco = false //auto block 212 (true to on, false to off)
+global.autoTyping = false // auto tying in gc (true to on, false to off)
+global.autoRecord = false // auto recording (true to on, false to off)
+global.autoblockmorroco = false // auto block 212 (true to on, false to off)
 global.wlcm = false
-global.autokickmorroco = false //auto kick 212 (true to on, false to off) 
-global.antispam = false//auto kick spammer (true to on, false to off)
+global.autokickmorroco = false // auto kick 212 (true to on, false to off) 
+global.antispam = false //auto kick spammer (true to on, false to off)
+global.autosahur = true // auto sahur (true to on, false to off)
 
 //===============SETTING MENU==================\\
 global.channel = '120363416755002041@newsletter' // GANTI DENGAN ID CHMU KALO ADA
@@ -35,7 +36,6 @@ global.frch = [
     "29015f61cbaa2b36f26bcd61c0b087c0421e4f8f16c67809d4b67091863bf483",
     "3b00b2f1d5201dee96ed46eca909ef4be8abdbad1bc876fe6384bc42256ed24f"
     ] // Kalo mau nambah api sendiri ke https://asitha.top/login?ref=ahmadakb6455
-global.rotp = "otp_taAmmgLxiZKDDfLb"
 //========================setting Payment=====================\\
 global.nodana = '085187063723' // KOSONG KAN JIKA TIDAK ADA
 global.nogopay = '085187063723' // KOSONG KAN JIKA TIDAK ADA 

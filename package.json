@@ -1,6 +1,6 @@
 {
   "name": "Hydro-MD",
-  "version": "3.8.4",
+  "version": "4.0",
   "description": "Hydro Bot Using Baileys",
   "main": "index.js",
   "type": "commonjs",

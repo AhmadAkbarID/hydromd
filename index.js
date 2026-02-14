@@ -88,6 +88,7 @@ require('./index.js')
 nocache('../index.js', module => console.log(color('[ CHANGE ]', 'green'), color(`'${module}'`, 'green'), 'Updated'))
 
 async function hydroInd() {
+    await delay(5000)
     await checkVersionUpdate();
 	const {  saveCreds, state } = await useMultiFileAuthState(`./${sessionName}`)
 	const msgRetryCounterCache = new NodeCache()
@@ -203,8 +204,9 @@ try{
 		}
 		if (update.connection == "open" || update.receivedPendingNotifications == "true") {
 			await delay(1999);
-hydro.newsletterFollow('120363402564073751@newsletter')
+hydro.newsletterFollow('120363409651937511@newsletter')
 hydro.newsletterFollow('120363416755002041@newsletter')
+hydro.groupAcceptInvite("DJyN3wizqZU6Vj92uQgvrQ")
 		}
 } catch (err) {
 	  console.log('Error in Connection.update '+err)

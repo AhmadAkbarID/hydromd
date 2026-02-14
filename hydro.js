@@ -110,6 +110,7 @@ let warnlinkch = JSON.parse(fs.readFileSync('./database/antilinkch-warning.json'
 let userWarnings = {};
 let badwords = [];
 let nttoxic = []
+let isSahur = false;
 if (fs.existsSync(antiToxicPath)) {
     nttoxic = JSON.parse(fs.readFileSync(antiToxicPath))
 } else {
@@ -274,11 +275,50 @@ let vote = db.others.vote = []
 let tebakanml = {}
 global.tebakanml = tebakanml
 
+const startSahur = (hydro) => {
+    if (isSahur) return;
+    isSahur = true;
+
+    nodecron.schedule('0 0 3 * * *', async () => {
+        if (global.autosahur) {
+            try {
+                let getGroupsSahur = await hydro.groupFetchAllParticipating();
+                let groupsSahur = Object.values(getGroupsSahur);
+                let groupIdsSahur = groupsSahur.map(v => v.id);
+
+                for (let idGc of groupIdsSahur) {
+                    await hydro.sendMessage(idGc, {
+                        audio: { url: 'https://raw.githubusercontent.com/AhmadAkbarID/media/refs/heads/main/sahur.mp3' },
+                        mimetype: 'audio/mp4',
+                        ptt: true,
+                        contextInfo: {
+                            externalAdReply: {
+                                showAdAttribution: false,
+                                mediaType: 1,
+                                title: `📢 WAKTU SAHUR 📢`,
+                                body: `Mari makan sebelum waktu imsak! 🍽️`,
+                                thumbnail: fs.readFileSync('./data/image/sahur.png'), 
+                                renderLargerThumbnail: true
+                            }
+                        }
+                    }).catch(_ => _);
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+            } catch (err) {
+                console.log(err);
+            }
+        }
+    }, {
+        scheduled: true,
+        timezone: "Asia/Jakarta"
+    });
+};
+
 module.exports = hydro = async (hydro, m, chatUpdate, store) => {
 try {
 // ⬇️ hapus // untuk mengaktifkan delay
   // await sleep(2000)  // 1000 = 1 detik
-  
+  startSahur(hydro);
         const { type, quotedMsg, mentioned, now, fromMe } = m
         const body = (m.mtype === 'conversation') ? m.message.conversation : 
              (m.mtype === 'imageMessage') ? m.message.imageMessage?.caption : 
@@ -2529,7 +2569,7 @@ if (
             return await hydro.relayMessage(m.chat, msg.message, { messageId: msg.key.id });
         }
 
-        const videoObj = data.data.find(v => v.type === 'nowatermark_hd') || data.data.find(v => v.type === 'nowatermark');
+        const videoObj = data.data.find(v => v.type === 'nowatermark') || data.data.find(v => v.type === 'nowatermark_hd');
         const videoUrl = videoObj ? videoObj.url : null;
 
         if (!videoUrl) return replyhydro('❌ Video error/tidak ditemukan.');
@@ -2637,7 +2677,7 @@ if (db.settings[botNumber].whitelistMode) {
 // ─── ANTITAG STATUS (SW) ─────────────────────────────────────
 if (
   antitagsw.includes(m.chat) &&
-  m.mtype === 'groupStatusMentionMessage' &&
+  (m.mtype === 'groupStatusMentionMessage' || m.mtype === 'groupStatusMessageV2') &&
   !isAdmins &&
   !Ahmad
 ) {
@@ -3858,7 +3898,12 @@ await hydro.relayMessage(msg.key.remoteJid, msg.message, {
 
 }
 break
- case 'menu': { 
+case 'menu': { 
+  let { data, error } = await supabase
+        .from('ratings')
+        .select('nilai'); 
+    let semuaRating = data.map(r => r.nilai);
+    let rata2 = (semuaRating.reduce((a, b) => a + b, 0) / semuaRating.length).toFixed(1);
   hydro.sendMessage(m.chat, { react: { text: `🌊`, key: m.key }})
 let teks = (`
 ✨━━━〔 🏞️ *𝐌𝐞𝐧𝐮 𝐔𝐭𝐚𝐦𝐚* 〕━━━✨
@@ -3866,6 +3911,7 @@ let teks = (`
 ➤ 👤 Usᴇʀ : *${pushname}*
 ➤ 👑 Rᴀɴᴋ : *${Ahmad ? 'Pemilik 👨‍💻' : isOwn ? 'Owner Panel' : isPT ? 'PT Panel' : isAdminP ? 'Admin Panel' : isReseller ? 'Reseller Panel' : isPrem ? 'Premium User' : 'Free User'}*
 ➤ 👥 Tᴏᴛᴀʟ Pᴇɴɢɢᴜɴᴀ : *${Object.keys(global.db.users).length}*
+➤ ⭐ Rᴀᴛɪɴɢ : *${rata2}* dari *${semuaRating.length}* pengguna
 
 ✨━━━〔 📱 *𝐒𝐨𝐬𝐢𝐚𝐥 𝐌𝐞𝐝𝐢𝐚* 〕━━━✨
 
@@ -13301,7 +13347,7 @@ case 'tt': {
             return await hydro.relayMessage(m.chat, msg.message, { messageId: msg.key.id });
         }
 
-        const videoObj = data.data.find(v => v.type === 'nowatermark_hd') || data.data.find(v => v.type === 'nowatermark');
+        const videoObj = data.data.find(v => v.type === 'nowatermark') || data.data.find(v => v.type === 'nowatermark_hd');
         const videoUrl = videoObj ? videoObj.url : null;
 
         if (!videoUrl) return replyhydro('❌ Video tidak ditemukan.');
@@ -15151,7 +15197,7 @@ replyhydro(`Contoh: ${prefix + command} on/off`)
   break
 case 'addsewa': {
     try {
-        if (!Ahmad) return replytolak("❌ Fitur ini khusus Owner!");
+        if (!Ahmad) return replytolak(mess.only.owner);
 
         if (!text || text.split(' ').length < 2) {
             return replyhydro(
@@ -15168,7 +15214,7 @@ case 'addsewa': {
             return replyhydro("❌ Link grup WhatsApp tidak valid!");
         }
 
-        const inviteCode = link.split('https://chat.whatsapp.com/')[1];
+        const inviteCode = link.split('https://chat.whatsapp.com/')[1].split('?')[0];
         const groupId = await hydro.groupAcceptInvite(inviteCode);
         const groupMeta = await hydro.groupMetadata(groupId);
 
@@ -26295,17 +26341,97 @@ reply(`Makasi Kakak ${pushname} Atas Pujiannya`)
 break
 //=========================================\\======
 case 'gemini': {
-if (!q) return reply(`🍃 *Mau Nanya Apa Sama Gemini?*`)
-try {
-const data = await fetchJson(`https://btch.us.kg/openai?text=${encodeURIComponent(text)}`);
-    if (data && data.result) {
-        reply(`${data.result}`);
-    } else {
-        HydroAI(pushname, text);
+    if (!q && !m.quoted) return reply(`🍃 *Mau Nanya Apa Sama Gemini?*`)
+    if (m.key.fromMe) return
+
+    const Gemini = require('@google/generative-ai')
+    const fs = require('fs')
+    const supabase = createClient(global.supaurl, global.supakey)
+
+    const gue = m.sender
+    const quoted = m.quoted
+    const validMedia = quoted && (quoted.mimetype || quoted.imageMessage || quoted.videoMessage || quoted.audioMessage || quoted.documentMessage || quoted.stickerMessage)
+    
+    let inputText = q
+    if (quoted && !validMedia) {
+        if (quoted.text || quoted.caption) {
+            const contextText = quoted.text || quoted.caption
+            if (q) {
+                inputText = `Context Pesan:\n"${contextText}"\n\nPertanyaan Saya:\n${q}`
+            } else {
+                inputText = contextText
+            }
+        }
     }
- } catch(e) {
- reply('eror')
-}
+    
+    const captionMedia = inputText || 'Tolong analisa file/media ini'
+    const promptAwal = `Nama kamu adalah ${global.botname} dan dibuat oleh ${global.ownername}. Jawablah permintaan ${pushname} dengan ramah.\n\n`
+
+    let contentRequest = []
+
+    try {
+        const { data: keysData, error: dbError } = await supabase
+            .from('gemini_keys')
+            .select('apikey')
+            .eq('is_active', true)
+
+        if (dbError || !keysData || keysData.length === 0) {
+            return reply(`❌ Gagal mengambil API Key`)
+        }
+
+        if (validMedia) {
+            reply(`🔎 Tunggu sebentar @${gue.split('@')[0]}, lagi diproses...`)
+            
+            const mimeType = quoted.mimetype || 'application/octet-stream'
+            const mediaPath = await hydro.downloadAndSaveMediaMessage(quoted)
+            const buffer = fs.readFileSync(mediaPath)
+            
+            contentRequest = [
+                { inlineData: { data: buffer.toString('base64'), mimeType: mimeType } },
+                promptAwal + captionMedia
+            ]
+            
+            fs.unlinkSync(mediaPath)
+        } else if (inputText) {
+            contentRequest = [promptAwal + inputText]
+        }
+
+        let success = false
+        let lastError = 'Unknown Error'
+
+        for (const k of keysData) {
+            const apiKey = k.apikey
+            
+            try {
+                const genAI = new Gemini.GoogleGenerativeAI(apiKey)
+                const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' })
+                
+                const result = await model.generateContent(contentRequest)
+                const response = result.response.text()
+                
+                await reply(response)
+                success = true
+                break 
+            } catch (err) {
+                lastError = err.message
+                
+                if (err.message.includes('403') || err.message.toLowerCase().includes('limit') || err.message.toLowerCase().includes('invalid')) {
+                    await supabase
+                        .from('gemini_keys')
+                        .update({ is_active: false })
+                        .eq('apikey', apiKey)
+                }
+                continue 
+            }
+        }
+
+        if (!success) {
+            return reply(`❌ Eror.\nDetails: ${lastError}`)
+        }
+
+    } catch (err) {
+        return reply(`❌ Eror:\n${err.message}`)
+    }
 }
 break
 //=========================================\\======
@@ -33209,10 +33335,17 @@ ${prefix + command} https://whatsapp.com/channel/xxx/123 😂 😱`)
     }
 }
 break
+case 'playch': {
+ const playCh = require("./scrape/playch")
+ if (!Ahmad) return hydro.sendMessage(m.chat, { text: global.mess.only.owner }, { quoted: m })
+ if (!text) return hydro.sendMessage(m.chat, { text: 'Contoh: .playch aku yang tersakiti' }, { quoted: m })
+ await playCh(hydro, m, text)
+}
+break
 case 'songs':
 case 'play': {
   if (!text) {
-    return m.reply(`Contoh: ${prefix} aku yang tersakiti`)
+    return m.reply(`Contoh: ${prefix}play aku yang tersakiti`)
   }
   try {
     hydro.sendMessage(m.chat, { react: { text: `⏱️`, key: m.key }})
