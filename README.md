@@ -25,7 +25,7 @@ I really appreciate the contributions you all have made, therefore I'm displayin
 This script is created by [Ahmad](https://github.com/AhmadAkbarID) using Node.js and the [Socketon](https://npmjs.com/package/socketon) library. The script is currently in the development phase (BETA), so there may still be some errors that can be ignored. If errors persist even after debugging, please contact the owner for assistance. ~ By Ahmad
 
 #### Join Group
-[![Grup WhatsApp](https://img.shields.io/badge/WhatsApp%20Group-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://chat.whatsapp.com/DPdgVJLsKGk2U3feeuk9cw) 
+[![Grup WhatsApp](https://img.shields.io/badge/WhatsApp%20Group-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://chat.whatsapp.com/FvSBEz1UezQ4G7Xwfrr9sF) 
 
 ---
 #### Deploy to Heroku
