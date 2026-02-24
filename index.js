@@ -4,7 +4,7 @@ const moment = require('moment-timezone');
 const { baileys, boom, chalk, fs, figlet, FileType, path, pino, process, PhoneNumber, axios, yargs, _ } = modul;
 const { Boom } = boom
 const {
-	default: XeonBotIncConnect,
+	default: makeWASocket,
 	BufferJSON,
 	processedMessages,
 	PHONENUMBER_MCC,
@@ -24,7 +24,7 @@ const {
     makeCacheableSignalKeyStore,
     getAggregateVotesInPollMessage,
     proto
-} = require("@whiskeysockets/baileys")
+} = require("socketon")
 // Override Generator ID Baileys secara Global
 const crypto = require('crypto')
 const cfonts = require('cfonts');
@@ -49,7 +49,6 @@ function saveAutoClose() {
 const { parsePhoneNumber } = require("libphonenumber-js")
 let _welcome = JSON.parse(fs.readFileSync('./database/welcome.json'))
 let _left = JSON.parse(fs.readFileSync('./database/left.json'))
-const makeWASocket = require("@whiskeysockets/baileys").default
 const Pino = require("pino")
 const { randomBytes } = require('crypto')
 const readline = require("readline")
@@ -92,7 +91,7 @@ async function hydroInd() {
     await checkVersionUpdate();
 	const {  saveCreds, state } = await useMultiFileAuthState(`./${sessionName}`)
 	const msgRetryCounterCache = new NodeCache()
-    	const hydro = XeonBotIncConnect({
+    	const hydro = makeWASocket({
         logger: pino({ level: 'silent' }),
         printQRInTerminal: !pairingCode, // popping up QR in terminal log
       mobile: useMobile, // mobile api (prone to bans)

@@ -8,7 +8,7 @@ require('./lib/listmenu')
 const {
     downloadContentFromMessage,
 	extractImageThumb
-} = require('@whiskeysockets/baileys')
+} = require('socketon')
 const { modul } = require('./module')
 const path = require('path')
 const { os, axios, baileys, chalk, cheerio, child_process, crypto, cookie, FormData, FileType, fetch, fs, fsx, ffmpeg, Jimp, jsobfus, PhoneNumber, process, moment, ms, speed, syntaxerror, util, ytdl, googleTTS, nodecron, maker } = modul
@@ -19304,7 +19304,7 @@ case 'leaderboard': {
 const getRandom = (ext) => {
             return `${Math.floor(Math.random() * 10000)}${ext}`
         }
-const { areJidsSameUser } = require ('@whiskeysockets/baileys')
+const { areJidsSameUser } = require ('socketon')
 function sort(property, ascending = true) {
   if (property) return (...args) => args[ascending & 1][property] - args[!ascending & 1][property]
   else return (...args) => args[ascending & 1] - args[!ascending & 1]
@@ -23894,7 +23894,7 @@ Dan health anda berkurang -80
 //==================================================================
 case 'repair': {
 if (!m.isGroup) return replytolak(mess.only.group)
-const {default: MessageType } = require ('@whiskeysockets/baileys')
+const {default: MessageType } = require ('socketon')
 
   let type = (args[0] || '').toLowerCase()
   let _type = (args[0] || '').toLowerCase()

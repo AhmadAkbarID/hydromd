@@ -13,7 +13,7 @@ const {
     generateWAMessageFromContent,
     WAMessageStubType,
     WA_DEFAULT_EPHEMERAL,
-} = require('@whiskeysockets/baileys')
+} = require('socketon')
 const { toAudio, toPTT, toVideo } = require('./converter')
 const chalk = require('chalk')
 const fetch = require("node-fetch")
