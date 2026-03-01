@@ -25,12 +25,12 @@ const {
     getAggregateVotesInPollMessage,
     proto
 } = require("socketon")
-// Override Generator ID Baileys secara Global
 const crypto = require('crypto')
 const cfonts = require('cfonts');
 const { color, bgcolor } = require('./lib/color')
 const { TelegraPh } = require('./lib/uploader')
 const NodeCache = require("node-cache")
+const { startAutoSahur } = require("./lib/autosahur")
 const { exec } = require('child_process');
 const canvafy = require("canvafy")
 const { 
@@ -86,20 +86,91 @@ nocache('../hydro.js', module => console.log(color('[ CHANGE ]', 'green'), color
 require('./index.js')
 nocache('../index.js', module => console.log(color('[ CHANGE ]', 'green'), color(`'${module}'`, 'green'), 'Updated'))
 
+const decodeJid = (jid) => {
+  if (!jid) return jid
+  if (/:\d+@/gi.test(jid)) {
+    const d = jidDecode(jid) || {}
+    return (d.user && d.server) ? `${d.user}@${d.server}` : jid
+  }
+  return jid
+}
+
+const lidCache = new Map()
+
+const isLid = (id = "") => id.endsWith("@lid")
+
+const resolveLidToJid = async (sock, id) => {
+  if (!id) return id
+  if (!id.endsWith("@lid")) return decodeJid(id)
+  if (lidCache.has(id)) return lidCache.get(id)
+
+  try {
+    const res = await sock.onWhatsApp(id)
+    const wjid = res?.[0]?.jid || id
+    const finalJid = decodeJid(wjid)
+    lidCache.set(id, finalJid)
+    return finalJid
+  } catch {
+    return id
+  }
+}
+
+const normalizeMessageIds = async (sock, kay) => {
+  if (kay?.key?.participant) kay.key.participant = await resolveLidToJid(sock, kay.key.participant)
+  if (kay?.participant) kay.participant = await resolveLidToJid(sock, kay.participant)
+  if (kay?.key?.remoteJid) kay.key.remoteJid = decodeJid(kay.key.remoteJid)
+
+  const extractMessage = (msg) => {
+    if (!msg) return msg
+    if (msg.ephemeralMessage) return extractMessage(msg.ephemeralMessage.message)
+    if (msg.viewOnceMessage) return extractMessage(msg.viewOnceMessage.message)
+    if (msg.viewOnceMessageV2) return extractMessage(msg.viewOnceMessageV2.message)
+    return msg
+  }
+
+  const realMessage = extractMessage(kay.message)
+  const type = realMessage ? Object.keys(realMessage)[0] : null
+  const node = type ? realMessage[type] : null
+  const ctx = node?.contextInfo
+
+  if (ctx?.participant) ctx.participant = await resolveLidToJid(sock, ctx.participant)
+
+  if (Array.isArray(ctx?.mentionedJid) && ctx.mentionedJid.length) {
+    ctx.mentionedJid = await Promise.all(ctx.mentionedJid.map(j => resolveLidToJid(sock, j)))
+  }
+
+  return kay
+}
+
 async function hydroInd() {
     await delay(5000)
     await checkVersionUpdate();
+    const { version } = await fetchLatestBaileysVersion()
 	const {  saveCreds, state } = await useMultiFileAuthState(`./${sessionName}`)
 	const msgRetryCounterCache = new NodeCache()
     	const hydro = makeWASocket({
+    	version,
         logger: pino({ level: 'silent' }),
         printQRInTerminal: !pairingCode, // popping up QR in terminal log
-      mobile: useMobile, // mobile api (prone to bans)
+      mobile: false, // mobile api (prone to bans)
      auth: {
          creds: state.creds,
          keys: makeCacheableSignalKeyStore(state.keys, Pino({ level: "fatal" }).child({ level: "fatal" })),
       },
       browser: [ "Android", "Chrome", "114.0.5735.196" ],
+      cachedGroupMetadata: async (jid) => {
+      if (!jid.endsWith('@g.us')) return
+      
+      let gm = store.groupMetadata?.[jid]
+      if (!gm) {
+      try {
+      gm = await hydro.groupMetadata(jid)
+      store.groupMetadata = store.groupMetadata || {}
+      store.groupMetadata[jid] = gm
+      } catch {}
+      }
+      return gm
+      },
       patchMessageBeforeSending: (message) => {
             const requiresPatch = !!(
                 message.buttonsMessage ||
@@ -126,22 +197,18 @@ async function hydroInd() {
          keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "silent" }).child({ level: "fatal" })),
       },
 connectTimeoutMs: 60000,
-defaultQueryTimeoutMs: 0,
+defaultQueryTimeoutMs: 20000,
 keepAliveIntervalMs: 10000,
 emitOwnEvents: true,
 fireInitQueries: true,
 generateHighQualityLinkPreview: true,
-syncFullHistory: true,
 markOnlineOnConnect: true,
-shouldSyncHistoryMessage: msg => {
-        console.log(color(`\u001B[32mMemuat Chat [${msg.progress || 0}%]\u001B[39m`, 'blue'));
-        return !!msg.syncType;
-    },
+syncFullHistory: false,
+shouldSyncHistoryMessage: () => false,
       getMessage: async (key) => {
             return null;
         },
       msgRetryCounterCache, // Resolve waiting messages
-      defaultQueryTimeoutMs: undefined, // for this issues https://github.com/WhiskeySockets/Baileys/issues/276
    })
     const _sendMessage = hydro.sendMessage
     hydro.sendMessage = async (jid, content, options = {}) => {
@@ -198,14 +265,15 @@ try{
 			  hydroInd();
 			}
 		}
-		if (update.connection == "connecting" || update.receivedPendingNotifications == "false") {
+		if (update.connection == "connecting") {
 			console.log(color(`\n👀Menghubungkan...`, 'yellow'))
 		}
-		if (update.connection == "open" || update.receivedPendingNotifications == "true") {
+		if (update.connection == "open") {
 			await delay(1999);
-hydro.newsletterFollow('120363409651937511@newsletter')
-hydro.newsletterFollow('120363416755002041@newsletter')
-hydro.groupAcceptInvite("DJyN3wizqZU6Vj92uQgvrQ")
+			startAutoSahur(hydro)
+            hydro.newsletterFollow('120363409651937511@newsletter')
+            hydro.newsletterFollow('120363416755002041@newsletter')
+            hydro.groupAcceptInvite("DJyN3wizqZU6Vj92uQgvrQ")
 		}
 } catch (err) {
 	  console.log('Error in Connection.update '+err)
@@ -221,22 +289,42 @@ global.hydro = hydro
 hydro.ev.on('creds.update', await saveCreds)
 
     // Anti Call
-    hydro.ev.on('call', async (XeonPapa) => {
+    hydro.ev.on('call', async (callUpdate) => {
+  try {
     let botNumber = await hydro.decodeJid(hydro.user.id)
-    let XeonBotNum = db.settings[botNumber].anticall
-    if (!XeonBotNum) return
-    console.log(XeonPapa)
-    for (let XeonFucks of XeonPapa) {
-    if (XeonFucks.isGroup == false) {
-    if (XeonFucks.status == "offer") {
-    let XeonBlokMsg = await hydro.sendTextWithMentions(XeonFucks.from, `*${hydro.user.name}* can't receive ${XeonFucks.isVideo ? `video` : `voice` } call. Sorry @${XeonFucks.from.split('@')[0]} you will be blocked. If accidentally please contact the owner to be unblocked !`)
-    hydro.sendContact(XeonFucks.from, global.owner, XeonBlokMsg)
-    await sleep(8000)
-    await hydro.updateBlockStatus(XeonFucks.from, "block")
+    let setting = db.settings?.[botNumber]
+    if (!setting) return
+
+    let antiCall = setting.anticall
+    if (!antiCall) return
+
+    const calls = Array.isArray(callUpdate) ? callUpdate : [callUpdate]
+
+    for (let call of calls) {
+      if (call.isGroup) continue
+
+      if (call.status === 'offer' || call.status === 'ringing') {
+        try {
+          if (hydro.rejectCall) await hydro.rejectCall(call.id, call.from)
+        } catch (e) {}
+
+        let msg = await hydro.sendTextWithMentions(
+          call.from,
+          `*${hydro.user.name}* tidak bisa menerima panggilan ${call.isVideo ? 'video' : 'suara'}.\nMaaf @${call.from.split('@')[0]} kamu akan diblokir.\nJika tidak sengaja, hubungi owner untuk di-unblock.`
+        )
+
+        try {
+          hydro.sendContact(call.from, global.owner, msg)
+        } catch (e) {}
+
+        await sleep(3000)
+        await hydro.updateBlockStatus(call.from, "block")
+      }
     }
-    }
-    }
-    })
+  } catch (err) {
+    console.log(err)
+  }
+})
     
 hydro.ev.on('messages.upsert', async chatUpdate => {
 try {
@@ -245,7 +333,14 @@ if (!kay.message) return
 kay.message = (Object.keys(kay.message)[0] === 'ephemeralMessage') ? kay.message.ephemeralMessage.message : kay.message
 if (kay.key && kay.key.remoteJid === 'status@broadcast')  {
 await hydro.readMessages([kay.key]) }
-if (!hydro.public && !kay.key.fromMe && chatUpdate.type === 'notify') return
+await normalizeMessageIds(hydro, kay)
+const sender = kay.key.participant || kay.key.remoteJid
+
+const Ahmad = [...owner, global.ownernomer, global.botnumber]
+    .map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
+    .includes(sender)
+
+if (!hydro.public && !kay.key.fromMe && !Ahmad && chatUpdate.type === 'notify') return
 if (kay.key.id.startsWith('903D') && kay.key.id.length === 14) return
 const m = smsg(hydro, kay, store)
 require('./hydro')(hydro, m, chatUpdate, store)
@@ -349,8 +444,13 @@ if (store && store.contacts) store.contacts[id] = { id, name: contact.notify }
 hydro.ev.on('groups.update', async (update) => {
     try {
         for (let x of update) {
+            if (x?.id) {
+        store.groupMetadata = store.groupMetadata || {}
+        try {
+          store.groupMetadata[x.id] = await hydro.groupMetadata(x.id)
+        } catch (e) {}
+      }
             if (x.id) {
-                // kalau approval dimatikan (join langsung)
                 if (x.joinApprovalMode === false) {
                     let idx = sewa.findIndex(s => s.id === x.id && s.status === 'pending');
                     if (idx !== -1) {
