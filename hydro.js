@@ -31,6 +31,7 @@ const canvafy = require('canvafy')
 const { isSetLeft, addSetLeft, removeSetLeft, changeSetLeft } = require('./lib/setleft');
 const { getTextSetWelcome } = require('./lib/setwelcome');
 const { getTextSetLeft } = require('./lib/setleft');
+const { gameSlot } = require("./lib/game")
 const { color, bgcolor } = require('./lib/color')
 const { TelegraPh, UploadFileUgu } = require('./lib/uploader')
 const { fetchBuffer, buffermagef } = require("./lib/myfunc2")
@@ -59,10 +60,11 @@ const { nanoEdit } = require('./scrape/nano');
 const mediafire = require('./scrape/mediafire');
 const scp3 = require('./scrape/scraperrr')
 const { hdvideo } = require('./scrape/hdvid');
-const { tiktokv1, tiktokv2 } = require('./scrape/tiktok')
+const { tiktokDl, tiktokv1, tiktokv2 } = require('./scrape/tiktok')
 const similarity = require("similarity");
 const githubstalk = require('./scrape/githubstalk')
 const npmstalk = require('./scrape/npmstalk')
+const { ytdlv1, ytdlv2, ytdlv3 } = require('./scrape/youtube');
 const liriklagu = require('./scrape/lirik');
 const { hdr } = require('./scrape/iloveimg.js')
 const photooxy = require('./scrape/photooxy')
@@ -209,7 +211,8 @@ let set_proses = JSON.parse(fs.readFileSync('./database/set_proses.json'))
 let set_done = JSON.parse(fs.readFileSync('./database/set_done.json'))
 let db_respon_list = JSON.parse(fs.readFileSync('./database/list-message.json'));
 let autoCloseDB = JSON.parse(fs.readFileSync('./database/autoco.json'));
-let autoCloseLastAction = {}; // Penanda eksekusi terakhir grup
+let autoCloseLastAction = {}; 
+
 function saveWhitelist() {
     fs.writeFileSync('./database/whitelist.json', JSON.stringify(whitelist, null, 2))
 }
@@ -275,50 +278,10 @@ let vote = db.others.vote = []
 let tebakanml = {}
 global.tebakanml = tebakanml
 
-const startSahur = (hydro) => {
-    if (isSahur) return;
-    isSahur = true;
-
-    nodecron.schedule('0 0 3 * * *', async () => {
-        if (global.autosahur) {
-            try {
-                let getGroupsSahur = await hydro.groupFetchAllParticipating();
-                let groupsSahur = Object.values(getGroupsSahur);
-                let groupIdsSahur = groupsSahur.map(v => v.id);
-
-                for (let idGc of groupIdsSahur) {
-                    await hydro.sendMessage(idGc, {
-                        audio: { url: 'https://raw.githubusercontent.com/AhmadAkbarID/media/refs/heads/main/sahur.mp3' },
-                        mimetype: 'audio/mp4',
-                        ptt: true,
-                        contextInfo: {
-                            externalAdReply: {
-                                showAdAttribution: false,
-                                mediaType: 1,
-                                title: `📢 WAKTU SAHUR 📢`,
-                                body: `Mari makan sebelum waktu imsak! 🍽️`,
-                                thumbnail: fs.readFileSync('./data/image/sahur.png'), 
-                                renderLargerThumbnail: true
-                            }
-                        }
-                    }).catch(_ => _);
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                }
-            } catch (err) {
-                console.log(err);
-            }
-        }
-    }, {
-        scheduled: true,
-        timezone: "Asia/Jakarta"
-    });
-};
-
 module.exports = hydro = async (hydro, m, chatUpdate, store) => {
 try {
 // ⬇️ hapus // untuk mengaktifkan delay
   // await sleep(2000)  // 1000 = 1 detik
-  startSahur(hydro);
         const { type, quotedMsg, mentioned, now, fromMe } = m
         const body = (m.mtype === 'conversation') ? m.message.conversation : 
              (m.mtype === 'imageMessage') ? m.message.imageMessage?.caption : 
@@ -341,7 +304,7 @@ quoted: m.quoted && m.quoted.fakeObj
 })
 messages.key.fromMe = areJidsSameUser(m.sender, hydro.user.id)
 messages.key.id = m.key.id
-messages.pushName = m.pushName
+messages.pushName = pushname
 if (m.isGroup) messages.participant = m.sender
 let msg = {
 ...chatUpdate,
@@ -359,7 +322,11 @@ hydro.ev.emit('messages.upsert', msg)
         const messagesD = body.slice(0).trim().split(/ +/).shift().toLowerCase()
         const command = isCmd ? body.slice(prefix.length).trim().split(/ +/).shift().toLowerCase() : ""
         const args = body.trim().split(/ +/).slice(1)
-        const pushname = m.pushName || "Misterius"
+        const userDb = global?.db?.users?.[m.sender]
+        const pushname =
+  (userDb?.registered && userDb?.name)
+    ? userDb.name
+    : (m.pushName || "Misterius")
         const botNumber = await hydro.decodeJid(hydro.user.id)
         const Ahmad = [...owner, global.ownernomer, global.botnumber]
     .map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
@@ -640,7 +607,7 @@ afkTime: -1,
 afkReason: '',
 premiumTime: 0,
 premium: false,
-money: 100000,
+money: 1000,
 exp: 0,
 level: 1,
 limit: 30,
@@ -650,7 +617,6 @@ skata: 0,
 registered: false,
 name: m.name,
 pc: 0,
-joinlimit: 1,
 age: -1,
 regTime: -1,
 unreg: false,
@@ -661,7 +627,6 @@ bannedTime: 0,
 warning: 0,
 level: 0,
 rokets: 0,
-role: 'Beginner',
 skill: '',
 ojekk: 0,
 WarnReason: '',
@@ -669,7 +634,7 @@ chip: 0,
 bank: 0,
 atm: 0,
 fullatm: 0,
-health: 1000,
+health: 100,
 potion: 10,
 trash: 0,
 wood: 0,
@@ -827,7 +792,7 @@ for (let jid of mentionUser) {
     if (!afkTime || afkTime < 0) continue
     let reason = user.afkReason || ''
     replyhydro(
-`👤 *${pushName}* jangan tag dia!  
+`👤 *${pushname}* jangan tag dia!  
 
 📌 Status: *AFK*  
 💤 Alasan : ${reason ? reason : '-'}  
@@ -836,6 +801,33 @@ for (let jid of mentionUser) {
 ─────────────────────
 `.trim())
 }
+
+const roleFromLevel = (level = 0) => {
+  if (level >= 70) return 'Netherite'
+  if (level >= 60) return 'Diamond'
+  if (level >= 50) return 'Lapis'
+  if (level >= 40) return 'Redstone'
+  if (level >= 30) return 'Gold'
+  if (level >= 20) return 'Iron'
+  if (level >= 10) return 'Copper'
+  return 'Coal'
+}
+
+let userLimit = global.db.users[m.sender]
+userLimit.limit = Number(userLimit.limit || 0)
+
+
+const toSmallCaps = (str = '') => {
+    const map = {
+      a:'ᴀ', b:'ʙ', c:'ᴄ', d:'ᴅ', e:'ᴇ', f:'ꜰ', g:'ɢ', h:'ʜ', i:'ɪ', j:'ᴊ',
+      k:'ᴋ', l:'ʟ', m:'ᴍ', n:'ɴ', o:'ᴏ', p:'ᴘ', q:'ǫ', r:'ʀ', s:'ꜱ', t:'ᴛ',
+      u:'ᴜ', v:'ᴠ', w:'ᴡ', x:'x', y:'ʏ', z:'ᴢ'
+    }
+    return String(str).split('').map(ch => {
+      const low = ch.toLowerCase()
+      return map[low] ? map[low] : ch
+    }).join('')
+  }
 
 //math
 if (kuismath.hasOwnProperty(m.sender.split('@')[0]) && isCmd) {
@@ -1005,7 +997,7 @@ if (db.users[m.sender].afkTime > -1) {
     m.reply(
 `✅ *Kamu berhenti AFK!*  
 
-👤 ${m.pushName} kembali aktif.  
+👤 ${pushname} kembali aktif.  
 💤 Alasan sebelumnya : ${user.afkReason ? user.afkReason : '-'}  
 ⏳ Durasi AFK : ${clockString(new Date - user.afkTime)}
 
@@ -1026,6 +1018,24 @@ if (db.users[m.sender].afkTime > -1) {
 		setting.status = new Date() * 1
 	    }
 	}
+function autoLevelUp(user) {
+  const expNeed = (lvl = 0) => Math.floor(20000 * Math.pow(1.25, Number(lvl || 0)))
+
+  user.level = Number(user.level || 0)
+  user.exp = Number(user.exp || 0)
+
+  let leveled = false
+
+  while (user.exp >= expNeed(user.level)) {
+    user.exp -= expNeed(user.level)
+    user.level += 1
+    leveled = true
+  }
+
+  return leveled
+}
+let userAuto = global.db.users[m.sender]
+if (userAuto) autoLevelUp(userAuto)
 
 //autoblock 212
 if (global.autoblockmorroco) {
@@ -1174,6 +1184,33 @@ const videoResponse = await axios.get(url, { headers });
             console.error('Response status:', error.response.status);
         }
     }
+}
+global.rpg = global.rpg || {}
+
+global.rpg.expNeed = function (lvl = 0) {
+  lvl = Number(lvl || 0)
+  return Math.floor(20000 * Math.pow(1.25, lvl))
+}
+
+global.rpg.addExp = function (user, amount = 0) {
+  if (!user) return { leveledUp: 0, level: 0, exp: 0, next: 0 }
+  amount = Number(amount || 0)
+  user.level = Number(user.level || 0)
+  user.exp = Number(user.exp || 0)
+
+  if (amount > 0) user.exp += amount
+
+  let leveledUp = 0
+  let need = global.rpg.expNeed(user.level)
+
+  while (user.exp >= need) {
+    user.exp -= need
+    user.level += 1
+    leveledUp += 1
+    need = global.rpg.expNeed(user.level)
+  }
+
+  return { leveledUp, level: user.level, exp: user.exp, next: need }
 }
 async function BingHydro(text) {
   const axios = require('axios');
@@ -1914,8 +1951,8 @@ participant: `0@s.whatsapp.net`,
 remoteJid: `${ownernumber}@s.whatsapp.net` } : {}) }, 
 message: { 
 extendedTextMessage: { 
-text: `${m.pushName}`, 
-title: `${m.pushName}`, 
+text: `${pushname}`, 
+title: `${pushname}`, 
 jpegThumbnail: defaultpp } } }
 //Fake
 	    const ftroli ={key: {fromMe: false,"participant":"0@s.whatsapp.net", "remoteJid": "status@broadcast"}, "message": {orderMessage: {itemCount: 2022,status: 200, thumbnail: thumb, surface: 200, message: botname, orderTitle: ownername, sellerJid: '0@s.whatsapp.net'}}, contextInfo: {"forwardingScore":999,"isForwarded":true},sendEphemeral: true}
@@ -2488,108 +2525,141 @@ await hydro.sendVideoAsSticker(from, mediac, m, { packname: global.packname, aut
             }
         }
 //=========================================\\
-if (budy.startsWith('.h')) {
+if (isCmd && (command === 'h' || command === 'hidetag')) {
   if (!m.isGroup) return replytolak(mess.only.group);
-  if (!isAdmins && !Ahmad) return reply('Khusus Admin!!');
-  if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_');
+  if (!isAdmins && !Ahmad) return replytolak(mess.only.admin);
+  if (!isBotAdmins) return replytolak(mess.only.badmin);
 
-  let users = participants.map(u => u.id);
+  let users = participants.map(u => u.id || u.jid).filter(Boolean);
+
   let qmsg = m.quoted ? m.quoted : m;
-  let mime = (qmsg.msg || qmsg).mimetype || '';
+  let mime = (qmsg.msg || qmsg).mimetype || (qmsg.msg || qmsg).mimetype || '';
 
   if (m.quoted) {
     if (/image|video|sticker|audio|document/.test(mime)) {
       let content = await qmsg.download();
       let mediaType = mime.split('/')[0];
       if (mediaType === 'application') mediaType = 'document';
-      
+
       await hydro.sendMessage(m.chat, {
         [mediaType]: content,
         caption: qmsg.text || q || '',
         mimetype: mime,
         fileName: qmsg.fileName || `file`,
         mentions: users
-      });
+      }, { quoted: m });
+
     } else {
-      await hydro.sendMessage(m.chat, { 
-        text: qmsg.text || q || '', 
-        mentions: users 
-      });
+      await hydro.sendMessage(m.chat, {
+        text: qmsg.text || q || '',
+        mentions: users
+      }, { quoted: m });
     }
   } else {
-    await hydro.sendMessage(m.chat, { 
-      text: q ? q : '', 
-      mentions: users 
-    });
+    await hydro.sendMessage(m.chat, {
+      text: q ? q : '',
+      mentions: users
+    }, { quoted: m });
   }
+
+  return; 
 }
 if (
-    budy.startsWith('https://vt.tiktok.com/') || 
-    budy.startsWith('https://www.tiktok.com/') || 
-    budy.startsWith('https://t.tiktok.com/') || 
-    budy.startsWith('https://vm.tiktok.com/')
+  budy.startsWith('https://vt.tiktok.com/') || 
+  budy.startsWith('https://www.tiktok.com/') || 
+  budy.startsWith('https://t.tiktok.com/') || 
+  budy.startsWith('https://vm.tiktok.com/')
 ) {
-    hydro.sendMessage(m.chat, { react: { text: `⏱️`, key: m.key } });
-    try {
-        const data = await tiktokv1(budy);
-        if (!data || !data.status) return replyhydro('❌ Gagal mengambil data TikTok.');
 
-        const title = data.title;
-        const author = data.author.nickname;
-        const stats = data.stats;
+  if (userLimit.limit < 2)
+    return replyhydro(`Limit kamu kurang!\nButuh *2* limit.\n> Sisa limit: *${userLimit.limit}*`)
 
-        const images = data.data.filter(v => v.type === 'photo').map(v => v.url);
-        if (images.length > 0) {
-            let cards = await Promise.all(images.map(async (url, i) => ({
-                header: proto.Message.InteractiveMessage.Header.create({
-                    ...(await prepareWAMessageMedia({ image: { url } }, { upload: hydro.waUploadToServer })),
-                    title: '',
-                    subtitle: `Foto ${i + 1}/${images.length}`,
-                    hasMediaAttachment: false
-                }),
-                body: { text: '' },
-                nativeFlowMessage: { buttons: [] }
-            })));
+  await hydro.sendMessage(m.chat, { react: { text: `⏱️`, key: m.key } })
 
-            let msg = generateWAMessageFromContent(m.chat, {
-                viewOnceMessage: {
-                    message: {
-                        interactiveMessage: {
-                            body: { 
-                                text: `📸 *Tiktok Slides*\n👤 ${author}\n📝 ${title}`
-                            },
-                            carouselMessage: {
-                                cards: cards,
-                                messageVersion: 1
-                            }
-                        }
-                    }
-                }
-            }, { quoted: m });
-            return await hydro.relayMessage(m.chat, msg.message, { messageId: msg.key.id });
+  try {
+    const data = await tiktokDl(budy)
+    if (!data || !data.status) return replyhydro('❌ Gagal mengambil data TikTok.')
+
+    const title = data.title
+    const author = data.author.nickname
+    const stats = data.stats
+
+    const images = data.data.filter(v => v.type === 'photo').map(v => v.url)
+
+    if (images.length > 0) {
+
+      let cards = await Promise.all(images.map(async (url, i) => ({
+        header: proto.Message.InteractiveMessage.Header.create({
+          ...(await prepareWAMessageMedia({ image: { url } }, { upload: hydro.waUploadToServer })),
+          title: '',
+          subtitle: `Foto ${i + 1}/${images.length}`,
+          hasMediaAttachment: false
+        }),
+        body: { text: '' },
+        nativeFlowMessage: { buttons: [] }
+      })))
+
+      let msg = generateWAMessageFromContent(m.chat, {
+        viewOnceMessage: {
+          message: {
+            interactiveMessage: {
+              body: { 
+                text:
+`📸 *Tiktok Slides*
+👤 ${author}
+📝 ${title}
+
+> Sisa limit: ${userLimit.limit - 2}`
+              },
+              carouselMessage: {
+                cards: cards,
+                messageVersion: 1
+              }
+            }
+          }
         }
+      }, { quoted: m })
 
-        const videoObj = data.data.find(v => v.type === 'nowatermark') || data.data.find(v => v.type === 'nowatermark_hd');
-        const videoUrl = videoObj ? videoObj.url : null;
+      await hydro.relayMessage(m.chat, msg.message, { messageId: msg.key.id })
+      await hydro.sendMessage(m.chat, { react: { text: `✅`, key: m.key } })
 
-        if (!videoUrl) return replyhydro('❌ Video error/tidak ditemukan.');
-
-        const caption = `🎥 *Tiktok Video*\n\n👤 *Author*: ${author}\n📝 *Desc*: ${title}\n\n📊 *Stats:*\n👁️ ${stats.views} | ❤️ ${stats.likes} |\n💬 ${stats.comment} |`;
-        
-        await hydro.sendMessage(m.chat, {
-            video: { url: videoUrl },
-            caption: caption,
-            footer: '',
-            buttons: [
-                { buttonId: `${prefix}ttaudio ${budy}`, buttonText: { displayText: "🎵 Audio" }, type: 1 }
-            ],
-            headerType: 4
-        }, { quoted: m });
-
-    } catch (err) {
-        console.error(err);
-        replyhydro('❌ Error mengambil data TikTok.');
+      userLimit.limit -= 2
+      return
     }
+
+    const videoObj = data.data.find(v => v.type === 'nowatermark') || data.data.find(v => v.type === 'nowatermark_hd')
+    const videoUrl = videoObj ? videoObj.url : null
+
+    if (!videoUrl) return replyhydro('❌ Video error/tidak ditemukan.')
+
+    await hydro.sendMessage(m.chat, {
+      video: { url: videoUrl },
+      caption:
+`🎥 *Tiktok Video*
+
+👤 Author: ${author}
+📝 Desc: ${title}
+
+📊 Views: ${stats.views} | ❤️ ${stats.likes}
+💬 ${stats.comment}
+
+> Sisa limit: ${userLimit.limit - 2}`,
+      footer: '',
+      buttons: [
+        { buttonId: `${prefix}ttaudio ${budy}`, buttonText: { displayText: "🎵 Audio" }, type: 1 }
+      ],
+      headerType: 4
+    }, { quoted: m })
+
+    await hydro.sendMessage(m.chat, { react: { text: `✅`, key: m.key } })
+
+    userLimit.limit -= 2
+
+  } catch (err) {
+    console.error(err)
+    await hydro.sendMessage(m.chat, { react: { text: `❌`, key: m.key } })
+    replyhydro('❌ Error mengambil data TikTok.')
+  }
 }
 //=========================================\\
 //Auto Download Video Instagram
@@ -2715,27 +2785,30 @@ if (
 // ─── ANTIBOT ─────────────────────────────────────
 if (m.isGroup && antibot.includes(m.chat)) {
     if (!isAdmins && !Ahmad && !m.key.fromMe) {
-        const targetId = m.key.id
+        const rawId = String(m.key?.id || '')
+        const baseId = rawId.split('-')[0]
+
         let reasons = []
         let isBotDetected = false
-        const nonHexChars = targetId.match(/[^0-9A-F]/gi)
 
+        const nonHexChars = baseId.match(/[^0-9A-F]/gi)
         if (nonHexChars) {
             const uniqueChars = [...new Set(nonHexChars)].join('').toUpperCase()
             reasons.push(`Format ID Invalid: Mengandung [ ${uniqueChars} ]`)
             isBotDetected = true
         }
 
-        if (targetId.length !== 32 && !targetId.startsWith('3EB0') && !targetId.startsWith('3A')) {
-            reasons.push(`Panjang ID Tidak Wajar (${targetId.length} digit)`)
+        if (baseId.length !== 32 && !baseId.startsWith('3EB0') && !baseId.startsWith('3A')) {
+            reasons.push(`Panjang ID Tidak Wajar (${baseId.length} digit)`)
             isBotDetected = true
         }
 
-        if (targetId.startsWith('3EB0')) {
+        if (baseId.startsWith('3EB0')) {
             reasons.push('Terdeteksi ID WhatsApp Web (3EB0)')
             isBotDetected = true
         }
-        if (targetId.startsWith('BAE5')) {
+
+        if (baseId.startsWith('BAE5')) {
             reasons.push('Terdeteksi ID Baileys Lama (BAE5)')
             isBotDetected = true
         }
@@ -2743,21 +2816,25 @@ if (m.isGroup && antibot.includes(m.chat)) {
         if (isBotDetected) {
             const actionType = antibotSettings[m.chat] || 'delete'
             const timeNow = new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta' })
-            
+
             const report = `⚡ *SISTEM KEAMANAN GRUP* ⚡
 ⏰ *Waktu:* ${timeNow}
 👤 *User:* @${m.sender.split('@')[0]}
-🔑 *ID:* ${targetId}
+🔑 *ID:* ${rawId}
 
 🚫 *Terdeteksi Unauthorized Client/Bot*
 ${reasons.map(r => `> • ${r}`).join('\n')}
 
 🔨 *Sanksi:* ${actionType === 'kick' ? 'HAPUS & TENDANG' : 'HAPUS PESAN'}`
 
-            await hydro.sendMessage(m.chat, { 
-                text: report, 
-                contextInfo: { mentionedJid: [m.sender] } 
-            }, { quoted: m })
+            await hydro.sendMessage(
+                m.chat,
+                {
+                    text: report,
+                    contextInfo: { mentionedJid: [m.sender] }
+                },
+                { quoted: m }
+            )
 
             await hydro.sendMessage(m.chat, { delete: m.key })
 
@@ -2964,7 +3041,7 @@ if (m.isGroup && nttoxic.includes(m.chat) && badwords.some(bw => body.toLowerCas
 //antivirtex by xeon
   if (antiVirtex) {
   if (budy.length > 3500) {
-  if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
+  if (!isBotAdmins) return replytolak(mess.only.badmin)
           await hydro.sendMessage(m.chat,
 			    {
 			        delete: {
@@ -3127,57 +3204,66 @@ hydro.sendMessage(from, {text:`\`\`\`「 Tiktok Link Detected 」\`\`\`\n\n@${m.
 } else {
 }
 
-hydro.family100 = hydro.family100 ? hydro.family100 : {};
-if (from in hydro.family100 && !m.key.fromMe ) {
-    let similarity = require('similarity');
-    let threshold = 0.72; // semakin tinggi nilai, semakin mirip
-    let id = m.chat;
-    let users = global.db.users[m.sender];
-    let room = hydro.family100[id];
-    let text = budy.toLowerCase().replace(/[^\w\s\-]+/, '');
-    let isSurrender = /^((me)?nyerah|surr?ender)$/i.test(budy);
+hydro.family100 = hydro.family100 ? hydro.family100 : {}
+if (from in hydro.family100 && !m.key.fromMe) {
+  let similarity = require('similarity')
+  let threshold = 0.72
+  let id = m.chat
+  let users = global.db.users[m.sender]
+  let room = hydro.family100[id]
+  let text = budy.toLowerCase().replace(/[^\w\s\-]+/g, '').trim()
+  let isSurrender = /^((me)?nyerah|surr?ender)$/i.test(budy)
 
-    if (!isSurrender) {
-        let index = room.jawaban.indexOf(text);
+  if (!isSurrender) {
+    let index = room.jawaban.map(v => String(v).toLowerCase()).indexOf(text)
 
-        if (index < 0) {
-            if (Math.max(...room.jawaban.filter((_, index) => !room.terjawab[index]).map(jawaban => similarity(jawaban, text))) >= threshold) {
-                return replyhydro('Dikit lagi!');
-            }
-        }
+    if (index < 0) {
+      let left = room.jawaban
+        .filter((_, idx) => !room.terjawab[idx])
+        .map(v => String(v).toLowerCase())
 
-        if (!isCmd && room.terjawab[index]) {
-            return;
-        }
-
-        users.money += room.winScore;
-        room.terjawab[index] = m.sender;
+      if (left.length) {
+        let sim = Math.max(...left.map(j => similarity(j, text)))
+        if (sim >= threshold) return replyhydro('Dikit lagi!')
+      }
+      return
     }
 
-    let isWin = room.terjawab.length === room.terjawab.filter(v => v).length;
+    if (!isCmd && room.terjawab[index]) return
 
-    let caption = `*GAME FAMILY100*
+    users.money = Number(users.money || 0) + Number(room.winScore || 0)
+    room.terjawab[index] = m.sender
+  }
 
-*Soal:* ${room.soal}
+  let isWin = room.terjawab.length === room.terjawab.filter(v => v).length
 
-Terdapat ${room.jawaban.length} jawaban${room.jawaban.find(v => v.includes(' ')) ? `
-(beberapa jawaban terdapat spasi)
-`: ''}
-${isWin ? `*SEMUA JAWABAN TERJAWAB ✅*` : isSurrender ? '*MENYERAH ❌*' : ''}
-${Array.from(room.jawaban, (jawaban, index) => {
-    return isSurrender || room.terjawab[index] ? `(${index + 1}) ${jawaban} ${room.terjawab[index] ? '✓ ' + room.terjawab[index].split('@')[0] : ''}`.trim() : false;
-}).filter(v => v).join('\n')}
+  const answeredLines = room.jawaban.map((jawaban, idx) => {
+    if (!isSurrender && !room.terjawab[idx]) return `┃ ${String(idx + 1).padStart(2, '0')}. ❓ *________*`
+    const by = room.terjawab[idx]
+    const byNum = by ? by.split('@')[0] : ''
+    return `┃ ${String(idx + 1).padStart(2, '0')}. ✅ *${jawaban}*${by ? `  —  @${byNum}` : ''}`
+  }).join('\n')
 
-${isSurrender ? '' : `+${room.winScore} Money tiap jawaban benar`}
-    `.trim();
+  const mentions = room.terjawab
+    .filter(v => typeof v === 'string' && v.endsWith('@s.whatsapp.net'))
 
-    hydro.sendMessage(from, { text: `${caption}`, mentions: [room.terjawab + '@s.whatsapp.net'] }, { quoted: m }).then(msg => {
-        hydro.family100[id].msg = msg;
-    }).catch(_ => _);
+  let caption =
+`╭┈┈⬡「 🎲 *FAMILY 100* 」
+┃ 🧩 Soal:
+┃ ${room.soal}
+┃
+┃ ${isWin ? '🏁 Status: *SEMUA TERJAWAB ✅*' : isSurrender ? '🏳️ Status: *MENYERAH ❌*' : `🎁 Hadiah: *Rp ${Number(room.winScore || 0).toLocaleString('id-ID')}* / jawaban`}
+╰┈┈┈┈┈┈┈┈⬡
 
-    if (isWin || isSurrender) {
-        delete hydro.family100[id];
-    }
+╭┈┈⬡「 📋 *JAWABAN* 」
+${answeredLines}
+╰┈┈┈┈┈┈┈┈⬡`.trim()
+
+  hydro.sendMessage(m.chat, { text: caption, mentions }, { quoted: m }).then(msg => {
+    hydro.family100[id].msg = msg
+  }).catch(_ => _)
+
+  if (isWin || isSurrender) delete hydro.family100[id]
 }
 hydro.tebaklagu = hydro.tebaklagu ? hydro.tebaklagu : {};
 if (tebaklagu.hasOwnProperty(m.sender.split('@')[0]) && isCmd) {
@@ -3542,7 +3628,7 @@ let messages = await generateWAMessage(m.chat, { text: text, mentions: mentioned
 })
 messages.key.fromMe = areJidsSameUser(m.sender, hydro.user.id)
 messages.key.id = m.key.id
-messages.pushName = m.pushName
+messages.pushName = pushname
 if (m.isGroup) messages.participant = m.sender
 let msg = {
     ...chatUpdate,
@@ -3796,7 +3882,7 @@ case 'totalcommand':
 └────⭓ Terimakasih 🔥`)
     break
 case 'owner': {
-let name = m.pushName || hydro.getName(m.sender);
+let name = pushname || hydro.getName(m.sender);
 let pan = `
 ▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
 > *Halo Kak \`${name}\`, Tekan Tombol Yang bertuliskan Chat Owner Untuk Menghubungi Nomor Owner ku*
@@ -11891,7 +11977,7 @@ case  'd25': {
            }); }
 break
 case 'ttsba': {
-  if (!text) return replyhydro(`Masukkan teks dan karakter!\n\nContoh: ${prefix + command} halo|momoi`);
+  if (!text) return replyhydro(`${mess.query.text}\n\nContoh: ${prefix + command} halo|momoi`);
 
   const translate = require('translate-google-api');
   const ws = require('ws');
@@ -13304,70 +13390,99 @@ break
 //=========================================\\
 case 'tiktok':
 case 'tt': {
-    if (!text) return replyhydro(`📌 Contoh: ${prefix + command} https://vt.tiktok.com/...`);
-    hydro.sendMessage(m.chat, { react: { text: `⏱️`, key: m.key } });
+  if (!m.isGroup) return replytolak(mess.only.group)
+  if (!text) return replyhydro(`📌 Contoh: ${prefix + command} https://vt.tiktok.com/...`)
 
-    try {
-        const data = await tiktokv1(text);
-        if (!data || !data.status) return replyhydro('❌ Gagal mengambil data.');
+  if (userLimit.limit < 2)
+    return replyhydro(`Limit kamu kurang!\nButuh *2* limit.\n> Sisa limit: *${userLimit.limit}*`)
 
-        const title = data.title;
-        const author = data.author.nickname;
-        const stats = data.stats;
-        
-        const images = data.data.filter(v => v.type === 'photo').map(v => v.url);
-        
-        if (images.length > 0) {
-            let cards = await Promise.all(images.map(async (url, i) => ({
-                header: proto.Message.InteractiveMessage.Header.create({
-                    ...(await prepareWAMessageMedia({ image: { url } }, { upload: hydro.waUploadToServer })),
-                    title: '',
-                    subtitle: `Foto ${i + 1}/${images.length}`,
-                    hasMediaAttachment: false
-                }),
-                body: { text: '' },
-                nativeFlowMessage: { buttons: [] }
-            })));
+  await hydro.sendMessage(m.chat, { react: { text: `⏱️`, key: m.key } })
 
-            let msg = generateWAMessageFromContent(m.chat, {
-                viewOnceMessage: {
-                    message: {
-                        interactiveMessage: {
-                            body: { 
-                                text: `📸 *Tiktok Slides*\n👤 ${author}\n📝 ${title}\n📊 View: ${stats.views} | Like: ${stats.likes}`
-                            },
-                            carouselMessage: {
-                                cards: cards,
-                                messageVersion: 1
-                            }
-                        }
-                    }
-                }
-            }, { quoted: m });
-            return await hydro.relayMessage(m.chat, msg.message, { messageId: msg.key.id });
+  try {
+    const data = await tiktokDl(text)
+    if (!data || !data.status) return replyhydro('❌ Gagal mengambil data.')
+
+    const title = data.title
+    const author = data.author.nickname
+    const stats = data.stats
+
+    const images = data.data.filter(v => v.type === 'photo').map(v => v.url)
+
+    if (images.length > 0) {
+
+      let cards = await Promise.all(images.map(async (url, i) => ({
+        header: proto.Message.InteractiveMessage.Header.create({
+          ...(await prepareWAMessageMedia({ image: { url } }, { upload: hydro.waUploadToServer })),
+          title: '',
+          subtitle: `Foto ${i + 1}/${images.length}`,
+          hasMediaAttachment: false
+        }),
+        body: { text: '' },
+        nativeFlowMessage: { buttons: [] }
+      })))
+
+      let msg = generateWAMessageFromContent(m.chat, {
+        viewOnceMessage: {
+          message: {
+            interactiveMessage: {
+              body: {
+                text:
+`📸 *Tiktok Slides*
+👤 ${author}
+📝 ${title}
+📊 View: ${stats.views} | Like: ${stats.likes}
+
+> Sisa limit: ${userLimit.limit - 2}`
+              },
+              carouselMessage: {
+                cards: cards,
+                messageVersion: 1
+              }
+            }
+          }
         }
+      }, { quoted: m })
 
-        const videoObj = data.data.find(v => v.type === 'nowatermark') || data.data.find(v => v.type === 'nowatermark_hd');
-        const videoUrl = videoObj ? videoObj.url : null;
+      await hydro.relayMessage(m.chat, msg.message, { messageId: msg.key.id })
+      await hydro.sendMessage(m.chat, { react: { text: `✅`, key: m.key } })
 
-        if (!videoUrl) return replyhydro('❌ Video tidak ditemukan.');
-
-        const caption = `🎥 *Tiktok Video*\n\n👤 *Author*: ${author}\n📝 *Desc*: ${title}\n\n📊 *Stats:*\n👁️ ${stats.views} | ❤️ ${stats.likes}\n💬 ${stats.comment} | 🔄 ${stats.share} |`;
-        
-        await hydro.sendMessage(m.chat, {
-            video: { url: videoUrl },
-            caption: caption,
-            footer: '',
-            buttons: [
-                { buttonId: `${prefix}ttaudio ${text}`, buttonText: { displayText: "🎵 Audio" }, type: 1 }
-            ],
-            headerType: 4
-        }, { quoted: m });
-
-    } catch (err) {
-        console.error(err);
-        replyhydro('❌ Error sistem.');
+      userLimit.limit -= 2
+      break
     }
+
+    const videoObj = data.data.find(v => v.type === 'nowatermark') || data.data.find(v => v.type === 'nowatermark_hd')
+    const videoUrl = videoObj ? videoObj.url : null
+
+    if (!videoUrl) return replyhydro('❌ Video tidak ditemukan.')
+
+    await hydro.sendMessage(m.chat, {
+      video: { url: videoUrl },
+      caption:
+`🎥 *Tiktok Video*
+
+👤 Author: ${author}
+📝 Desc: ${title}
+
+📊 Views: ${stats.views} | ❤️ ${stats.likes}
+💬 ${stats.comment} | 🔄 ${stats.share}
+
+> Sisa limit: ${userLimit.limit - 2}`,
+      footer: '',
+      buttons: [
+        { buttonId: `${prefix}ttaudio ${text}`, buttonText: { displayText: "🎵 Audio" }, type: 1 }
+      ],
+      headerType: 4
+    }, { quoted: m })
+
+    await hydro.sendMessage(m.chat, { react: { text: `✅`, key: m.key } })
+
+    userLimit.limit -= 2
+
+  } catch (err) {
+    console.error(err)
+    await hydro.sendMessage(m.chat, { react: { text: `❌`, key: m.key } })
+    replyhydro('❌ Error sistem.')
+  }
 }
 break;
 //==============================================
@@ -13418,24 +13533,31 @@ case 'ttaudio':
 case 'tiktokaudio':
 case 'ttmp3':
 case 'tiktokmp3': {
-    if (!text) return replyhydro(`📌 Contoh penggunaan:\n${prefix + command} https://vt.tiktok.com/...`);
-    hydro.sendMessage(m.chat, { react: { text: '🎶', key: m.key } });
+  if (!text) return replyhydro(`📌 Contoh penggunaan:\n${prefix + command} https://vt.tiktok.com/...`);
+  hydro.sendMessage(m.chat, { react: { text: '🎶', key: m.key } });
 
-    try {
-        const res = await tiktokv2(text);
-        if (!res.status || !res.mp3) {
-            throw new Error('Audio tidak ditemukan.');
-        }
+  try {
+    const res = await tiktokDl(text);
 
-        await hydro.sendMessage(m.chat, {
-            audio: { url: res.mp3 },
-            mimetype: 'audio/mp4'
-        }, { quoted: m });
+    const audioUrl =
+      res?.music_info?.url ||
+      res?.data?.music_info?.url ||
+      res?.data?.music_info?.[0]?.url;
 
-    } catch (err) {
-        console.error('❌ Error tiktokaudio:', err);
-        replyhydro('❌ Gagal mengambil audio dari TikTok.');
+    if (!res?.status || !audioUrl) {
+      throw new Error('Audio tidak ditemukan');
     }
+
+    await hydro.sendMessage(m.chat, {
+      audio: { url: audioUrl },
+      mimetype: 'audio/mpeg',
+      fileName: 'tiktokaudio-byhydro.mp3'
+    }, { quoted: m });
+
+  } catch (err) {
+    console.error('❌ Error tiktokaudio:', err);
+    replyhydro('❌ Gagal mengambil audio dari TikTok.');
+  }
 }
 break;
 case 'ghstalk': case 'githubstalk':{
@@ -13469,48 +13591,86 @@ Updated At : ${aj.updated_at}` }, { quoted: m } )
 break
 //=================================================
 case 'sewa':
-case 'sewabot':{
-sun = `_ƤƦƖƇЄԼƖƧƬ ƧЄƜƛ ӇƳƊƦƠ_
-     ┈ׁ ִ─ׄ─꯭─ ׄ┈ׄ ⸼ׅ🧸⸼ ׄ┈ׁ─꯭─ׄ─ׅ ┈ׁ
+case 'sewabot': {
+ try {
+ const sun = `╭━━〔 ʜᴀʀɢᴀ ꜱᴇᴡᴀ ʜʏᴅʀᴏ ʙᴏᴛ 〕━━╮
+│
+│➤ 🌤️ ꜱᴇᴡᴀ ʜᴀʀɪᴀɴ
+│ • 1 ʜᴀʀɪ — ʀᴘ 1.000
+│ • 3 ʜᴀʀɪ — ʀᴘ 3.500
+│ • 7 ʜᴀʀɪ — ʀᴘ 6.000
+│
+│➤ 📆 ꜱᴇᴡᴀ ᴍɪɴɢɢᴜᴀɴ
+│ • 14 ʜᴀʀɪ — ʀᴘ 10.500
+│ • 21 ʜᴀʀɪ — ʀᴘ 16.000
+│
+│➤ 🗓️ ꜱᴇᴡᴀ ʙᴜʟᴀɴᴀɴ
+│ • 1 ʙᴜʟᴀɴ — ʀᴘ 20.000
+│ • 2 ʙᴜʟᴀɴ — ʀᴘ 35.000
+│ • 3 ʙᴜʟᴀɴ — ʀᴘ 55.000
+│
+│≈ ᴛɪᴅᴀᴋ ᴍᴇɴʏᴇᴅɪᴀᴋᴀɴ ꜱᴇᴡᴀ ᴘᴇʀᴍᴀɴᴇɴ
+╰━━━━━━━━━━━━━━━━╯
 
-✎𝑠𝑒𝑤𝑎 ℎ𝑎𝑟𝑖𝑎𝑛&𝑚𝑖𝑛𝑔𝑔𝑢𝑎𝑛
-۫   ⃞💌⋅˚₊‧ ୨୧ 𝟏ℎ: 1.000
-۫   ⃞💌⋅˚₊‧ ୨୧ 𝟓ℎ: 3.500
-۫   ⃞💌⋅˚₊‧ ୨୧ 𝟕ℎ: 6.000
+✦ ───〔 ɴᴏᴛᴇ 〕─── ✦
+• ʙᴏᴛ ᴀᴋᴛɪꜰ 24 ᴊᴀᴍ
+• ꜰᴀꜱᴛ ʀᴇꜱᴘᴏɴ + ʙᴀɴʏᴀᴋ ꜰɪᴛᴜʀ
+• ᴄᴏᴄᴏᴋ ᴜɴᴛᴜᴋ ᴊᴀɢᴀ ɢʀᴜᴘ
+• ᴄᴜꜱᴛᴏᴍ ᴘʀᴇꜰɪx
+• ʙɪꜱᴀ ᴅᴏᴡɴʟᴏᴀᴅ ᴠɪᴅᴇᴏ ᴍᴇᴅꜱᴏꜱ
+• ᴅᴀɴ ᴍᴀꜱɪʜ ʙᴀɴʏᴀᴋ ꜰɪᴛᴜʀ ɢʀᴜᴘ ʟᴀɪɴɴʏᴀ`;
 
-✎𝑠𝑒𝑤𝑎 𝑝𝑒𝑟𝑏𝑢𝑙𝑎𝑛&𝑝𝑒𝑟𝑡𝑎ℎ𝑢𝑛
-۫   ⃞💌⋅˚₊‧ ୨୧ 𝟏𝑏𝑙𝑛: 20.000
-۫   ⃞💌⋅˚₊‧ ୨୧ 𝟏𝑡ℎ𝑢𝑛: 80.000
-۫   ⃞💌⋅˚₊‧ ୨୧ 𝒑𝒆𝒓𝒎𝒂𝒏𝒆𝒏: 200.000
+ const sellerUrl = 'https://wa.me/6285187063723?text=Kak+mau+sewabot';
+ const groupUrl = global.wagc;
 
-✎𝑝𝑟𝑒𝑚𝑖𝑢𝑚 𝑣𝑣𝑖𝑝 𝑔𝑟𝑢𝑝
-(𝐚𝐝𝐦𝐢𝐧 𝐣𝐚𝐝𝐢 𝐮𝐬𝐞𝐫 𝐩𝐫𝐞𝐦𝐢𝐮𝐦) 
-۫   ⃞💌⋅˚₊‧ ୨୧ 𝟏𝑏𝑙𝑛: 60.000
-۫   ⃞💌⋅˚₊‧ ୨୧ 𝟏𝑡ℎ𝑛: 150.000
+ const media = await prepareWAMessageMedia(
+ { image: { url: './data/image/sewa.png' } },
+ { upload: hydro.waUploadToServer }
+ );
 
+ const msg = generateWAMessageFromContent(m.chat, {
+ viewOnceMessage: {
+ message: {
+ interactiveMessage: proto.Message.InteractiveMessage.create({
+ body: proto.Message.InteractiveMessage.Body.create({ text: sun }),
+ footer: proto.Message.InteractiveMessage.Footer.create({ text: botname }),
+ header: proto.Message.InteractiveMessage.Header.create({
+ hasMediaAttachment: true,
+ ...media
+ }),
+ nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+ buttons: [
+ {
+ name: "cta_url",
+ buttonParamsJson: JSON.stringify({
+ display_text: "Pesan Sekarang",
+ url: sellerUrl
+ })
+ },
+ {
+ name: "cta_url",
+ buttonParamsJson: JSON.stringify({
+ display_text: "Bergabung Ke Grup",
+ url: groupUrl
+ })
+ }
+ ]
+ })
+ })
+ }
+ }
+ }, { quoted: m });
 
-𝑶𝒘𝒏𝒆𝒓 : https://wa.me/6285187063723?text=Kak+mau+sewabot
+ await hydro.relayMessage(m.chat, msg.message, { messageId: msg.key.id });
 
-
-
-𝑵𝒐𝒕𝒆!!! 
-- _𝐩𝒓𝒐𝒔𝒆𝒔 𝟏-𝟓 𝒎𝒆𝒏𝒊𝒕_
-- _𝐛𝐢𝐬𝐚 𝐣𝐚𝐠𝐚 𝐠𝐫𝐮𝐩_
-- _𝐟𝐢𝐭𝐮𝐫? 𝐛𝐚𝐧𝐲𝐚𝐤𝐤_
-- _𝐛𝐨𝐭 𝐚𝐤𝐭𝐢𝐟 𝟐𝟒 𝐣𝐚𝐦_`
-hydro.sendMessage(m.chat, {
-text: sun,
-contextInfo: {
-externalAdReply: {  
-title: botname,
-body: `${botname}`,
-thumbnailUrl: global.thumbnail,
-sourceUrl: wagc,
-mediaType: 1,
-renderLargerThumbnail: true
-}}}, { quoted: m})
-        }
-        break;
+ } catch (e) {
+ await hydro.sendMessage(m.chat, {
+ image: fs.readFileSync('./data/image/sewa.png'),
+ caption: `${sun}\n\nPesan: https://wa.me/6285187063723?text=Kak+mau+sewabot\nGrup: ${global.wagc}`
+ }, { quoted: m });
+ }
+}
+break
 //=================={{=[===================]]\\
 case 'tourl': {
     if (!quoted) return replyhydro('Reply media (foto/video/file) yang ingin diupload.');
@@ -13843,7 +14003,7 @@ case 'jadizombie': {
 break
 //============ CASE BUG BY AHMAD AKBAR =====================
 case 'invis-delay': {
-if (!isPrem) return m.reply('Khusus Premium');
+if (!isPrem) return m.reply(mess.only.premium);
 if (!text) return m.reply(`\`Example:\` : ${prefix+command} 628×××`);
 target = q.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
 await hydro.sendMessage(m.chat, {react: {text: '⏳', key: m.key}})
@@ -13864,7 +14024,7 @@ m.reply(`bug ${prefix+command} successfully sent to the destination number. *min
 break;
 //======================
 case 'invis-slow': {
-if (!isPrem) return m.reply('Khusus Premium');  
+if (!isPrem) return m.reply(mess.only.premium);  
 if (!text) return m.reply(`\`Example:\` : ${prefix+command} 628���`);
 target = q.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
 await hydro.sendMessage(m.chat, {react: {text: '⏳', key: m.key}})
@@ -13885,7 +14045,7 @@ m.reply(`bug ${prefix+command} successfully sent to the destination number. *min
 break;
 //======================
 case 'invis-bulldozer': {
-if (!isPrem) return m.reply('Khusus Premium');
+if (!isPrem) return m.reply(mess.only.premium);
 if (!text) return m.reply(`\`Example:\` : ${prefix+command} 628×××`);
 target = q.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
 await hydro.sendMessage(m.chat, {react: {text: '⏳', key: m.key}})
@@ -13901,7 +14061,7 @@ m.reply(`bug ${prefix+command} successfully sent to the destination number. *min
 break;
 //======================
 case 'penyedot-kuota': {
-if (!isPrem) return m.reply('Khusus Premium');
+if (!isPrem) return m.reply(mess.only.premium);
 if (!text) return m.reply(`\`Example:\` : ${prefix+command} 628×××`);
 target = q.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
 m.reply(`bug ${prefix+command} successfully sent to the destination number. *minimum 5 minute pause*`); 
@@ -13915,7 +14075,7 @@ m.reply(`bug ${prefix+command} successfully sent to the destination number. *min
 break;
 //======================
 case 'invis-hard': {
-if (!isPrem) return m.reply('Khusus Premium');  
+if (!isPrem) return m.reply(mess.only.premium);  
 if (!text) return m.reply(`\`Example:\` : ${prefix+command} 628���`);
 target = q.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
 await hydro.sendMessage(m.chat, {react: {text: '⏳', key: m.key}})
@@ -13936,7 +14096,7 @@ m.reply(`bug ${prefix+command} successfully sent to the destination number. *min
 break
 //======================
 case 'hydro-hard': {
-if (!isPrem) return m.reply('Khusus Premium');  
+if (!isPrem) return m.reply(mess.only.premium);  
 if (!text) return m.reply(`\`Example:\` : ${prefix+command} 628���`);
 target = q.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
 await hydro.sendMessage(m.chat, {react: {text: '⏳', key: m.key}})
@@ -13958,7 +14118,7 @@ m.reply(`bug ${prefix+command} successfully sent to the destination number. *min
 break
 //======================
 case 'hydro-delay': {
-if (!isPrem) return m.reply('Khusus Premium');  
+if (!isPrem) return m.reply(mess.only.premium);  
 if (!text) return m.reply(`\`Example:\` : ${prefix+command} 628���`);
 target = q.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
 await hydro.sendMessage(m.chat, {react: {text: '⏳', key: m.key}})
@@ -13980,7 +14140,7 @@ m.reply(`bug ${prefix+command} successfully sent to the destination number. *min
 break;
 //======================
 case 'hydrocrash': {
-if (!isPrem) return m.reply('Khusus Premium');  
+if (!isPrem) return m.reply(mess.only.premium);  
 if (!text) return m.reply(`\`Example:\` : ${prefix+command} 628���`);
 target = q.replace(/[^0-9]/g, "") + "@s.whatsapp.net";
 await hydro.sendMessage(m.chat, {react: {text: '⏳', key: m.key}})
@@ -14006,80 +14166,69 @@ case '🐦':
 case 'readvo':
 case 'rvo':
 case 'readviewonce': {
-    if (!quoted) return replyhydro('Reply pesan sekali lihat.');
-    if (!mime) return replyhydro(`Kirim foto/video/audio dengan caption *${prefix + command}*`);
+    if (!m.quoted) return replyhydro(global.mess.query.image);
+    if (!mime) return replyhydro(global.mess.query.image);
 
-    await hydro.sendMessage(m.chat, {
-        react: { text: "⏱️", key: m.key }
-    });
-
-    const FormData = require("form-data");
-    const fs = require("fs");
-    const path = require("path");
-    const axios = require("axios");
-
-    // Fungsi upload ke tmpfiles.org
-    async function uploadTmpFiles(filePath) {
-        try {
-            if (!fs.existsSync(filePath)) throw new Error("File tidak ditemukan");
-            const form = new FormData();
-            form.append("file", fs.createReadStream(filePath));
-            const res = await axios.post("https://tmpfiles.org/api/v1/upload", form, {
-                headers: form.getHeaders(),
-                timeout: 120000
-            });
-            if (res.data && res.data.data && res.data.data.url) {
-                const idMatch = res.data.data.url.match(/\/(\d+)(?:\/|$)/);
-                const fileName = path.basename(filePath);
-                if (idMatch) {
-                    return `https://tmpfiles.org/dl/${idMatch[1]}/${fileName}`;
-                }
-            }
-            throw new Error("Upload ke tmpfiles.org gagal");
-        } catch (err) {
-            console.error("TmpFiles Error:", err.message);
-            return null;
-        }
-    }
+    await replyhydro(global.mess.wait);
 
     try {
-        // Ambil caption asli
-        let originalCaption = '';
-        if (quoted.msg?.caption) {
-            originalCaption = quoted.msg.caption;
-        } else if (quoted.text) {
-            originalCaption = quoted.text;
+        const fs = require("fs");
+        const path = require("path");
+
+        const tempDir = path.resolve("./temp");
+        if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+
+        const qObj = await m.getQuotedObj();
+        const qMsg = qObj?.message || {};
+
+        const isViewOnce =
+            m.quoted?.viewOnce === true ||
+            !!qMsg.viewOnceMessage ||
+            !!qMsg.viewOnceMessageV2 ||
+            !!qMsg.viewOnceMessageV2Extension;
+
+        if (!isViewOnce) return replyhydro(global.mess.error.fitur);
+
+        let originalCaption = "";
+
+        const voContainer =
+            qMsg.viewOnceMessage?.message ||
+            qMsg.viewOnceMessageV2?.message ||
+            qMsg.viewOnceMessageV2Extension?.message;
+
+        if (voContainer) {
+            const innerType = Object.keys(voContainer)[0];
+            originalCaption = voContainer?.[innerType]?.caption || "";
         }
 
-        const mediaPath = await hydro.downloadAndSaveMediaMessage(quoted);
-        const url = await uploadTmpFiles(mediaPath);
-        if (!url) throw new Error("Eror Uploading");
+        originalCaption = String(originalCaption || "").trim();
+
+        const media =
+            (await m.quoted?.download?.()) ||
+            (await qObj?.download?.());
+
+        if (!media) return replyhydro(global.mess.error.fitur);
+
+        const ext = /image/.test(mime) ? "jpg" : /video/.test(mime) ? "mp4" : /audio/.test(mime) ? "mp3" : "bin";
+        const filePath = path.join(tempDir, `${Date.now()}.${ext}`);
+
+        fs.writeFileSync(filePath, media);
 
         if (/image/.test(mime)) {
-            await hydro.sendMessage(m.chat, {
-                image: { url },
-                caption: '`Pesan :`\n> ' + originalCaption || ''
-            }, { quoted: m });
+            const payload = { image: { url: filePath } };
+            if (originalCaption) payload.caption = `Pesan : ${originalCaption}`;
+            await hydro.sendMessage(m.chat, payload, { quoted: m });
+        } else if (/video/.test(mime)) {
+            const payload = { video: { url: filePath } };
+            if (originalCaption) payload.caption = `Pesan : ${originalCaption}`;
+            await hydro.sendMessage(m.chat, payload, { quoted: m });
+        } else if (/audio/.test(mime)) {
+            await hydro.sendMessage(m.chat, { audio: { url: filePath } }, { quoted: m });
+        } else {
+            return replyhydro(global.mess.error.fitur);
         }
-        else if (/video/.test(mime)) {
-            await hydro.sendMessage(m.chat, {
-                video: { url },
-                caption: '`Pesan :`\n> ' + originalCaption || ''
-            }, { quoted: m });
-        }
-        else if (/audio/.test(mime)) {
-            await hydro.sendMessage(m.chat, {
-                audio: { url }
-            }, { quoted: m });
-        }
-        else {
-            replyhydro('Jenis media tidak support.');
-        }
-
-        fs.unlinkSync(mediaPath);
     } catch (err) {
-        console.error('RVO ERROR:', err);
-        replyhydro(`Error: ${err.message}`);
+        replyhydro(global.mess.error.fitur);
     }
 }
 break;
@@ -14329,7 +14478,7 @@ break
  let anulistp = await store.chats.all().filter(v => v.id.endsWith('.net')).map(v => v.id)
  let teks = `${themeemoji} *PERSONAL CHAT LIST*\n\nTotal Chat : ${anulistp.length} Chat\n\n`
  for (let i of anulistp) {
- let nama = store.messages[i].array[0].pushName
+ let nama = store.messages[i].array[0].pushname
  teks += `${themeemoji} *Name :* ${nama}\n${themeemoji} *User :* @${i.split('@')[0]}\n${themeemoji} *Chat :* https://wa.me/${i.split('@')[0]}\n\n────────────────────────\n\n`
  }
  hydro.sendTextWithMentions(m.chat, teks, m)
@@ -14731,7 +14880,7 @@ case 'antitagsw': {
 break;
             case 'bctext': case 'broadcasttext': case 'broadcast': {
 			    if (!Ahmad) return replytolak(mess.only.owner)
-		            if (!q) return replyhydro(`Masukkan teks`)
+		            if (!q) return replyhydro(mess.query.text)
 		        const data = await store.chats.all()
         for (let i of data) {
            hydro.sendMessage(i.id, {text: `${ownername}'s Siaran\n\nPesan : ${q}` })
@@ -14741,7 +14890,7 @@ break;
         break
         case 'broadcastimage': case 'bcimage': case 'broadcastvideo': case 'broadcastvid':
 if(!Ahmad) return reply(mess.only.owner)
-        if (!q) return replyhydro(`Masukkan teks`)
+        if (!q) return replyhydro(mess.query.text)
         let getGroups = await hydro.groupFetchAllParticipating()
         let groups = Object.entries(getGroups).slice(0).map(entry => entry[1])
         let xeoncast = groups.map(v => v.id)
@@ -14788,8 +14937,8 @@ case 'resetgrouplink':
 case 'resetgclink':
 case 'resetgruplink': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 hydro.groupRevokeInvite(m.chat)
 }
 break
@@ -14806,8 +14955,8 @@ hydro.sendMessage(m.chat, reactionMessage)
             break
 case 'group': case 'gc': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
+if (!isBotAdmins) return replytolak(mess.only.badmin)
 if (!q) return replyhydro(`Send orders ${command} _options_\nOptions : close & open\nExample : ${command} close`)
 if (args[0] == 'close') {
   reply(`┌─┉─ • ─┉─  ── .✦
@@ -14830,7 +14979,7 @@ hydro.groupSettingUpdate(from, 'announcement')
 𝗷𝝰𝗻𝗴𝝰𝗻 𝗹𝘂𝗽𝝰 𝗯𝗲𝗿𝘀𝘆𝘂𝗸𝘂𝗿 𝘆𝝰 𝗯𝘂𝝰𝘁 𝗵𝝰𝗿𝗶 𝗶𝗻𝗶...`)
 hydro.groupSettingUpdate(from, 'not_announcement')
 } else {
-replyhydro(`Contoh: ${prefix + command} on/off`)
+replyhydro(`Contoh: ${prefix + command} close/open`)
 }}
 break
 case 'imgtopix': {
@@ -14911,7 +15060,7 @@ case 'imgtopix': {
 break
 case 'autostickergc':
             case 'autosticker':
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args.length < 1) return replyhydro('type auto sticker on to enable\ntype auto sticker off to disable')
 if (args[0]  === 'on'){
 if (isAutoSticker) return replyhydro(`Already activated`)
@@ -14927,8 +15076,8 @@ replyhydro('auto sticker deactivated')
 break
 case 'antivirus': case 'antivirtex': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 if (antiVirtex) return replyhydro('Already activated')
 ntvirtex.push(from)
@@ -14954,8 +15103,8 @@ replyhydro('Success in turning off antivirus this group')
   break
   case 'antilinkyoutubevideo': case 'antilinkyoutubevid': case 'antilinkytvid': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 if (AntiLinkYoutubeVid) return replyhydro('Already activated')
 ntilinkytvid.push(from)
@@ -14981,8 +15130,8 @@ replyhydro(`Contoh: ${prefix + command} on/off`)
   break
     case 'antilinkyoutubech': case 'antilinkyoutubechannel': case 'antilinkytch': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 if (AntiLinkYoutubeChannel) return replyhydro('Already activated')
 ntilinkytch.push(from)
@@ -15008,8 +15157,8 @@ replyhydro(`Contoh: ${prefix + command} on/off`)
   break
       case 'antilinkinstagram': case 'antilinkig': case 'antilinkinsta': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 if (AntiLinkInstagram) return replyhydro('Already activated')
 ntilinkig.push(from)
@@ -15035,8 +15184,8 @@ replyhydro(`Contoh: ${prefix + command} on/off`)
   break
         case 'antilinkfacebook': case 'antilinkfb': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 if (AntiLinkFacebook) return replyhydro('Already activated')
 ntilinkfb.push(from)
@@ -15062,8 +15211,8 @@ replyhydro(`Contoh: ${prefix + command} on/off`)
   break
           case 'antilinktelegram': case 'antilinktg': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 if (AntiLinkTelegram) return replyhydro('Already activated')
 ntilinktg.push(from)
@@ -15089,8 +15238,8 @@ replyhydro(`Contoh: ${prefix + command} on/off`)
   break
             case 'antilinktiktok': case 'antilinktt': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 if (AntiLinkTiktok) return replyhydro('Already activated')
 ntilinktt.push(from)
@@ -15116,8 +15265,8 @@ replyhydro(`Contoh: ${prefix + command} on/off`)
   break
             case 'antilinktwt': case 'antilinktwitter': case 'antilinktwit': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 if (AntiLinkTwitter) return replyhydro('Already activated')
 ntilinktwt.push(from)
@@ -15143,8 +15292,8 @@ replyhydro(`Contoh: ${prefix + command} on/off`)
   break
 case 'antilinkall': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 if (AntiLinkTwitter) return replyhydro('Already activated')
 ntilinkall.push(from)
@@ -15170,8 +15319,8 @@ replyhydro(`Contoh: ${prefix + command} on/off`)
   break
 case 'antiwame': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 if (antiWame) return replyhydro('Already activated')
 ntwame.push(from)
@@ -15238,7 +15387,7 @@ case 'addsewa': {
 }
 break;
 case 'delsewa': {
-    if (!Ahmad) return replytolak("❌ Fitur khusus Owner!")
+    if (!Ahmad) return replytolak(mess.only.owner)
 
     if (text) {
         let targetId = text.trim()
@@ -15457,8 +15606,8 @@ case 'totalpessn': {
 break
 case 'antilinkch': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 if (Antilinkch) return replyhydro('Already activated')
 ntlinkch.push(from)
@@ -15484,8 +15633,8 @@ replyhydro(`Contoh: ${prefix + command} on/off`)
  break
  case 'antilinkgc': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 if (Antilinkgc) return replyhydro('Already activated')
 ntlinkgc.push(from)
@@ -15670,7 +15819,7 @@ await replyhydro(`*[ Done ]*`)
             break
 case 'add': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
 let users = m.quoted ? m.quoted.sender : text.replace(/[^0-9]/g, '')+'@s.whatsapp.net'
 await hydro.groupParticipantsUpdate(m.chat, [users], 'add')
 await replyhydro(`*[ Done ]*`)
@@ -15678,8 +15827,8 @@ await replyhydro(`*[ Done ]*`)
 break
 case 'closetime': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
+if (!isBotAdmins) return replytolak(mess.only.badmin)
 if (args[1] == 'second') {
 var timer = args[0] * `1000`
 } else if (args[1] == 'minute') {
@@ -15702,8 +15851,8 @@ replyhydro(close)
 break
            case 'ephemeral': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins) return replytolak('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins) return replytolak(mess.only.admin)
 if (!text) return replyhydro('Enter the value enable/disable')
 if (args[0] === 'enable') {
 await hydro.sendMessage(m.chat, { disappearingMessagesInChat: WA_DEFAULT_EPHEMERAL })
@@ -15715,7 +15864,7 @@ await replyhydro(`*[ Done ]*`)
             break
 
             case 'delete': case 'del': {
-    if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
+    if (!isAdmins && !Ahmad) return reply(mess.only.admin)
     if (!m.quoted) return reply('Reply pesan yang ingin dihapus')
     
     hydro.sendMessage(m.chat, { 
@@ -15736,7 +15885,7 @@ let { chat, id } = m.quoted
             break
             case 'linkgroup': case 'linkgc': case 'gclink': case 'grouplink': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
 let response = await hydro.groupInviteCode(m.chat)
 hydro.sendText(m.chat, `https://chat.whatsapp.com/${response}\n\nGroup Link : ${groupMetadata.subject}`, m, { detectLink: true })
             }
@@ -15750,8 +15899,8 @@ case 'd': {
             break
 case 'opentime': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
+if (!isBotAdmins) return replytolak(mess.only.badmin)
 if (args[1] == 'second') {
 var timer = args[0] * `1000`
 } else if (args[1] == 'minute') {
@@ -15872,8 +16021,8 @@ case 'sulap': {
 break
 case 'kick': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
+if (!isBotAdmins) return replytolak(mess.only.badmin)
 let users = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : text.replace(/[^0-9]/g, '')+'@s.whatsapp.net'
 await hydro.groupParticipantsUpdate(m.chat, [users], 'remove')
 await replyhydro(`*[ Done ]*`)
@@ -15882,8 +16031,8 @@ break
 //=========================================\\
 case 'kickall': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
+if (!isBotAdmins) return replytolak(mess.only.badmin)
 const users = participants.map(a => a.id)
 await hydro.groupParticipantsUpdate(m.chat, [users], 'remove')
 await replyhydro(`*[ Done ]*`)
@@ -15905,8 +16054,8 @@ if (!text) return replyhydro(`Dimana teksnya?\nContoh: ${prefix + command} ${bot
     break
    case 'setnamegc': case 'setgroupname': case 'setsubject': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins) return replytolak('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins) return replytolak(mess.only.admin)
 if (!text) return replyhydro('Text ?')
 await hydro.groupUpdateSubject(m.chat, text)
 await replyhydro(`*[ Done ]*`)
@@ -15914,8 +16063,8 @@ await replyhydro(`*[ Done ]*`)
             break
           case 'setdesc': case 'setdesk': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
-if (!isAdmins) return replytolak('Khusus Admin!!')
+if (!isBotAdmins) return replytolak(mess.only.badmin)
+if (!isAdmins) return replytolak(mess.only.admin)
 if (!text) return replyhydro('Text ?')
 await hydro.groupUpdateDescription(m.chat, text)
 await replyhydro(`*[ Done ]*`)
@@ -15937,8 +16086,8 @@ break
 //=========================================\\
 case 'setppgroup': case 'setgcpp': case 'setgrouppp': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
+if (!isBotAdmins) return replytolak(mess.only.badmin)
 if (!quoted) return replyhydro(`Where is the picture?`)
 if (!/image/.test(mime)) return replyhydro(`Kirim/Balas Gambar Dengan Caption ${prefix + command}`)
 if (/webp/.test(mime)) return replyhydro(`Kirim/Balas Gambar Dengan Caption ${prefix + command}`)
@@ -15971,8 +16120,8 @@ replyhydro(`Success`)
 break
 case 'deleteppgroup': case 'delppgc': case 'deleteppgc': case 'delppgroup': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
+if (!isBotAdmins) return replytolak(mess.only.badmin)
     await hydro.removeProfilePicture(from)
     }
     break
@@ -15984,8 +16133,8 @@ if (!Ahmad) return replytolak(mess.only.owner)
     break
 case 'promote': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
+if (!isBotAdmins) return replytolak(mess.only.badmin)
 let users = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : text.replace(/[^0-9]/g, '')+'@s.whatsapp.net'
 await hydro.groupParticipantsUpdate(m.chat, [users], 'promote')
 await replyhydro(`*[ Done ]*`)
@@ -15993,8 +16142,8 @@ await replyhydro(`*[ Done ]*`)
 break
 case 'demote': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
+if (!isBotAdmins) return replytolak(mess.only.badmin)
 let users = m.mentionedJid[0] ? m.mentionedJid[0] : m.quoted ? m.quoted.sender : text.replace(/[^0-9]/g, '')+'@s.whatsapp.net'
 await hydro.groupParticipantsUpdate(m.chat, [users], 'demote')
 await replyhydro(`*[ Done ]*`)
@@ -16002,8 +16151,8 @@ await replyhydro(`*[ Done ]*`)
 break
 case 'hidetag': {
   if (!m.isGroup) return replytolak(mess.only.group);
-  if (!isAdmins && !Ahmad) return reply('Khusus Admin!!');
-  if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_');
+  if (!isAdmins && !Ahmad) return reply(mess.only.admin);
+  if (!isBotAdmins) return replytolak(mess.only.badmin);
 
   let users = participants.map(u => u.id);
   let qmsg = m.quoted ? m.quoted : m;
@@ -16038,8 +16187,8 @@ case 'hidetag': {
 break
 case 'ht': {
   if (!m.isGroup) return replytolak(mess.only.group);
-  if (!isAdmins && !Ahmad) return reply('Khusus Admin!!');
-  if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_');
+  if (!isAdmins && !Ahmad) return reply(mess.only.admin);
+  if (!isBotAdmins) return replytolak(mess.only.badmin);
 
   let users = participants.map(u => u.id);
   let qmsg = m.quoted ? m.quoted : m;
@@ -16074,8 +16223,8 @@ case 'ht': {
 break
 case 'totag': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
+if (!isBotAdmins) return replytolak(mess.only.badmin)
                if (!m.quoted) return replyhydro(`Reply message with caption ${prefix + command}`)
                hydro.sendMessage(m.chat, { forward: m.quoted.fakeObj, mentions: participants.map(a => a.id) })
                }
@@ -16083,8 +16232,8 @@ if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
 
 case 'tagall': {
 if (!m.isGroup) return replytolak(mess.only.group)
-if (!isAdmins && !Ahmad) return reply('Khusus Admin!!')
-if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
+if (!isBotAdmins) return replytolak(mess.only.badmin)
 me = m.sender
 let teks = `╚»˙·٠${themeemoji}●♥ Tag All ♥●${themeemoji}٠·˙«╝ 
  
@@ -16551,69 +16700,63 @@ case 'hdr':
 case 'hdvid':
 case 'vidhd':
 case 'hdvideo': {
-    if (!quoted) return replytolak(`📸 Reply gambar atau video dengan perintah *${prefix + command}*`);
 
-    if (/video/.test(mime)) {
-        await hydro.sendMessage(m.chat, { react: { text: '⌛', key: m.key } });
-        replyhydro(global.mess.wait);
+  if (!quoted) 
+    return replytolak(`📸 Reply gambar atau video dengan perintah *${prefix + command}*`)
 
-        try {
-            let qmsg = m.quoted ? m.quoted : m;
-            let buffer = await qmsg.download();
-            let resultUrl = await hdvideo(buffer);
+  if (userLimit.limit < 5)
+    return replyhydro(`Limit kamu kurang!\nButuh *5* limit.\nSisa limit: *${userLimit.limit}*`)
 
-            await hydro.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
-            await hydro.sendMessage(m.chat, {
-                video: { url: resultUrl },
-                caption: global.mess.success
-            }, { quoted: m });
-        } catch (error) {
-            console.error(error);
-            await hydro.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
-            replyhydro(global.mess.error.fitur);
-        }
+  if (/video/.test(mime)) {
 
-    } else if (/image/.test(mime) || /webp/.test(mime)) {
-        await hydro.sendMessage(m.chat, { react: { text: `⏱️`, key: m.key } });
-        
-        let res;
-        let scale = 4;
-        let attempt = 0;
+    try {
+      await hydro.sendMessage(m.chat, { react: { text: '⌛', key: m.key } })
+      replyhydro(global.mess.wait)
 
-        try {
-            const buffer = await quoted.download();
-            while (attempt < 2) {
-                try {
-                    if (attempt === 1) scale = 2;
-                    res = await hdr(buffer, scale);
+      let buffer = await quoted.download()
+      let resultUrl = await hdvideo(buffer)
 
-                    let caption = global.mess.success;
-                    
-                    await hydro.sendMessage(m.chat, {
-                        image: res,
-                        caption: caption
-                    }, { quoted: m });
-                    
-                    await hydro.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
-                    return;
+      await hydro.sendMessage(m.chat, {
+        video: { url: resultUrl },
+        caption: global.mess.success + `\n> Sisa limit: ${userLimit.limit - 5}`
+      }, { quoted: m })
 
-                } catch (e) {
-                    if (attempt === 0) {
-                        attempt++;
-                        continue;
-                    } else {
-                        throw e;
-                    }
-                }
-            }
-        } catch (e) {
-            console.error(e);
-            await hydro.sendMessage(m.chat, { react: { text: "❌", key: m.key } });
-            replyhydro(global.mess.error.fitur);
-        }
-    } else {
-        replytolak("❗ Format tidak didukung. Harap reply gambar, stiker, atau video.");
+      await hydro.sendMessage(m.chat, { react: { text: '✅', key: m.key } })
+
+      userLimit.limit -= 5
+
+    } catch (error) {
+      console.error(error)
+      await hydro.sendMessage(m.chat, { react: { text: '❌', key: m.key } })
+      replyhydro(global.mess.error.fitur)
     }
+
+  } else if (/image/.test(mime) || /webp/.test(mime)) {
+
+    try {
+      await hydro.sendMessage(m.chat, { react: { text: '⏱️', key: m.key } })
+
+      const buffer = await quoted.download()
+      let result = await hdr(buffer, 4)
+
+      await hydro.sendMessage(m.chat, {
+        image: result,
+        caption: global.mess.success + `\n> Sisa limit: ${userLimit.limit - 5}`
+      }, { quoted: m })
+
+      await hydro.sendMessage(m.chat, { react: { text: "✅", key: m.key } })
+
+      userLimit.limit -= 5
+
+    } catch (e) {
+      console.error(e)
+      await hydro.sendMessage(m.chat, { react: { text: "❌", key: m.key } })
+      replyhydro(global.mess.error.fitur)
+    }
+
+  } else {
+    replytolak("❗ Format tidak didukung. Harap reply gambar atau video.")
+  }
 }
 break
 //=========================================\\
@@ -18892,46 +19035,102 @@ break
 //=========================================\\
 case 'casino': {
   if (!m.isGroup) return replytolak(mess.only.group)
-function pickRandom(list) {
-    return list[Math.floor(Math.random() * list.length)]
-}
-let buatall = 1
-    hydro.casino = hydro.casino ? hydro.casino : {}
-    if (m.chat in hydro.casino) return reply ('Masih ada yang melakukan casino disini, tunggu sampai selesai!!')
-    else hydro.casino[m.chat] = true
-    try {
-        let randomaku = `${Math.floor(Math.random() * 101)}`.trim()
-        let randomkamu = `${Math.floor(Math.random() * 81)}`.trim() //hehe Biar Susah Menang :v
-        let Aku = (randomaku * 1)
-        let Kamu = (randomkamu * 1)
-        let count = args[0]
-        count = count ? /all/i.test(count) ? Math.floor(global.db.users[m.sender].exp / buatall) : parseInt(count) : args[0] ? parseInt(args[0]) : 1
-        count = Math.max(1, count)
-        if (args.length < 1) return reply('casino <jumlah>\n ' + 'casino 1000', )
-        if (global.db.users[m.sender].exp >= count * 1) {
-            global.db.users[m.sender].exp -= count * 1
-            //await reply('') //Kwkwwkkwlwlw
-            if (Aku > Kamu) {
-                reply(`💰 Casino 💰\n*Kamu:* ${Kamu} Point\n*Computer:* ${Aku} Point\n\n*You LOSE*\nKamu kehilangan ${count} Uang(xp)`)
-            } else if (Aku < Kamu) {
-                global.db.users[m.sender].exp += count * 2
-                reply(`💰 Casino 💰\n*Kamu:* ${Kamu} Point\n*Computer:* ${Aku} Point\n\n*You Win*\nKamu mendapatkan ${count * 2} Uang(xp)`)
-            } else {
-                global.db.users[m.sender].exp += count * 1
-                reply(`💰 Casino 💰\n*Kamu:* ${Kamu} Point\n*Computer:* ${Aku} Point\n\n*SERI*\nKamu mendapatkan ${count * 1} Uang(xp)`)
-            }
-        } else reply(`Uang(xp) kamu tidak mencukupi untuk Casino silahkan *#kerja* terlebih dahulu!`)
-    } catch (e) {
-        console.log(e)
-        reply('Error!!')
-        if (DevMode) {
-            for (let jid of global.owner.map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').filter(v => v != hydro.user.jid)) {
-                hydro.sendMessage(jid, 'casino.js error\nNo: *' + m.sender.split`@`[0] + '*\nCommand: *' + m.text + '*\n\n*' + e + '*', MessageType.text)
-            }
-        }
-    } finally {
-        delete hydro.casino[m.chat]
+
+  const rupiah = (n) => {
+    n = Number(n) || 0
+    const sign = n < 0 ? '-' : ''
+    const s = String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    return `${sign}${s}`
+  }
+
+  const pickRandom = (list) => list[Math.floor(Math.random() * list.length)]
+
+  hydro.casino = hydro.casino ? hydro.casino : {}
+  if (m.chat in hydro.casino) return reply('Masih ada yang melakukan casino disini, tunggu sampai selesai!!')
+  hydro.casino[m.chat] = true
+
+  try {
+    if (args.length < 2) {
+      return reply(
+`╭┈┈⬡「 🎰 *CASINO* 」
+┃ Format:
+┃ casino <jumlah> <xp/money>
+┃
+┃ Contoh:
+┃ casino 5000 xp
+┃ casino 10000 money
+┃ casino all xp
+╰┈┈┈┈┈┈┈┈⬡`)
     }
+
+    let user = global.db.users[m.sender]
+    let amountArg = args[0]
+    let typeArg = args[1].toLowerCase()
+
+    let isXP = typeArg === 'xp' || typeArg === 'exp'
+    let isMoney = typeArg === 'uang' || typeArg === 'money'
+
+    if (!isXP && !isMoney) return reply('Pilihan harus xp/exp atau uang/money')
+
+    let balance = isXP ? Number(user.exp || 0) : Number(user.money || 0)
+
+    let amount = /all/i.test(amountArg)
+      ? balance
+      : parseInt(amountArg)
+
+    if (isNaN(amount) || amount <= 0) return reply('Jumlah tidak valid')
+    if (balance < amount) return reply('Saldo tidak mencukupi!')
+
+    let botPoint = Math.floor(Math.random() * 101)
+    let userPoint = Math.floor(Math.random() * 101)
+
+    if (isXP) user.exp -= amount
+    if (isMoney) user.money -= amount
+
+    let resultText = ''
+    let reward = 0
+
+    if (userPoint > botPoint) {
+      reward = amount * 2
+      if (isXP) user.exp += reward
+      if (isMoney) user.money += reward
+      resultText = `🎉 *YOU WIN*`
+    } else if (userPoint < botPoint) {
+      resultText = `💀 *YOU LOSE*`
+    } else {
+      reward = amount
+      if (isXP) user.exp += reward
+      if (isMoney) user.money += reward
+      resultText = `🤝 *SERI*`
+    }
+
+    let currencyName = isXP ? 'XP' : 'Money'
+    let displayAmount = isXP ? rupiah(amount) : `Rp ${rupiah(amount)}`
+    let displayReward = isXP ? rupiah(reward) : `Rp ${rupiah(reward)}`
+
+    let caption =
+`╭┈┈⬡「 🎰 *CASINO* 」
+┃ 👤 Pemain: @${m.sender.split('@')[0]}
+┃ 🎯 Taruhan: *${displayAmount}* (${currencyName})
+┃
+┃ 🎲 Kamu: *${userPoint}* Point
+┃ 🤖 Bot: *${botPoint}* Point
+┃
+┃ ${resultText}
+${reward > 0 ? `┃ 💰 Mendapat: *${displayReward}*` : `┃ 💸 Kehilangan: *${displayAmount}*`}
+╰┈┈┈┈┈┈┈┈⬡`.trim()
+
+    hydro.sendMessage(m.chat, {
+      text: caption,
+      mentions: [m.sender]
+    }, { quoted: m })
+
+  } catch (e) {
+    console.log(e)
+    reply('Terjadi kesalahan!')
+  } finally {
+    delete hydro.casino[m.chat]
+  }
 }
 break
 //=========================================\\
@@ -19036,109 +19235,244 @@ break;
 case 'kerja':
 case 'bekerja': {
   if (!m.isGroup) return replytolak(mess.only.group)
-function clockString(ms) {
+
+  const clockString = (ms) => {
     let h = Math.floor(ms / 3600000)
-    let m = Math.floor(ms / 60000) % 60
+    let mnt = Math.floor(ms / 60000) % 60
     let s = Math.floor(ms / 1000) % 60
-    return [h, m, s].map(v => v.toString().padStart(2, 0) ).join(':')
-}
-    let type = (args[0] || '').toLowerCase()
-    let users = global.db.users[m.sender]
-    let time = users.lastkerja + 30000
-    let __timers = (new Date - users.lastkerja)
-    let _timers = (1000 - __timers)
-    let timers = clockString(_timers)
+    return [h, mnt, s].map(v => v.toString().padStart(2, '0')).join(':')
+  }
 
-    let penumpan = ['mas mas', 'bapak bapak', 'cewe sma', 'bocil epep', 'emak emak']
-    let penumpang = penumpan[Math.floor(Math.random() * penumpan.length)]
+  const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min
+  const chance = (p) => Math.random() * 100 < p
+  const rupiah = (n) => String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 
-    let daganga = ['wortel', 'sawi', 'selada', 'tomat', 'seledri', 'cabai', 'daging', 'ikan', 'ayam']
-    let dagangan = daganga[Math.floor(Math.random() * daganga.length)]
-    
-    let pasie = ['sakit kepala', 'cedera', 'luka bakar', 'patah tulang']
-    let pasien = pasie[Math.floor(Math.random() * pasie.length)]
+  let type = (args[0] || '').toLowerCase()
+  let users = global.db.users[m.sender]
+  if (!users) return replyhydro('User tidak ada di database')
 
-    let pane = ['Wortel', 'Kubis', 'stowbery', 'teh', 'padi', 'jeruk', 'pisang', 'semangka', 'durian', 'rambutan']
-    let panen = pane[Math.floor(Math.random() * pane.length)]
+  const cooldown = 300000
+  const now = Date.now()
+  users.lastkerja = users.lastkerja || 0
 
-    let bengke = ['mobil', 'motor', 'becak', 'bajai', 'bus', 'angkot', 'becak', 'sepeda']
-    let bengkel = bengke[Math.floor(Math.random() * bengke.length)]
+  const jobs = {
+    kuli: { title: '🔨 Kuli', min: 100000, max: 200000, fail: 18 },
+    montir: { title: '🔧 Montir', min: 50000, max: 150000, fail: 28 },
+    petani: { title: '🌾 Petani', min: 50000, max: 100000, fail: 15 },
+    dokter: { title: '💉 Dokter', min: 150000, max: 300000, fail: 32 },
+    pedagang: { title: '🛒 Pedagang', min: 100000, max: 150000, fail: 12 },
+    ojek: { title: '🛵 Ojek', min: 50000, max: 150000, fail: 10 },
+    nyawit: { title: '🌴 Nyawit', min: 120000, max: 250000, fail: 22 },
+    koki: { title: '👨‍🍳 Koki', min: 90000, max: 180000, fail: 20 },
+    chef: { title: '🍽️ Chef', min: 150000, max: 320000, fail: 30 },
+    pembersihjalan: { title: '🧹 Pembersih Jalan', min: 60000, max: 120000, fail: 12 },
+    malingbesi: { title: '🧰 Maling Besi', min: 120000, max: 280000, fail: 45 },
+    fotografer: { title: '📸 Fotografer', min: 80000, max: 200000, fail: 18 },
+    pilot: { title: '✈️ Pilot', min: 250000, max: 500000, fail: 35 },
+    peternak: { title: '🐄 Peternak', min: 70000, max: 180000, fail: 16 },
+    tukangparkir: { title: '🅿️ Tukang Parkir', min: 30000, max: 90000, fail: 10 },
+    nelayan: { title: '🎣 Nelayan', min: 60000, max: 200000, fail: 24 },
+    ngepet: { title: '🧿 Ngepet', min: 150000, max: 450000, fail: 55 }
+  }
 
-    let ruma = ['Membangun Rumah', 'Membangun Gedung', 'Memperbaiki Rumah', 'Memperbaiki Gedung', 'Membangun Fasilitas Umum', 'Memperbaiki Fasilitas Umum']
-    let rumah = ruma[Math.floor(Math.random() * ruma.length)]
+  const keys = Object.keys(jobs)
 
-    if (/kerja/i.test(command)) {
-        switch (type) {
-            case 'ojek':
-if (new Date - users.lastkerja < 300000) return replyhydro(`Kamu sudah bekerja\nSaatnya istirahat selama ${clockString(time - new Date())}`)
-let hasilojek = `${Math.floor(Math.random() * 150000)}`.trim()
-users.money += hasilojek * 1
-	              users.lastparming = new Date * 1
-replyhydro(`Kamu Sudah Mengantarkan *${penumpang}* 🚗\nDan mendapatkan uang senilai *Rp ${hasilojek} ${global.rpg.emoticon('money')}*`)
-break
-            case 'pedagang':
-if (new Date - users.lastkerja < 300000) return replyhydro(`Kamu sudah bekerja,Saatnya istirahat selama\n🕜 ${clockString(time - new Date())}`)
-let hasildagang = `${Math.floor(Math.random() * 150000)}`.trim()
-users.money += hasildagang * 1
-	              users.lastparming = new Date * 1
-replyhydro(`Ada pembeli yg membeli *${dagangan}* 🛒\nDan mendapatkan uang senilai *Rp ${hasildagang} ${global.rpg.emoticon('money')}*`)
-break
-            case 'dokter':
-if (new Date - users.lastkerja < 300000) return replyhydro(`Kamu sudah bekerja,Saatnya istirahat selama\n🕜 ${clockString(time - new Date())}`)
-let hasildokter = `${Math.floor(Math.random() * 150000)}`.trim()
-users.money += hasildokter * 1
-	              users.lastparming = new Date * 1
-replyhydro(`Kamu menyembuhkan pasien *${pasien}* 💉\nDan mendapatkan uang senilai *Rp ${hasildokter}* ${global.rpg.emoticon('money')}`)
-break
-            case 'petani':
-if (new Date - users.lastkerja < 300000) return replyhydro(`Kamu sudah bekerja,Saatnya istirahat selama\n🕜 ${clockString(time - new Date())}`)
-let hasiltani = `${Math.floor(Math.random() * 150000)}`.trim()
-users.money += hasiltani * 1
-	              users.lastparming = new Date * 1
-replyhydro(`${panen} Sudah Panen !🌽 Dan menjualnya 🧺\nDan mendapatkan uang senilai Rp *${hasiltani} ${global.rpg.emoticon('money')}*`)
-break
-            case 'montir':
-if (new Date - users.lastkerja < 300000) return replyhydro(`Kamu sudah bekerja,Saatnya istirahat selama\n🕜 ${clockString(time - new Date())}`)
-let hasilmontir = `${Math.floor(Math.random() * 150000)}`.trim()
-users.money += hasilmontir * 1
-	              users.lastparming = new Date * 1
-replyhydro(`Kamu Baru saja mendapatkan pelanggan dan memperbaiki *${bengkel} 🔧*\nDan kamu mendapatkan uang senilai *Rp ${hasilmontir}* ${global.rpg.emoticon('money')}`)
-break
-            case 'kuli':
-if (new Date - users.lastkerja < 300000) return replyhydro(`Kamu sudah bekerja,Saatnya istirahat selama\n🕜 ${clockString(time - new Date())}`)
-let hasilkuli = `${Math.floor(Math.random() * 150000)}`.trim()
-users.money += hasilkuli * 1
-	              users.lastparming = new Date * 1
-replyhydro(`Kamu baru saja selesai ${rumah} 🔨\nDan mendapatkan uang senilai *Rp ${hasilkuli} ${global.rpg.emoticon('money')}*`)
-break
-            default:
-return replyhydro(`_*Pilih Pekerjaan Yang Kamu Inginkan*_\n\n_• Kuli_ \n_• Montir_ \n_• Petani_ \n_• Dokter_ \n_• Pedagang_ \n_• Ojek_ \n\nContoh Penggunaan :\nkerja Kuli`)
+  if (!type) {
+    const rows = keys.map(k => ({
+      header: "",
+      title: jobs[k].title,
+      description: `Gaji: Rp ${rupiah(jobs[k].min)} - ${rupiah(jobs[k].max)} | Risiko gagal: ${jobs[k].fail}%`,
+      id: `${prefix}kerja ${k}`
+    }))
+
+    let msg = generateWAMessageFromContent(m.chat, {
+      viewOnceMessage: {
+        message: {
+          messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
+          interactiveMessage: {
+            body: { text: `🧰 *PILIH PEKERJAAN*` },
+            footer: { text: `${botname}` },
+            header: { title: "", subtitle: "", hasMediaAttachment: false },
+            nativeFlowMessage: {
+              buttons: [
+                {
+                  name: "single_select",
+                  buttonParamsJson: JSON.stringify({
+                    title: "PILIH PEKERJAAN",
+                    sections: [{ title: "Daftar Pekerjaan", rows }]
+                  })
+                }
+              ]
+            }
+          }
         }
-    }
+      }
+    }, { quoted: m }, {})
+
+    await hydro.relayMessage(msg.key.remoteJid, msg.message, { messageId: msg.key.id })
+    break
+  }
+
+  type = type.replace(/\s+/g, '')
+
+  if (!jobs[type]) return replyhydro(`Pekerjaan tidak tersedia.\nKetik ${prefix}kerja untuk memilih.`)
+
+  if (now - users.lastkerja < cooldown) {
+    const sisa = cooldown - (now - users.lastkerja)
+    return replyhydro(`Kamu sudah bekerja.\nIstirahat selama 🕜 ${clockString(sisa)}`)
+  }
+
+  let penumpan = ['mas mas', 'bapak bapak', 'cewe sma', 'bocil epep', 'emak emak']
+  let penumpang = penumpan[Math.floor(Math.random() * penumpan.length)]
+
+  let daganga = ['wortel', 'sawi', 'selada', 'tomat', 'seledri', 'cabai', 'daging', 'ikan', 'ayam']
+  let dagangan = daganga[Math.floor(Math.random() * daganga.length)]
+
+  let pasie = ['sakit kepala', 'cedera', 'luka bakar', 'patah tulang']
+  let pasien = pasie[Math.floor(Math.random() * pasie.length)]
+
+  let pane = ['Wortel', 'Kubis', 'Stroberi', 'Teh', 'Padi', 'Jeruk', 'Pisang', 'Semangka', 'Durian', 'Rambutan']
+  let panen = pane[Math.floor(Math.random() * pane.length)]
+
+  let bengke = ['mobil', 'motor', 'becak', 'bajai', 'bus', 'angkot', 'sepeda']
+  let bengkel = bengke[Math.floor(Math.random() * bengke.length)]
+
+  let ruma = [
+    'Membangun Rumah', 'Membangun Gedung', 'Memperbaiki Rumah',
+    'Memperbaiki Gedung', 'Membangun Fasilitas Umum', 'Memperbaiki Fasilitas Umum'
+  ]
+  let rumah = ruma[Math.floor(Math.random() * ruma.length)]
+
+  let sawitEvent = ['buah sawit matang', 'tandan besar', 'kebun licin', 'panen berat', 'cuaca panas', 'duri tajam', 'alat rusak', 'jalan becek']
+  let sawit = sawitEvent[Math.floor(Math.random() * sawitEvent.length)]
+
+  let menuKoki = ['nasi goreng', 'mie goreng', 'ayam bakar', 'sate', 'soto', 'bakso', 'rendang', 'gado-gado']
+  let masakan = menuKoki[Math.floor(Math.random() * menuKoki.length)]
+
+  let menuChef = ['beef wellington', 'salmon steak', 'pasta carbonara', 'risotto', 'ramen', 'sushi platter']
+  let masakanChef = menuChef[Math.floor(Math.random() * menuChef.length)]
+
+  let jalanEvent = ['sampah berserakan', 'daun kering', 'lumpur tebal', 'pecahan kaca', 'bau menyengat']
+  let kotoran = jalanEvent[Math.floor(Math.random() * jalanEvent.length)]
+
+  let besiEvent = ['pagar besi', 'pagar besi dpr', 'tiang lampu', 'teralis', 'besi tua', 'gerbang kecil', 'pipa besi']
+  let targetBesi = besiEvent[Math.floor(Math.random() * besiEvent.length)]
+
+  let fotoEvent = ['prewedding', 'wisuda', 'ulang tahun', 'foto produk', 'konser', 'acara nikahan']
+  let fotoJob = fotoEvent[Math.floor(Math.random() * fotoEvent.length)]
+
+  let ternakEvent = ['sapi', 'kambing', 'ayam', 'bebek', 'kerbau']
+  let ternak = ternakEvent[Math.floor(Math.random() * ternakEvent.length)]
+
+  let parkirEvent = ['motor', 'mobil', 'bus', 'truk kecil']
+  let parkir = parkirEvent[Math.floor(Math.random() * parkirEvent.length)]
+
+  let lautEvent = ['ikan tongkol', 'ikan kembung', 'udang', 'cumi-cumi', 'kepiting']
+  let tangkapan = lautEvent[Math.floor(Math.random() * lautEvent.length)]
+
+  let ngepetEvent = ['rumah sepi', 'warung', 'toko', 'gang sempit', 'pasar malam']
+  let targetNgepet = ngepetEvent[Math.floor(Math.random() * ngepetEvent.length)]
+
+  const contextText = {
+    kuli: rumah,
+    montir: bengkel,
+    petani: panen,
+    dokter: pasien,
+    pedagang: dagangan,
+    ojek: penumpang,
+    nyawit: sawit,
+    koki: masakan,
+    chef: masakanChef,
+    pembersihjalan: kotoran,
+    malingbesi: targetBesi,
+    fotografer: fotoJob,
+    pilot: 'penerbangan',
+    peternak: ternak,
+    tukangparkir: parkir,
+    nelayan: tangkapan,
+    ngepet: targetNgepet
+  }
+
+  const job = jobs[type]
+  const baseSalary = randInt(job.min, job.max)
+  const failed = chance(job.fail)
+
+  let moneyChange = 0
+  let message = ''
+
+  if (failed) {
+    const lossPercent = randInt(20, 50)
+    moneyChange = -Math.floor(baseSalary * (lossPercent / 100))
+    message = `${job.title}\n⚠️ Kamu gagal saat menangani *${contextText[type]}*\n📉 Saldo berkurang ${lossPercent}% dari potensi gaji\n💸 -Rp ${rupiah(moneyChange)} ${global.rpg.emoticon('money')}`
+  } else {
+    moneyChange = baseSalary
+    message = `${job.title}\n✅ Berhasil menyelesaikan pekerjaan pada *${contextText[type]}*\n💰 +Rp ${rupiah(moneyChange)} ${global.rpg.emoticon('money')}`
+  }
+
+  users.money = (users.money || 0) + moneyChange
+  users.lastkerja = now
+
+  replyhydro(message)
 }
 break
 //=========================================\\
   case 'bankcek': {
-    if (!m.isGroup) return replytolak(mess.only.group)
-    let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0]: m.fromMe ? hydro.user.jid: m.sender
-    if (!(who in global.db.users)) return reply(`User ${who} not in database`)
-    let user = global.db.users[who]
-    let isMods = global.owner.filter(([number, _, isDeveloper]) => number && isDeveloper).map(([number]) => number).map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(who)
-    let Ahmad = m.fromMe || isMods || [hydro.decodeJid(hydro.user.id), ...global.owner.filter(([number, _, Ahmad]) => number && !Ahmad).map(([number]) => number)].map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(who)
-    let isPrems =  Ahmad || new Date() - user.premiumTime < 0
-    let caption = `
-▧「 *BANK CEK* 」
-│ 👤 Name: ${user.registered ? user.name: hydro.getName(m.sender)}
-│ ${global.rpg.emoticon('atm')} Atm: ${user.atm > 0 ? 'Level ' + user.atm: '✖️'}
-│ ${global.rpg.emoticon('bank')} Bank: ${user.bank} / ${user.fullatm}
-│ ${global.rpg.emoticon('money')} Money: ${user.money}
-│ ${global.rpg.emoticon('chip')} Chip: ${user.chip}
-│ 🤖 Robo: ${user.robo > 0 ? 'Level ' + user.robo: '✖️'}
-│ 🌟 Status: ${isMods ? 'Developer' : Ahmad ? 'Owner' : isPrem ? 'Premium User ✅' : user.level > 999 ? 'Elite User' : 'Free User'}
-│ 📑 Registered: ${user.registered ? 'Yes': 'No'}
-└────···
+  if (!m.isGroup) return replytolak(mess.only.group)
+
+  const rupiah = (n) => {
+    n = Number(n) || 0
+    const sign = n < 0 ? '-' : ''
+    const s = String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    return `${sign}${s}`
+  }
+
+  let who = m.mentionedJid && m.mentionedJid[0]
+    ? m.mentionedJid[0]
+    : m.fromMe
+      ? hydro.user.jid
+      : m.sender
+
+  if (!(who in global.db.users)) return replyhydro(`User ${who} not in database`)
+  let user = global.db.users[who]
+
+  let isMods = [hydro.decodeJid(hydro.user.id), ...global.owner.filter(([number, _, isDeveloper]) => number && isDeveloper).map(([number]) => number)]
+    .map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
+    .includes(who)
+
+  let Ahmad = m.fromMe || isMods || [hydro.decodeJid(hydro.user.id), ...global.owner.filter(([number, _, isDeveloper]) => number && !isDeveloper).map(([number]) => number)]
+    .map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
+    .includes(who)
+
+  let isPrems = Ahmad || (new Date() - (user.premiumTime || 0) < 0)
+
+  const displayName = (user?.registered && user?.name)
+    ? user.name
+    : (hydro.getName(who) ? hydro.getName(who) : who.split('@')[0])
+
+  const statusText = isMods
+    ? 'Developer'
+    : Ahmad
+      ? 'Owner'
+      : isPrems
+        ? 'Premium User ✅'
+        : (user.level || 0) > 999
+          ? 'Elite User'
+          : 'Free User'
+
+  let caption = `
+╭┈┈⬡「 🏦 *${toSmallCaps('bank cek')}* 」
+┃ 👤 ${toSmallCaps('name')}: *${displayName}*
+┃ ${global.rpg.emoticon('atm')} ${toSmallCaps('atm')}: *${user.atm > 0 ? 'Level ' + user.atm : '✖️'}*
+┃ ${global.rpg.emoticon('bank')} ${toSmallCaps('bank')}: *Rp ${rupiah(user.bank || 0)} / ${rupiah(user.fullatm || 0)}*
+┃ ${global.rpg.emoticon('money')} ${toSmallCaps('money')}: *Rp ${rupiah(user.money || 0)}*
+┃ ${global.rpg.emoticon('chip')} ${toSmallCaps('chip')}: *${rupiah(user.chip || 0)}*
+┃ 🤖 ${toSmallCaps('robo')}: *${user.robo > 0 ? 'Level ' + user.robo : '✖️'}*
+┃ 🌟 ${toSmallCaps('status')}: *${statusText}*
+┃ 📑 ${toSmallCaps('registered')}: *${user.registered ? 'Yes' : 'No'}*
+╰┈┈┈┈┈┈┈┈⬡
 `.trim()
-    replyhydro(`${caption}`)
+
+  replyhydro(caption)
 }
 break
 //=========================================\\
@@ -19260,7 +19594,7 @@ case 'taxy': {
 `.trim()
 
         user.money += randomaku1
-        user.exp += randomaku2
+        const r = global.rpg.addExp(user, randomaku2)
         user.ojekk += 1
         
         hydro.misi[id] = [
@@ -19299,39 +19633,31 @@ case 'taxy': {
 break
 //=========================================\\
 //=========================================\\
-case 'leaderboard': {
+case 'leaderboard': case 'top': {
   if (!m.isGroup) return replytolak(mess.only.group)
-const getRandom = (ext) => {
-            return `${Math.floor(Math.random() * 10000)}${ext}`
-        }
-const { areJidsSameUser } = require ('socketon')
-function sort(property, ascending = true) {
-  if (property) return (...args) => args[ascending & 1][property] - args[!ascending & 1][property]
-  else return (...args) => args[ascending & 1] - args[!ascending & 1]
-}
 
-function toNumber(property, _default = 0) {
-  if (property) return (a, i, b) => {
-    return { ...b[i], [property]: a[property] === undefined ? _default : a[property] }
+  const rupiah = (n) => {
+    n = Number(n) || 0
+    const sign = n < 0 ? '-' : ''
+    const s = String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    return `${sign}${s}`
   }
-  else return a => a === undefined ? _default : a
-}
 
-function enumGetKey(a) {
-  return a.jid
-}
+  function isNumber(x) {
+    if (x === undefined) return false
+    const n = parseInt(x)
+    return typeof n === 'number' && !isNaN(n)
+  }
 
+  function toNumber(property, _default = 0) {
+    return (a, i, b) => ({ ...b[i], [property]: a[property] === undefined ? _default : a[property] })
+  }
 
-/**
- * Detect Number
- * @param {Number} x 
- */
-function isNumber(number) {
-  if (!number) return number
-  number = parseInt(number)
-  return typeof number == 'number' && !isNaN(number)
-}
-const leaderboards = [
+  function sortDesc(property) {
+    return (a, b) => (Number(b[property] || 0) - Number(a[property] || 0))
+  }
+
+  const leaderboards = [
     'level',
     'exp',
     'limit',
@@ -19355,49 +19681,75 @@ const leaderboards = [
     'bank',
     'chip',
     'skata'
-]
-    let users = Object.entries(global.db.users).map(([key, value]) => {
-        return {
-            ...value, jid: key
-        }
-    })
-    let imgr = getRandom()
-    let leaderboard = leaderboards.filter(v => v && users.filter(user => user && user[v]).length)
-    let type = (args[0] || '').toLowerCase()
-    const getPage = (item) => Math.ceil((users.filter(user => user && user[item]).length) / 0)
-    let wrong = `🔖 ᴛʏᴩᴇ ʟɪsᴛ :
-${leaderboard.map(v => `
-⮕ ${rpg.emoticon(v)} - ${v}
-`.trim()).join('\n')}
-––––––––––––––––––––––––
-💁🏻‍♂ ᴛɪᴩ :
-⮕ ᴛᴏ ᴠɪᴇᴡ ᴅɪғғᴇʀᴇɴᴛ ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅ:
-${command} [type]
-★ ᴇxᴀᴍᴩʟᴇ:
-${command} legendary`.trim()
-    if (!leaderboard.includes(type))
-        return await reply('*––––『 𝙻𝙴𝙰𝙳𝙴𝚁𝙱𝙾𝙰𝚁𝙳 』––––*\n' + wrong, {
-        contextInfo: {
-            
-        }
-    })
-    let page = isNumber(args[1]) ? Math.min(Math.max(parseInt(args[1]), 0), getPage(type)): 0
-    let sortedItem = users.map(toNumber(type)).sort(sort(type))
-    let userItem = sortedItem.map(enumGetKey)
-    // let len = args[0] && args[0].length > 0 ? Math.min(100, Math.max(parseInt(args[0]), 5)) : Math.min(5, sortedExp.length)
-    let text = `
-🏆 ʀᴀɴᴋ: ${userItem.indexOf(m.sender) + 1} ᴏᴜᴛ ᴏғ ${userItem.length}
+  ]
 
-                *• ${rpg.emoticon(type)} ${type} •*
+  const users = Object.entries(global.db.users).map(([jid, data]) => ({ ...data, jid }))
+  const available = leaderboards.filter(k => users.some(u => u && u[k]))
+  const type = String(args[0] || '').toLowerCase()
 
-${sortedItem.slice(page * 0, page * 5 + 5).map((user, i) => `${i + 1}.*﹙${user[type]}﹚*- ${participants.some(p => areJidsSameUser(user.jid, p.id)) ? `${user.registered ? user.name: hydro.getName(user.jid)} \nwa.me/`: 'ғʀᴏᴍ ᴏᴛʜᴇʀ ɢʀᴏᴜᴩ\n @'}${user.jid.split`@`[0]}`).join`\n\n`}
-`.trim()
-    return await reply(text,{
-        contextInfo: {
-            mentionedJid: [...userItem.slice(page * 0, page * 5 + 5)].filter(v => !participants.some(p => areJidsSameUser(v, p.id))),
-           
-        }
-    })
+  const listText = available.map(v => `⮕ ${global.rpg.emoticon(v)} ${v}`).join('\n')
+  const helpText =
+`╭┈┈⬡「 🏆 *LEADERBOARD* 」
+┃ ${toSmallCaps('type list')}:
+${listText ? listText.split('\n').map(x => `┃ ${x}`).join('\n') : '┃ -'}
+┃
+┃ ${toSmallCaps('cara pakai')}:
+┃ ${prefix}leaderboard money
+┃ ${prefix}leaderboard money 2
+╰┈┈┈┈┈┈┈┈⬡`.trim()
+
+  if (!available.includes(type)) return reply(helpText)
+
+  const pageSize = 10
+  const filtered = users
+    .map(toNumber(type))
+    .filter(u => u && Number(u[type] || 0) > 0)
+
+  const totalPage = Math.max(1, Math.ceil(filtered.length / pageSize))
+
+  let page = isNumber(args[1]) ? parseInt(args[1]) : 1
+  page = Math.min(Math.max(page, 1), totalPage)
+
+  const sortedItem = filtered.sort(sortDesc(type))
+  const userItem = sortedItem.map(u => u.jid)
+  const myRank = userItem.indexOf(m.sender) + 1
+
+  const start = (page - 1) * pageSize
+  const end = start + pageSize
+  const slice = sortedItem.slice(start, end)
+
+  const moneyTypes = ['money', 'bank', 'chip']
+  const formatValue = (t, v) => moneyTypes.includes(t) ? `Rp ${rupiah(v)}` : rupiah(v)
+
+  const medals = ['🥇', '🥈', '🥉']
+  const mentions = []
+
+  let teks =
+`╭┈┈⬡「 🏆 *${toSmallCaps('leaderboard')}* 」
+┃ ${global.rpg.emoticon(type)} ${toSmallCaps('type')}: *${type}*
+┃ ${toSmallCaps('halaman')}: *${page}/${totalPage}*
+┃ ${toSmallCaps('rank kamu')}: *${myRank > 0 ? myRank : '-'}* ${toSmallCaps('dari')} *${userItem.length}*
+╰┈┈┈┈┈┈┈┈⬡
+
+╭┈┈⬡「 📋 *${toSmallCaps('daftar')}* 」\n`
+
+  for (let i = 0; i < slice.length; i++) {
+    const u = slice[i]
+    const rank = start + i + 1
+    const medal = medals[rank - 1] || `${String(rank).padStart(2, '0')}.`
+    const num = u.jid.split('@')[0]
+    mentions.push(u.jid)
+
+    const valueText = formatValue(type, u[type])
+
+    teks += `┃ ${medal} ${global.rpg.emoticon(type)} *${valueText}*\n`
+    teks += `┃     👤 @${num}\n`
+    if (i !== slice.length - 1) teks += `┃\n`
+  }
+
+  teks += `╰┈┈┈┈┈┈┈┈⬡`
+
+  hydro.sendMessage(m.chat, { text: teks, mentions }, { quoted: m })
 }
 break
 //=========================================\\
@@ -19677,65 +20029,151 @@ const xpperlimit = 1
 }
  break
 case 'fightnaga':
-  case 'perangnaga': {
-    if (!m.isGroup) return replytolak(mess.only.group)
-function Acakin(min,max){
-  min = Math.ceil(min)
-  max = Math.floor(max)
-  return Math.floor(Math.random()*(max-min+1)) + min
-}
-let penumpan = ['mas mas', 'bapak bapak', 'cewe sma', 'bocil epep', 'emak emak']
-    let penumpang = penumpan[Math.floor(Math.random() * penumpan.length)]
-let nogo = ['mas mas', 'bapak bapak', 'cewe sma', 'bocil epep', 'emak emak']
-    let nogorojo = penumpan[Math.floor(Math.random() * penumpan.length)]
-hydro.level = global.db.users[m.sender]
-  hydro.fightnaga = hydro.fightnaga ? hydro.fightnaga : {}
-  const delay = time => new Promise(res=>setTimeout(res,time));
+case 'perangnaga': {
+  if (!m.isGroup) return replytolak(mess.only.group)
 
-  if (typeof hydro.fightnaga[m.sender] != "undefined" && hydro.fightnaga[m.sender] == true) return reply(`*Tidak bisa melakukan battle ⚔️ karena Arena yang kamu miliki dipakai untuk fight pet mu yg lain.*`)
+  function Acakin(min, max) {
+    min = Math.ceil(min)
+    max = Math.floor(max)
+    return Math.floor(Math.random() * (max - min + 1)) + min
+  }
+
+  const delay = time => new Promise(res => setTimeout(res, time))
+
+  const rupiah = (n) => {
+    n = Number(n) || 0
+    const sign = n < 0 ? '-' : ''
+    const s = String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    return `${sign}${s}`
+  }
+
+  hydro.fightnaga = hydro.fightnaga ? hydro.fightnaga : {}
+
+  if (typeof hydro.fightnaga[m.sender] != "undefined" && hydro.fightnaga[m.sender] == true) {
+    return reply(`*Tidak bisa melakukan battle ⚔️ karena Arena yang kamu miliki dipakai untuk fight pet mu yg lain.*`)
+  }
 
   let users = participants.map(a => a.id)
-  var lawan
-	lawan = users[Math.floor(users.length * Math.random())]
-  while (typeof global.db.users[lawan] == "undefined" || lawan == m.sender){
+  let lawan = users[Math.floor(users.length * Math.random())]
+  while (typeof global.db.users[lawan] == "undefined" || lawan == m.sender) {
     lawan = users[Math.floor(users.length * Math.random())]
   }
 
-  let lamaPertarungan = Acakin(8,20)
-  reply(`*Pet Kamu* (🐉naga ${nogorojo} ) ⚔️menantang 🐉naganya *${penumpang}* (🐉naga kamu ) lagi berkelahi.\n\nTunggu ${lamaPertarungan} menit lagi dan lihat siapa yg menang🎮.`)
+  const dataLawan = global.db.users[lawan] || {}
+
+  const namaPemain = (pushname && String(pushname).trim())
+    ? String(pushname).trim()
+    : m.sender.split('@')[0]
+
+  const namaLawanRaw = (dataLawan.registered && dataLawan.name)
+    ? String(dataLawan.name)
+    : (hydro.getName(lawan) ? String(hydro.getName(lawan)) : lawan.split('@')[0])
+
+  const namaLawan = (namaLawanRaw && namaLawanRaw.trim() && namaLawanRaw !== 'undefined')
+    ? namaLawanRaw.trim()
+    : lawan.split('@')[0]
+
+  const penumpan = ['mas mas', 'bapak bapak', 'cewe sma', 'bocil epep', 'emak emak']
+  const penumpang = penumpan[Math.floor(Math.random() * penumpan.length)]
+  const nogo = ['mas mas', 'bapak bapak', 'cewe sma', 'bocil epep', 'emak emak']
+  const nogorojo = nogo[Math.floor(Math.random() * nogo.length)]
+
+  let lamaPertarungan = Acakin(8, 20)
+
+  replyhydro(
+`╭┈┈⬡「 🐉 *${toSmallCaps('fight naga')}* 」
+┃ 🐲 *${namaPemain}* (naga ${nogorojo}) menantang
+┃ 🐉 *${namaLawan}* (naga ${penumpang})
+┃ ⏳ ${toSmallCaps('tunggu')}: *${lamaPertarungan} menit*
+╰┈┈┈┈┈┈┈┈⬡`.trim()
+  )
 
   hydro.fightnaga[m.sender] = true
-
   await delay(1000 * 60 * lamaPertarungan)
 
-  const alasanKalah = ['Naikin lagi levelnya😐','Cupu','Kurang hebat','Ampas Petnya','Pet gembel']
-  const alasanMenang = ['Hebat','Pro','Ganas Pet','Legenda Pet','Sangat Pro','Rajin Ngasi Makan Pet']
+  const namaLawanFinal = namaLawan
+  const expBonus = 500
+
+  const nagaPemain = Number(global.db.users[m.sender]?.naga || 0)
+  const nagaLawan = Number(global.db.users[lawan]?.naga || 0)
+
+  if (nagaPemain <= 0 || nagaLawan <= 0) {
+    delete hydro.fightnaga[m.sender]
+    return replyhydro(`Kedua pemain belum punya naga 🐉`)
+  }
+
+  const alasanKalah = ['Naikin lagi levelnya😐', 'Cupu', 'Kurang hebat', 'Ampas Petnya', 'Pet gembel']
+  const alasanMenang = ['Hebat', 'Pro', 'Ganas Pet', 'Legenda Pet', 'Sangat Pro', 'Rajin Ngasi Makan Pet']
 
   let kesempatan = []
-  let i
-  for (i=0;i<global.db.users[m.sender].naga;i++) kesempatan.push(m.sender)
-  for (i=0;i<global.db.users[lawan].naga;i++) kesempatan.push(lawan)
+  for (let i = 0; i < nagaPemain; i++) kesempatan.push(m.sender)
+  for (let i = 0; i < nagaLawan; i++) kesempatan.push(lawan)
 
   let pointPemain = 0
   let pointLawan = 0
-  for (i=0;i<10;i++){
-    unggul = Acakin(0,kesempatan.length-1)
-    if (kesempatan[unggul] == m.sender) pointPemain += 1
+  for (let i = 0; i < 10; i++) {
+    const unggul = Acakin(0, kesempatan.length - 1)
+    if (kesempatan[unggul] === m.sender) pointPemain += 1
     else pointLawan += 1
   }
 
-  if (pointPemain > pointLawan){
-    let hadiah = (pointPemain - pointLawan) * 20000
-    global.db.users[m.sender].money += hadiah
-    global.db.users[m.sender].tiketcoin += 1
-    reply(`*${hydro.getName(m.sender)}* [${pointPemain * 10}] - [${pointLawan * 10}] *${hydro.getName(lawan)}*\n\n*Pet🐉Kamu* (naga ${global.db.users[m.sender].naga}) MENANG melawan 🐉naganya *${hydro.getName(lawan)}* (naga ${global.db.users[lawan].naga}) karena naga🐉kamu ${alasanMenang[Acakin(0,alasanMenang.length-1)]}\n\nHadiah Rp. ${hadiah.toLocaleString()}\n+1 Tiketcoin`)
-  }else if (pointPemain < pointLawan){
-    let denda = (pointLawan - pointPemain) * 100000
-    global.db.users[m.sender].money -= denda
-    global.db.users[m.sender].tiketcoin += 1
-    reply(`*${hydro.getName(m.sender)}* [${pointPemain * 10}] - [${pointLawan * 10}] *${hydro.getName(lawan)}*\n\n*Pet🐉Kamu* (naga ${global.db.users[m.sender].naga}) KALAH melawan 🐉naganya *${hydro.getName(lawan)}* (naga ${global.db.users[lawan].naga}) karena pet kamu ${alasanKalah[Acakin(0,alasanKalah.length-1)]}\n\nUang kamu berkurang Rp. ${denda.toLocaleString()}\n+1 Tiketcoin`)
-  }else {
-    reply(`*${hydro.getName(m.sender)}* [${pointPemain * 10}] - [${pointLawan * 10}] *${hydro.getName(lawan)}*\n\nHasil imbang kak, ga dapet apa apa 😂`)
+  const skorPemain = pointPemain * 10
+  const skorLawan = pointLawan * 10
+
+  global.db.users[m.sender].exp = (global.db.users[m.sender].exp || 0) + expBonus
+  global.db.users[lawan].exp = (global.db.users[lawan].exp || 0) + expBonus
+
+  if (pointPemain > pointLawan) {
+    const hadiah = 500000
+    global.db.users[m.sender].money = (global.db.users[m.sender].money || 0) + hadiah
+    global.db.users[m.sender].tiketcoin = (global.db.users[m.sender].tiketcoin || 0) + 1
+    global.db.users[lawan].tiketcoin = (global.db.users[lawan].tiketcoin || 0) + 1
+
+    replyhydro(
+`╭┈┈⬡「 🏁 *${toSmallCaps('hasil fight')}* 」
+┃ *${namaPemain}* [${skorPemain}] - [${skorLawan}] *${namaLawanFinal}*
+┃
+┃ 🐲 ${toSmallCaps('pet kamu menang')}!
+┃ ${toSmallCaps('alasan')}: *${alasanMenang[Acakin(0, alasanMenang.length - 1)]}*
+┃
+┃ 🪙 ${toSmallCaps('hadiah')}: *+Rp ${rupiah(hadiah)}*
+┃ 🚄 ${toSmallCaps('exp')}: *+${rupiah(expBonus)}*
+┃ 🎟️ ${toSmallCaps('tiketcoin')}: *+1*
+╰┈┈┈┈┈┈┈┈⬡`.trim()
+    )
+
+  } else if (pointPemain < pointLawan) {
+    const denda = 250000
+    global.db.users[m.sender].money = (global.db.users[m.sender].money || 0) - denda
+    global.db.users[m.sender].tiketcoin = (global.db.users[m.sender].tiketcoin || 0) + 1
+    global.db.users[lawan].tiketcoin = (global.db.users[lawan].tiketcoin || 0) + 1
+
+    replyhydro(
+`╭┈┈⬡「 🏁 *${toSmallCaps('hasil fight')}* 」
+┃ *${namaPemain}* [${skorPemain}] - [${skorLawan}] *${namaLawanFinal}*
+┃
+┃ 🐉 ${toSmallCaps('pet kamu kalah')}!
+┃ ${toSmallCaps('alasan')}: *${alasanKalah[Acakin(0, alasanKalah.length - 1)]}*
+┃
+┃ 🪙 ${toSmallCaps('denda')}: *-Rp ${rupiah(denda)}*
+┃ 🚄 ${toSmallCaps('exp')}: *+${rupiah(expBonus)}*
+┃ 🎟️ ${toSmallCaps('tiketcoin')}: *+1*
+╰┈┈┈┈┈┈┈┈⬡`.trim()
+    )
+
+  } else {
+    global.db.users[m.sender].tiketcoin = (global.db.users[m.sender].tiketcoin || 0) + 1
+    global.db.users[lawan].tiketcoin = (global.db.users[lawan].tiketcoin || 0) + 1
+
+    replyhydro(
+`╭┈┈⬡「 🏁 *${toSmallCaps('hasil fight')}* 」
+┃ *${namaPemain}* [${skorPemain}] - [${skorLawan}] *${namaLawanFinal}*
+┃
+┃ 🤝 ${toSmallCaps('hasil imbang')}
+┃ 🚄 ${toSmallCaps('exp')}: *+${rupiah(expBonus)}*
+┃ 🎟️ ${toSmallCaps('tiketcoin')}: *+1*
+╰┈┈┈┈┈┈┈┈⬡`.trim()
+    )
   }
 
   delete hydro.fightnaga[m.sender]
@@ -20214,7 +20652,7 @@ function clockString(ms) {
 `.trim()
 
         user.money += rbrb1
-        user.exp += rbrb2
+        const r = global.rpg.addExp(user, rbrb2)
         user.ojekk += 1
 
         hydro.misi[id] = [
@@ -20532,24 +20970,38 @@ break
 //==================================================================
 case 'family100': {
   if (!m.isGroup) return replytolak(mess.only.group)
+
   let winScore = 10000
- let id = m.chat
-	if (id in hydro.family100) return replyhydro('Masih Ada Sesi Yang Belum Diselesaikan!')
- let src = await (await fetch('https://raw.githubusercontent.com/BochilTeam/database/master/games/family100.json')).json()
-	let json = src[Math.floor(Math.random() * src.length)]
- let hasil = `*Jawablah Pertanyaan Berikut :*\n\nSoal : ${json.soal}\n\nHadiah : 10.000 money\n\nTerdapat *${json.jawaban.length}* Jawaban ${json.jawaban.find(v => v.includes(' ')) ? `(beberapa Jawaban Terdapat Spasi)` : ''}`.trim()
- hydro.family100[id] = {
-			id,
-			msg: await replyhydro(`${hasil}`),
-			...json,
-			terjawab: Array.from(json.jawaban, () => false),
-      winScore,  
-        }
+  let id = m.chat
+  if (id in hydro.family100) return replyhydro('Masih Ada Sesi Yang Belum Diselesaikan!')
+
+  let src = await (await fetch('https://raw.githubusercontent.com/BochilTeam/database/master/games/family100.json')).json()
+  let json = src[Math.floor(Math.random() * src.length)]
+
+  let hasil =
+`╭┈┈⬡「 🎲 *FAMILY 100* 」
+┃ 🧩 Soal:
+┃ ${json.soal}
+┃
+┃ 🎁 Hadiah: *Rp ${winScore.toLocaleString('id-ID')}* / jawaban
+┃ 📌 Total Jawaban: *${json.jawaban.length}*
+┃ ${json.jawaban.find(v => v.includes(' ')) ? `📝 Catatan: *Ada jawaban spasi*` : `📝 Catatan: *Tidak ada spasi*`}
+┃
+┃ ⛔ Ketik: *nyerah* untuk menyerah
+╰┈┈┈┈┈┈┈┈⬡`.trim()
+
+  hydro.family100[id] = {
+    id,
+    msg: await replyhydro(hasil),
+    ...json,
+    terjawab: Array.from(json.jawaban, () => false),
+    winScore
+  }
 }
 break
 //==================================================================
 case 'upvn':{
-if (!Ahmad) return replytolak(`Ngapain ? Fitur Ini Khusus Tuan Saya😜`)
+if (!Ahmad) return replytolak(mess.only.owner)
 function getRandomHexColor() {
   return "#" + Math.floor(Math.random() * 16777215).toString(16).padStart(6, "0");
 }
@@ -20847,377 +21299,413 @@ Ketik *nyerah* untuk menyerah.
     }, timeout)
 }
 break;
-case 'blackjack': {
-class Blackjack {
-    decks;
-    state = "waiting";
-    player = [];
-    dealer = [];
-    table = {
-        player: {
-            total: 0,
-            cards: [],
-        },
-        dealer: {
-            total: 0,
-            cards: [],
-        },
+case "blackjack": case "bj": {
+  class Blackjack {
+    constructor(decks) {
+      this.decks = validateDeck(decks);
+      this.state = "waiting";
+      this.player = [];
+      this.dealer = [];
+      this.table = {
+        player: { total: 0, cards: [] },
+        dealer: { total: 0, cards: [] },
         bet: 0,
         payout: 0,
         doubleDowned: false,
-    };
-    cards;
-    endHandlers = [];
-    constructor(decks) {
-        hydro.decks = validateDeck(decks);
+      };
+      this.cards = null;
+      this.endHandlers = [];
     }
+
     placeBet(bet) {
-        if (bet <= 0) {
-            throw new Error("You must place a bet greater than 0");
-        }
-        hydro.table.bet = bet;
+      if (bet <= 0) throw new Error("You must place a bet greater than 0");
+      this.table.bet = bet;
     }
+
     start() {
-        if (hydro.table.bet <= 0) {
-            throw new Error("You must place a bet before starting the game");
-        }
-        hydro.cards = new Deck(hydro.decks);
-        hydro.cards.shuffleDeck(2);
-        hydro.player = hydro.cards.dealCard(2);
-        let dealerFirstCard;
-        do {
-            dealerFirstCard = hydro.cards.dealCard(1)[0];
-        } while (dealerFirstCard.value > 11);
-        hydro.dealer = [dealerFirstCard, ...hydro.cards.dealCard(1)];
-        hydro.updateTable();
-        return hydro.table;
+      if (this.table.bet <= 0) throw new Error("You must place a bet before starting the game");
+
+      this.cards = new Deck(this.decks);
+      this.cards.shuffleDeck(2);
+
+      this.player = this.cards.dealCard(2);
+
+      let dealerFirstCard;
+      do {
+        dealerFirstCard = this.cards.dealCard(1)[0];
+      } while (dealerFirstCard.value > 11);
+
+      this.dealer = [dealerFirstCard, ...this.cards.dealCard(1)];
+      this.updateTable();
+      return this.table;
     }
+
     hit() {
-        if (hydro.state === "waiting") {
-            const newCard = hydro.cards.dealCard(1)[0];
-            hydro.player.push(newCard);
-            hydro.updateTable();
-            const playerSum = sumCards(hydro.player);
-            const dealerSum = sumCards(hydro.dealer);
-            if (playerSum === dealerSum) {
-                hydro.state = "draw";
-                hydro.emitEndEvent();
-            }
-            else if (playerSum === 21) {
-                hydro.state = "player_blackjack";
-                hydro.emitEndEvent();
-            }
-            else if (playerSum > 21) {
-                hydro.state = "dealer_win";
-                hydro.emitEndEvent();
-            }
-            return hydro.table;
-        }
+      if (this.state !== "waiting") return this.table;
+
+      const newCard = this.cards.dealCard(1)[0];
+      this.player.push(newCard);
+      this.updateTable();
+
+      const playerSum = sumCards(this.player);
+      const dealerSum = sumCards(this.dealer);
+
+      if (playerSum === dealerSum) {
+        this.state = "draw";
+        this.emitEndEvent();
+      } else if (playerSum === 21) {
+        this.state = "player_blackjack";
+        this.emitEndEvent();
+      } else if (playerSum > 21) {
+        this.state = "dealer_win";
+        this.emitEndEvent();
+      }
+
+      return this.table;
     }
+
     stand() {
-        let dealerSum = sumCards(hydro.dealer);
-        let playerSum = sumCards(hydro.player);
-        if (playerSum <= 21) {
-            while (dealerSum < 17) {
-                hydro.dealer.push(...hydro.cards.dealCard(1));
-                dealerSum = sumCards(hydro.dealer);
-                hydro.updateTable();
-            }
+      let dealerSum = sumCards(this.dealer);
+      const playerSum = sumCards(this.player);
+
+      if (playerSum <= 21) {
+        while (dealerSum < 17) {
+          this.dealer.push(...this.cards.dealCard(1));
+          dealerSum = sumCards(this.dealer);
+          this.updateTable();
         }
-        if (playerSum <= 21 && (dealerSum > 21 || dealerSum < playerSum)) {
-            if (playerSum === 21) {
-                hydro.state = "player_blackjack";
-            }
-            else {
-                hydro.state = "player_win";
-            }
-        }
-        else if (dealerSum === playerSum) {
-            hydro.state = "draw";
-        }
-        else {
-            hydro.state = dealerSum === 21 ? "dealer_blackjack" : "dealer_win";
-        }
-        hydro.emitEndEvent();
+      }
+
+      if (playerSum <= 21 && (dealerSum > 21 || dealerSum < playerSum)) {
+        this.state = playerSum === 21 ? "player_blackjack" : "player_win";
+      } else if (dealerSum === playerSum) {
+        this.state = "draw";
+      } else {
+        this.state = dealerSum === 21 ? "dealer_blackjack" : "dealer_win";
+      }
+
+      this.emitEndEvent();
+      return this.table;
     }
+
     doubleDown() {
-        if (hydro.canDoubleDown()) {
-            hydro.table.doubleDowned = true;
-            hydro.player.push(...hydro.cards.dealCard(1));
-            hydro.updateTable();
-            hydro.stand();
-        }
-        else {
-            throw new Error("You can only double down on the first turn");
-        }
+      if (!this.canDoubleDown()) throw new Error("You can only double down on the first turn");
+
+      this.table.doubleDowned = true;
+      this.player.push(...this.cards.dealCard(1));
+      this.updateTable();
+      this.stand();
+      return this.table;
     }
+
     calculatePayout() {
-        if (hydro.state === "player_blackjack") {
-            hydro.table.payout = hydro.table.bet * 1.5;
-        }
-        else if (hydro.state === "player_win") {
-            hydro.table.payout = hydro.table.bet;
-        }
-        else if (hydro.state === "dealer_win" ||
-            hydro.state === "dealer_blackjack") {
-            hydro.table.payout = 0;
-        }
-        else if (hydro.state === "draw") {
-            hydro.table.payout = hydro.table.bet;
-        }
-        if (hydro.table.doubleDowned && hydro.state !== "draw") {
-            hydro.table.payout *= 2;
-        }
-        hydro.table.payout = Math.round(hydro.table.payout);
+      if (this.state === "player_blackjack") {
+        this.table.payout = this.table.bet * 1.5;
+      } else if (this.state === "player_win") {
+        this.table.payout = this.table.bet;
+      } else if (this.state === "dealer_win" || this.state === "dealer_blackjack") {
+        this.table.payout = 0;
+      } else if (this.state === "draw") {
+        this.table.payout = this.table.bet;
+      }
+
+      if (this.table.doubleDowned && this.state !== "draw") {
+        this.table.payout *= 2;
+      }
+
+      this.table.payout = Math.round(this.table.payout);
     }
+
     canDoubleDown() {
-        return hydro.state === "waiting" && hydro.player.length === 2;
+      return this.state === "waiting" && this.player.length === 2;
     }
+
     onEnd(handler) {
-        hydro.endHandlers.push(handler);
+      this.endHandlers.push(handler);
     }
+
     emitEndEvent() {
-        hydro.calculatePayout();
-        for (let handler of hydro.endHandlers) {
-            handler({
-                state: hydro.state,
-                player: formatCards(hydro.player),
-                dealer: formatCards(hydro.dealer),
-                bet: hydro.table.bet,
-                payout: hydro.table.payout,
-            });
-        }
+      this.calculatePayout();
+      for (const handler of this.endHandlers) {
+        handler({
+          state: this.state,
+          player: formatCards(this.player),
+          dealer: formatCards(this.dealer),
+          bet: this.table.bet,
+          payout: this.table.payout,
+        });
+      }
     }
+
     updateTable() {
-        hydro.table.player = formatCards(hydro.player);
-        hydro.table.dealer = formatCards(hydro.dealer);
+      this.table.player = formatCards(this.player);
+      this.table.dealer = formatCards(this.dealer);
     }
-}
-class Deck {
-    deck = [];
-    dealtCards = [];
+  }
+
+  class Deck {
     constructor(decks) {
-        for (let i = 0; i < decks; i++) {
-            hydro.createDeck();
-        }
+      this.deck = [];
+      this.dealtCards = [];
+      for (let i = 0; i < decks; i++) this.createDeck();
     }
+
     createDeck() {
-        const card = (suit, value) => {
-            let name = value + " of " + suit;
-            if (value.toUpperCase().includes("J") ||
-                value.toUpperCase().includes("Q") ||
-                value.toUpperCase().includes("K"))
-                value = "10";
-            if (value.toUpperCase().includes("A"))
-                value = "11";
-            return { name, suit, value: +value };
-        };
-        const values = [
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
-            "9",
-            "10",
-            "J",
-            "Q",
-            "K",
-            "A",
-        ];
-        const suits = ["♣️", "♦️", "♠️", "♥️"];
-        for (let s = 0; s < suits.length; s++) {
-            for (let v = 0; v < values.length; v++) {
-                hydro.deck.push(card(suits[s], values[v]));
-            }
+      const card = (suit, value) => {
+        let name = value + " of " + suit;
+        let v = value.toUpperCase();
+        if (v.includes("J") || v.includes("Q") || v.includes("K")) value = "10";
+        if (v.includes("A")) value = "11";
+        return { name, suit, value: +value };
+      };
+
+      const values = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
+      const suits = ["♣️", "♦️", "♠️", "♥️"];
+
+      for (const s of suits) {
+        for (const v of values) {
+          this.deck.push(card(s, v));
         }
+      }
     }
+
     shuffleDeck(amount = 1) {
-        for (let i = 0; i < amount; i++) {
-            for (let c = hydro.deck.length - 1; c >= 0; c--) {
-                const tempVal = hydro.deck[c];
-                let randomIndex = Math.floor(Math.random() * hydro.deck.length);
-                while (randomIndex === c) {
-                    randomIndex = Math.floor(Math.random() * hydro.deck.length);
-                }
-                hydro.deck[c] = hydro.deck[randomIndex];
-                hydro.deck[randomIndex] = tempVal;
-            }
+      for (let i = 0; i < amount; i++) {
+        for (let c = this.deck.length - 1; c >= 0; c--) {
+          const tempVal = this.deck[c];
+          let randomIndex = Math.floor(Math.random() * this.deck.length);
+          while (randomIndex === c) randomIndex = Math.floor(Math.random() * this.deck.length);
+          this.deck[c] = this.deck[randomIndex];
+          this.deck[randomIndex] = tempVal;
         }
+      }
     }
+
     dealCard(numCards) {
-        const cards = [];
-        for (let c = 0; c < numCards; c++) {
-            const dealtCard = hydro.deck.shift();
-            if (dealtCard) {
-                cards.push(dealtCard);
-                hydro.dealtCards.push(dealtCard);
-            }
+      const cards = [];
+      for (let c = 0; c < numCards; c++) {
+        const dealtCard = this.deck.shift();
+        if (dealtCard) {
+          cards.push(dealtCard);
+          this.dealtCards.push(dealtCard);
         }
-        return cards;
+      }
+      return cards;
     }
-}
-function sumCards(cards) {
+  }
+
+  function sumCards(cards) {
     let value = 0;
     let numAces = 0;
     for (const card of cards) {
-        value += card.value;
-        numAces += card.value === 11 ? 1 : 0;
+      value += card.value;
+      numAces += card.value === 11 ? 1 : 0;
     }
     while (value > 21 && numAces > 0) {
-        value -= 10;
+      value -= 10;
+      numAces--;
     }
     return value;
-}
-function formatCards(cards) {
+  }
+
+  function formatCards(cards) {
     return { total: sumCards(cards), cards };
-}
-function validateDeck(decks) {
-    if (!decks) {
-        throw new Error("A deck must have a number of decks");
-    }
-    if (decks < 1) {
-        throw new Error("A deck must have at least 1 deck");
-    }
-    if (decks > 8) {
-        throw new Error("A deck can have at most 8 decks");
-    }
+  }
+
+  function validateDeck(decks) {
+    if (!decks) throw new Error("A deck must have a number of decks");
+    if (decks < 1) throw new Error("A deck must have at least 1 deck");
+    if (decks > 8) throw new Error("A deck can have at most 8 decks");
     return decks;
-}
-const formatter = new Intl.NumberFormat('id-ID', {
-  style: 'currency',
-  currency: 'IDR'
-});
-const templateBlackjackMessage = (prefix, command, hydro, m, blackjack) => {
+  }
+
+  const formatter = new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" });
+
+  const templateBlackjackMessage = (prefix, command, hydro, m, blackjack) => {
     const { table, state } = blackjack;
     const { bet, dealer, player, payout } = table;
-    let message = '';
-    const dealerCards = dealer.cards.map(card => `${card.name}`).join(', ');
+
+    const dealerCards = dealer.cards.map((card) => `${card.name}`).join(", ");
     const dealerTotal = dealer.total;
-    const playerCards = player.cards.map(card => `${card.name}`).join(', ');
+
+    const playerCards = player.cards.map((card) => `${card.name}`).join(", ");
     const playerTotal = player.total;
 
-    let hiddenDealerCards = dealer.cards.slice(0, -1).map(card => `${card.name}`).join(', ');
-    if (dealer.cards.length > 1) {
-        hiddenDealerCards += ', ❓';
-    } else {
-        hiddenDealerCards += `, ${dealer.cards[0].name}`;
-    }
-    
-    switch (state) {
-        case "player_win":
-        case "dealer_win":
-        case "draw":
-        case "player_blackjack":
-        case "dealer_blackjack":
-            hiddenDealerCards = dealer.cards.map(card => `${card.name}`).join(', ');
-            message = `*\`🃏 • B L A C K J A C K •\`*
+    let hiddenDealerCards = dealer.cards.slice(0, -1).map((card) => `${card.name}`).join(", ");
+    if (dealer.cards.length > 1) hiddenDealerCards += ", ❓";
+    else hiddenDealerCards += `, ${dealer.cards[0].name}`;
+
+    if (
+      state === "player_win" ||
+      state === "dealer_win" ||
+      state === "draw" ||
+      state === "player_blackjack" ||
+      state === "dealer_blackjack"
+    ) {
+      const resultText =
+        state === "player_win"
+          ? "You win! 🎉"
+          : state === "dealer_win"
+          ? "Dealer wins. 😔"
+          : state === "draw"
+          ? "Draw. 🤝"
+          : state === "player_blackjack"
+          ? "Blackjack! 🥳"
+          : "Dealer got Blackjack! 😔";
+
+      return `*\`🃏 • B L A C K J A C K •\`*
 
 ╭───┈ •
 │ *Your Cards:*\n│ \`${playerCards}\`
 │ *Your Total:*\n│ \`${playerTotal}\`
 ├───┈ •
 │ *Dealer's Cards:*\n│ \`${dealerCards}\`
-│ *Dealer's Total:*\n│ \`${dealerTotal > 21 ? 'BUST' : dealerTotal}\`
+│ *Dealer's Total:*\n│ \`${dealerTotal > 21 ? "BUST" : dealerTotal}\`
 ╰───┈ •
 
-> *\`${(state === "player_win" ? "You win! 🎉" : state === "dealer_win" ? "Dealer wins. 😔" : state === "draw" ? "Draw. 🤝" : state === "player_blackjack" ? "Blackjack! 🥳" : "Dealer got Blackjack! 😔").toUpperCase()}\`*\n*Bet:*\n- \`\`\`${formatter.format(bet)}\`\`\`\n*Payout:*\n- \`\`\`${formatter.format(payout)}\`\`\`
+> *\`${resultText.toUpperCase()}\`*
+*Bet:*
+- \`\`\`${formatter.format(bet)}\`\`\`
+*Payout:*
+- \`\`\`${formatter.format(payout)}\`\`\`
 `;
-            global.db.users[hydro.blackjack[m.chat].idPemain].money += payout;
-            delete hydro.blackjack[m.chat];
-            break;
-        default:
-            message = `*\`🃏 • B L A C K J A C K •\`*
+    }
+
+    return `*\`🃏 • B L A C K J A C K •\`*
 
 ╭───┈ •
 │ *Your Cards:*\n│ \`${playerCards}\`
 │ *Your Total:*\n│ \`${playerTotal}\`
 ├───┈ •
 │ *Dealer's Cards:*\n│ \`${hiddenDealerCards}\`
-│ *Dealer's Total:*\n│ \`${dealerTotal > 21 ? 'BUST' : '❓'}\`
+│ *Dealer's Total:*\n│ \`${dealerTotal > 21 ? "BUST" : "❓"}\`
 ╰───┈ •
 
-*Bet:*\n- \`\`\`${formatter.format(bet)}\`\`\`
+*Bet:*
+- \`\`\`${formatter.format(bet)}\`\`\`
 
 Type *\`${prefix + command} hit\`* to draw a card.
 Type *\`${prefix + command} stand\`* to end your turn.`;
-            break;
-    }
-    return message;
-}
-    hydro.blackjack = hydro.blackjack || {};
-    let [aksi, argumen] = args;
-    try {
-        switch (aksi) {
-            case 'end':
-                if (hydro.blackjack[m.chat]?.idPemain === m.sender) {
-                    delete hydro.blackjack[m.chat];
-                    await reply('*Anda keluar dari sesi blackjack.* 👋');
-                } else {
-                    await reply('*Tidak ada sesi blackjack yang sedang berlangsung atau Anda bukan pemainnya.*');
-                }
-                break;
+  };
 
-            case 'start':
-                if (hydro.blackjack[m.chat]) {
-                    await reply(`*Sesi blackjack sudah berlangsung.* Gunakan *${prefix + command} end* untuk keluar dari sesi.`);
-                } else {
-                    hydro.blackjack[m.chat] = new Blackjack(1);
-                    hydro.blackjack[m.chat].idPemain = m.sender;
-                    let betAmount = argumen ? parseInt(argumen) : 1000;
-                    hydro.blackjack[m.chat].placeBet(betAmount);
-                    hydro.blackjack[m.chat].start();
-                    const table = hydro.blackjack[m.chat];
-                    const pesanStart = templateBlackjackMessage(prefix, command, hydro, m, table);
-                    await reply(pesanStart);
-                }
-                break;
+  hydro.blackjack = hydro.blackjack || {};
+  let [aksi, argumen] = args;
 
-            case 'hit':
-                if (!hydro.blackjack[m.chat] || hydro.blackjack[m.chat]?.idPemain !== m.sender) {
-                    await reply('*Anda tidak sedang bermain blackjack atau bukan pemainnya.*');
-                    break;
-                }
-                hydro.blackjack[m.chat].hit();
-                const tableHit = hydro.blackjack[m.chat];
-                const pesanHit = templateBlackjackMessage(prefix, command, hydro, m, tableHit);
-                await reply(pesanHit);
-                break;
-
-            case 'stand':
-                if (!hydro.blackjack[m.chat] || hydro.blackjack[m.chat]?.idPemain !== m.sender) {
-                    await reply('*Anda tidak sedang bermain blackjack atau bukan pemainnya.*');
-                    break;
-                }
-                hydro.blackjack[m.chat].stand();
-                const tableStand = hydro.blackjack[m.chat];
-                const pesanStand = templateBlackjackMessage(prefix, command, hydro, m, tableStand);
-                await reply(pesanStand);
-                break;
-
-            case 'double':
-                if (!hydro.blackjack[m.chat] || hydro.blackjack[m.chat]?.idPemain !== m.sender) {
-                    await reply('*Anda tidak sedang bermain blackjack atau bukan pemainnya.*');
-                    break;
-                }
-                hydro.blackjack[m.chat].doubleDown();
-                const tableDouble = hydro.blackjack[m.chat];
-                const pesanDouble = templateBlackjackMessage(prefix, command, hydro, m, tableDouble);
-                await reply(pesanDouble);
-                break;
-
-            default:
-                await reply(`*Perintah tidak valid.*\nGunakan *${prefix + command} start* untuk memulai sesi blackjack.`);
-                break;
+  try {
+    switch (aksi) {
+      case "end":
+        if (hydro.blackjack[m.chat]?.idPemain === m.sender) {
+          delete hydro.blackjack[m.chat];
+          await reply("*Anda keluar dari sesi blackjack.* 👋");
+        } else {
+          await reply("*Tidak ada sesi blackjack yang sedang berlangsung atau Anda bukan pemainnya.*");
         }
-    } catch (err) {
-        console.error(err);
-        await reply('*Terjadi kesalahan saat memproses perintah.*');
+        break;
+
+      case "start":
+        if (hydro.blackjack[m.chat]) {
+          await reply(`*Sesi blackjack sudah berlangsung.* Gunakan *${prefix + command} end* untuk keluar dari sesi.`);
+        } else {
+          hydro.blackjack[m.chat] = new Blackjack(1);
+          hydro.blackjack[m.chat].idPemain = m.sender;
+
+          let betAmount = argumen ? parseInt(argumen) : 1000;
+          if (Number.isNaN(betAmount)) betAmount = 1000;
+
+          hydro.blackjack[m.chat].placeBet(betAmount);
+          hydro.blackjack[m.chat].start();
+
+          const table = hydro.blackjack[m.chat];
+          const pesanStart = templateBlackjackMessage(prefix, command, hydro, m, table);
+          await reply(pesanStart);
+        }
+        break;
+
+      case "hit":
+        if (!hydro.blackjack[m.chat] || hydro.blackjack[m.chat]?.idPemain !== m.sender) {
+          await reply("*Anda tidak sedang bermain blackjack atau bukan pemainnya.*");
+          break;
+        }
+        hydro.blackjack[m.chat].hit();
+        {
+          const tableHit = hydro.blackjack[m.chat];
+          const pesanHit = templateBlackjackMessage(prefix, command, hydro, m, tableHit);
+          await reply(pesanHit);
+
+          const st = tableHit.state;
+          if (
+            st === "player_win" ||
+            st === "dealer_win" ||
+            st === "draw" ||
+            st === "player_blackjack" ||
+            st === "dealer_blackjack"
+          ) {
+            global.db.users[hydro.blackjack[m.chat].idPemain].money += tableHit.table.payout;
+            delete hydro.blackjack[m.chat];
+          }
+        }
+        break;
+
+      case "stand":
+        if (!hydro.blackjack[m.chat] || hydro.blackjack[m.chat]?.idPemain !== m.sender) {
+          await reply("*Anda tidak sedang bermain blackjack atau bukan pemainnya.*");
+          break;
+        }
+        hydro.blackjack[m.chat].stand();
+        {
+          const tableStand = hydro.blackjack[m.chat];
+          const pesanStand = templateBlackjackMessage(prefix, command, hydro, m, tableStand);
+          await reply(pesanStand);
+
+          const st = tableStand.state;
+          if (
+            st === "player_win" ||
+            st === "dealer_win" ||
+            st === "draw" ||
+            st === "player_blackjack" ||
+            st === "dealer_blackjack"
+          ) {
+            global.db.users[hydro.blackjack[m.chat].idPemain].money += tableStand.table.payout;
+            delete hydro.blackjack[m.chat];
+          }
+        }
+        break;
+
+      case "double":
+        if (!hydro.blackjack[m.chat] || hydro.blackjack[m.chat]?.idPemain !== m.sender) {
+          await reply("*Anda tidak sedang bermain blackjack atau bukan pemainnya.*");
+          break;
+        }
+        hydro.blackjack[m.chat].doubleDown();
+        {
+          const tableDouble = hydro.blackjack[m.chat];
+          const pesanDouble = templateBlackjackMessage(prefix, command, hydro, m, tableDouble);
+          await reply(pesanDouble);
+
+          const st = tableDouble.state;
+          if (
+            st === "player_win" ||
+            st === "dealer_win" ||
+            st === "draw" ||
+            st === "player_blackjack" ||
+            st === "dealer_blackjack"
+          ) {
+            global.db.users[hydro.blackjack[m.chat].idPemain].money += tableDouble.table.payout;
+            delete hydro.blackjack[m.chat];
+          }
+        }
+        break;
+
+      default:
+        await reply(`*Perintah tidak valid.*\nGunakan *${prefix + command} start* untuk memulai sesi blackjack.`);
+        break;
     }
+  } catch (err) {
+    console.error(err);
+    await reply("*Terjadi kesalahan saat memproses perintah.*");
+  }
 }
-break
+break;
 case 'perangsarung': {
     let taggedUsers = m.mentionedJid.slice(0, 7) // Maksimal 7 pemain
     if (taggedUsers.length < 7) return reply(`Tag 7 orang untuk bermain perang sarung!`)
@@ -21380,7 +21868,7 @@ function clockString(ms) {
             // Menambahkan target ke daftar duel
             hydro.duel.push(who)
             let message = `@${m.sender.split('@')[0]} mengajak duel ${await hydro.getName(who)}\n\nBalas dengan *gass* untuk menerima atau *skip* untuk menolak.`
-            return await hydro.reply(m.chat, message, m, { mentions: [m.sender, who] })
+            return await replyhydro(m.chat, message, m, { mentions: [m.sender, who] })
         }
 
         if (/gass/.test(command)) {
@@ -21733,94 +22221,9 @@ class SnakeAndLadderGame {
 }
 break;
 case 'slot': {
-            hydro.slots = hydro.slots ? hydro.slots : {};
-            if (m.chat in hydro.slots) return m.reply('Masih ada yg bermain slot disini, tunggu sampai selesai!!');
-            else hydro.slots[m.chat] = true;
-
-            try {
-                if (args.length < 1) return m.reply(`Gunakan format *${prefix}${command} [jumlah]*\nContoh *${prefix}${command} 10*`);
-                let count = (typeof args[0] == 'number' ? Math.round(Math.max(args[0], 1)) : 1);
-
-                let _spin1 = pickRandom(['1', '2', '3', '4', '5']);
-                let _spin2 = pickRandom(['1', '2', '3', '4', '5']);
-                let _spin3 = pickRandom(['1', '2', '3', '4', '5']);
-                let _spin4 = pickRandom(['1', '2', '3', '4', '5']);
-                let _spin5 = pickRandom(['1', '2', '3', '4', '5']);
-                let _spin6 = pickRandom(['1', '2', '3', '4', '5']);
-                let _spin7 = pickRandom(['1', '2', '3', '4', '5']);
-                let _spin8 = pickRandom(['1', '2', '3', '4', '5']);
-                let _spin9 = pickRandom(['1', '2', '3', '4', '5']);
-
-                let spin1 = (_spin1 * 1);
-                let spin2 = (_spin2 * 1);
-                let spin3 = (_spin3 * 1);
-                let spin4 = (_spin4 * 1);
-                let spin5 = (_spin5 * 1);
-                let spin6 = (_spin6 * 1);
-                let spin7 = (_spin7 * 1);
-                let spin8 = (_spin8 * 1);
-                let spin9 = (_spin9 * 1);
-
-                let spins1 = (spin1 == 1 ? '🦁' : spin1 == 2 ? '🐼' : spin1 == 3 ? '🐷' : spin1 == 4 ? '🐮' : spin1 == 5 ? '🦊' : '');
-                let spins2 = (spin2 == 1 ? '🦁' : spin2 == 2 ? '🐼' : spin2 == 3 ? '🐷' : spin2 == 4 ? '🐮' : spin2 == 5 ? '🦊' : '');
-                let spins3 = (spin3 == 1 ? '🦁' : spin3 == 2 ? '🐼' : spin3 == 3 ? '🐷' : spin3 == 4 ? '🐮' : spin3 == 5 ? '🦊' : '');
-                let spins4 = (spin4 == 1 ? '🦁' : spin4 == 2 ? '🐼' : spin4 == 3 ? '🐷' : spin4 == 4 ? '🐮' : spin4 == 5 ? '🦊' : '');
-                let spins5 = (spin5 == 1 ? '🦁' : spin5 == 2 ? '🐼' : spin5 == 3 ? '🐷' : spin5 == 4 ? '🐮' : spin5 == 5 ? '🦊' : '');
-                let spins6 = (spin6 == 1 ? '🦁' : spin6 == 2 ? '🐼' : spin6 == 3 ? '🐷' : spin6 == 4 ? '🐮' : spin6 == 5 ? '🦊' : '');
-                let spins7 = (spin7 == 1 ? '🦁' : spin7 == 2 ? '🐼' : spin7 == 3 ? '🐷' : spin7 == 4 ? '🐮' : spin7 == 5 ? '🦊' : '');
-                let spins8 = (spin8 == 1 ? '🦁' : spin8 == 2 ? '🐼' : spin8 == 3 ? '🐷' : spin8 == 4 ? '🐮' : spin8 == 5 ? '🦊' : '');
-                let spins9 = (spin9 == 1 ? '🦁' : spin9 == 2 ? '🐼' : spin9 == 3 ? '🐷' : spin9 == 4 ? '🐮' : spin9 == 5 ? '🦊' : '');
-
-                let user = global.db.users[m.sender];
-                user.money -= count * 1;
-
-                for (let i = 0; i < 3; i++) {
-                    m.reply(m.chat, `
-                    *🎰VIRTUAL SLOT🎰*
-                    
-${pickRandom(['🦁', '🐼', '🐷', '🐮', '🦊'])}|${pickRandom(['🦁', '🐼', '🐷', '🐮', '🦊'])}|${pickRandom(['🦁', '🐼', '🐷', '🐮', '🦊'])}
-${pickRandom(['🦁', '🐼', '🐷', '🐮', '🦊'])}|${pickRandom(['🦁', '🐼', '🐷', '🐮', '🦊'])}|${pickRandom(['🦁', '🐼', '🐷', '🐮', '🦊'])} <<==
-${pickRandom(['🦁', '🐼', '🐷', '🐮', '🦊'])}|${pickRandom(['🦁', '🐼', '🐷', '🐮', '狐狸'])}|${pickRandom(['🦁', '🐼', '🐷', '🐮', '🦊'])}
-                    
-                    `, m);
-                }
-
-                let winOrLose, hadiah;
-                if (spin1 == spin2 && spin2 == spin3 && spin3 == spin4 && spin4 == spin5 && spin5 == spin6 && spin6 == spin7 && spin7 == spin8 && spin8 == spin9) {
-                    winOrLose = 'JACKPOT BESAR 🎉🎉';
-                    hadiah = `+${count * 4}`;
-                    user.money += count * 4;
-                } else if (spin4 == spin5 && spin5 == spin6) {
-                    winOrLose = 'JACKPOT 🎉';
-                    hadiah = `+${count * 2}`;
-                    user.money += count * 2;
-                } else if ((spin1 == spin2 && spin2 == spin3) || (spin7 == spin8 && spin8 == spin9)) {
-                    hadiah = `-${count * 1}`;
-                    winOrLose = 'SEDikit Lagi!!';
-                } else {
-                    hadiah = `-${count * 1}`;
-                    winOrLose = 'Kamu Kalah';
-                }
-
-                hydro.reply(m.chat, `
-*🎰VIRTUAL SLOT🎰*
-${spins1}|${spins2}|${spins3}
-${spins4}|${spins5}|${spins6} <<==
-${spins7}|${spins8}|${spins9}
-*${winOrLose}* *${hadiah}*
-`, m);
-            } catch (e) {
-                console.log(e);
-                reply('Error');
-                if (DevMode) {
-                    for (let jid of global.owner.map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').filter(v => v != hydro.user.jid)) {
-                        hydro.sendMessage(jid, 'Menu.js error\nNo: *' + m.sender.split`@`[0] + '*\nCommand: *' + m.text + '*\n\n*' + e + '*', MessageType.text);
-                    }
-                }
-            } finally {
-                delete hydro.slots[m.chat];
-            }
-    }
+  await gameSlot(hydro, m, global.db, args[0])
+}
+break
 //==================================================================
 case 'tebaktebakan': {
   if (!m.isGroup) return replytolak(mess.only.group)
@@ -22287,37 +22690,65 @@ break
 //==================================================================
 case 'banknabung': {
   if (!m.isGroup) return replytolak(mess.only.group)
-const xpperlimit = 1
+
   let user = global.db.users[m.sender]
-  let all = command.replace(/^tarik/i, '')
-  let count = all ? all : args[0]
-  count = count ? /all/i.test(count) ? Math.floor(user.money / xpperlimit) : parseInt(count) : args[0] ? parseInt(args[0]) : 1
-  count = Math.max(1, count)
-  if (user.atm == 0) return replyhydro('kamu belum mempunyai kartu ATM')
-  if (user.bank > user.fullatm) return replyhydro('Uang Di ATM sudah penuh!')
-  if (count > user.fullatm - user.bank) return m.reply('Uangnya nya sudah mencapai batas')
-  if (user.money >= xpperlimit * count) {
-    user.money -= xpperlimit * count
-    user.bank += count
-    replyhydro(`Sukses menabung sebesar ${count} Money 💹`)
-  } else replyhydro(`[❗] Uang anda tidak mencukupi untuk menabung ${count} money 💹`, )
+  if (!user) return replyhydro('User tidak ditemukan')
+  if (user.atm == 0) return replyhydro('Kamu belum mempunyai kartu ATM')
+  
+  let count = args[0]
+  if (!count) return replyhydro('Masukkan jumlah yang ingin ditabung')
+  
+  if (/all/i.test(count)) {
+    count = user.money
+  } else {
+    count = parseInt(count)
+  }
+
+  if (isNaN(count) || count <= 0) return replyhydro('Jumlah tidak valid')
+  if (user.bank >= user.fullatm) return replyhydro('Uang di ATM sudah penuh!')
+  if (count > user.fullatm - user.bank)
+    return replyhydro('Saldo ATM tidak cukup untuk menampung uang sebanyak itu')
+  if (user.money < count)
+    return replyhydro('Uang kamu tidak mencukupi')
+
+  user.money -= count
+  user.bank += count
+
+  replyhydro(`╭┈┈⬡「 💰 *MENABUNG BERHASIL* 」
+┃ 💹 Disetor: *Rp ${count.toLocaleString()}*
+┃ 🏦 Saldo Bank: *Rp ${user.bank.toLocaleString()}*
+╰┈┈┈┈┈┈┈┈⬡`)
 }
 break
 //==================================================================
-case 'banktarik': {
+case 'banktarik':
+case 'tarik': {
   if (!m.isGroup) return replytolak(mess.only.group)
-const xpperlimit = 1
+
   let user = global.db.users[m.sender]
-  let all = command.replace(/^tarik/i, '')
-  let count = all ? all : args[0]
-  count = count ? /all/i.test(count) ? Math.floor(user.bank / xpperlimit) : parseInt(count) : args[0] ? parseInt(args[0]) : 1
-  count = Math.max(1, count)
-  if (user.atm == 0) return replyhydro('kamu belum mempuyai kartu ATM !')
-  if (user.bank >= xpperlimit * count) {
-    user.bank -= xpperlimit * count
-    user.money += count
-    replyhydro(`Sukses menarik sebesar ${count} Money 💹`)
-  } else replyhydro(`[❗] Uang dibank anda tidak mencukupi untuk ditarik sebesar ${count} money 💹`)
+  if (!user) return replyhydro('User tidak ditemukan')
+  if (user.atm == 0) return replyhydro('Kamu belum mempunyai kartu ATM')
+
+  let count = args[0]
+  if (!count) return replyhydro('Masukkan jumlah yang ingin ditarik')
+
+  if (/all/i.test(count)) {
+    count = user.bank
+  } else {
+    count = parseInt(count)
+  }
+
+  if (isNaN(count) || count <= 0) return replyhydro('Jumlah tidak valid')
+  if (user.bank < count)
+    return replyhydro('Uang di bank tidak mencukupi')
+
+  user.bank -= count
+  user.money += count
+
+  replyhydro(`╭┈┈⬡「 🏦 *TARIK BERHASIL* 」
+┃ 💸 Ditarik: *Rp ${count.toLocaleString()}*
+┃ 🪙 Money: *Rp ${user.money.toLocaleString()}*
+╰┈┈┈┈┈┈┈┈⬡`)
 }
 break
 //==================================================================
@@ -22449,24 +22880,54 @@ break
 case 'claim':
 case 'bonus': {
   if (!m.isGroup) return replytolak(mess.only.group)
-function msToTime(duration) {
-    var milliseconds = parseInt((duration % 1000) / 100),
-    seconds = Math.floor((duration / 1000) % 60),
-    minutes = Math.floor((duration / (1000 * 60)) % 60),
-    hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
-    hours = (hours < 10) ? "0" + hours : hours
-    minutes = (minutes < 10) ? "0" + minutes : minutes
-    seconds = (seconds < 10) ? "0" + seconds : seconds
 
-  return hours + " jam " + minutes + " menit " + seconds + " detik"
-}
-    let user = global.db.users[m.sender]
-    let time = user.lastbonus + 86400000
-    if (new Date - user.lastbonus < 86400000) return replyhydro(`Kamu Sudah Ambil Bonus Hari Ini\nTunggu selama ${msToTime(time - new Date())} lagi`)
-    let money = Math.floor(Math.random() * 50000000)
-    user.money += money * 1
-    user.lastbonus = new Date * 1
-    replyhydro(`Selamat Kamu Mendapatkan Bonus : \n+${money} Money`)
+  const msToTime = (duration) => {
+    let seconds = Math.floor((duration / 1000) % 60)
+    let minutes = Math.floor((duration / (1000 * 60)) % 60)
+    let hours = Math.floor((duration / (1000 * 60 * 60)) % 24)
+    hours = (hours < 10) ? "0" + hours : String(hours)
+    minutes = (minutes < 10) ? "0" + minutes : String(minutes)
+    seconds = (seconds < 10) ? "0" + seconds : String(seconds)
+    return hours + " jam " + minutes + " menit " + seconds + " detik"
+  }
+
+  const rupiah = (n) => {
+    n = Number(n) || 0
+    const sign = n < 0 ? '-' : ''
+    const s = String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    return `${sign}${s}`
+  }
+
+  let user = global.db.users[m.sender]
+  if (!user) return replyhydro('User tidak ditemukan di database')
+
+  const cooldown = 86400000
+  const now = Date.now()
+  const time = (user.lastbonus || 0) + cooldown
+
+  if (now - (user.lastbonus || 0) < cooldown) {
+    return replyhydro(
+`╭┈┈⬡「 🎁 *${toSmallCaps('bonus harian')}* 」
+┃ ❌ ${toSmallCaps('kamu sudah claim hari ini')}
+┃ ⏳ ${toSmallCaps('tunggu')}: *${msToTime(time - now)}*
+╰┈┈┈┈┈┈┈┈⬡`.trim()
+    )
+  }
+
+  const moneyBonus = 10000
+  const expBonus = 500
+
+  user.money = (user.money || 0) + moneyBonus
+  user.exp = (user.exp || 0) + expBonus
+  user.lastbonus = now
+
+  replyhydro(
+`╭┈┈⬡「 🎉 *${toSmallCaps('bonus berhasil')}* 」
+┃ 🪙 ${toSmallCaps('money')}: *+Rp ${rupiah(moneyBonus)}*
+┃ 🚄 ${toSmallCaps('exp')}: *+${rupiah(expBonus)}*
+┃ ✅ ${toSmallCaps('silahkan claim lagi besok')}
+╰┈┈┈┈┈┈┈┈⬡`.trim()
+  )
 }
 break
 //==================================================================
@@ -22539,7 +23000,7 @@ case 'hitman': {
 `.trim()
 
 		user.money += rbrb4
-        user.exp += rbrb5
+        const r = global.rpg.addExp(user, rbrb5)
         user.ojekk += 1
         user.warn += 1
 
@@ -22982,182 +23443,780 @@ case 'profil':
 case 'profile':
 case 'inventory': {
   if (!m.isGroup) return replytolak(mess.only.group)
-let inventory = {
-  others: {
-    joinlimit: true,
-    health: true,
-    money: true,
-    chip: true,
-    exp: true,
-  },
-  items: {
-    bibitanggur: true,
-    bibitmangga: true,
-    bibitpisang: true,
-    bibitapel: true,
-    bibitjeruk: true,
-    anggur: true,
-    mangga: true,
-    pisang: true,
-    apel: true,
-    jeruk: true,
-    potion: true,
-    trash: true,
-    wood: true,
-    rock: true,
-    string: true,
-    emerald: true,
-    diamond: true,
-    gold: true,
-    iron: true,
-    umpan: true,
-    upgrader: true,
-    pet: true,
-    petfood: true,
-  },
-  durabi: {
-    sworddurability: true,
-    pickaxedurability: true,
-    fishingroddurability: true,
-    armordurability: true,
-  },
-  tools: {
-    armor: {
-      '0': '❌',
-      '1': 'Leather Armor',
-      '2': 'Iron Armor',
-      '3': 'Gold Armor',
-      '4': 'Diamond Armor',
-      '5': 'Emerald Armor',
-      '6': 'Crystal Armor',
-      '7': 'Obsidian Armor',
-      '8': 'Netherite Armor',
-      '9': 'Wither Armor',
-      '10': 'Dragon Armor',
-      '11': 'Hacker Armor'
-    },
-    sword: {
-      '0': '❌',
-      '1': 'Wooden Sword',
-      '2': 'Stone Sword',
-      '3': 'Iron Sword',
-      '4': 'Gold Sword',
-      '5': 'Copper Sword',
-      '6': 'Diamond Sword',
-      '7': 'Emerald Sword',
-      '8': 'Obsidian Sword',
-      '9': 'Netherite Sword',
-      '10': 'Samurai Slayer Green Sword',
-      '11': 'Hacker Sword'
-    },
-    pickaxe: {
-      '0': '❌',
-      '1': 'Wooden Pickaxe',
-      '2': 'Stone Pickaxe',
-      '3': 'Iron Pickaxe',
-      '4': 'Gold Pickaxe',
-      '5': 'Copper Pickaxe',
-      '6': 'Diamond Pickaxe',
-      '7': 'Emerlad Pickaxe',
-      '8': 'Crystal Pickaxe',
-      '9': 'Obsidian Pickaxe',
-      '10': 'Netherite Pickaxe',
-      '11': 'Hacker Pickaxe'
-    },
-    fishingrod: {
-      '0': '❌',
-      '1': 'Wooden Fishingrod',
-      '2': 'Stone Fishingrod',
-      '3': 'Iron Fishingrod',
-      '4': 'Gold Fishingrod',
-      '5': 'Copper Fishingrod',
-      '6': 'Diamond Fishingrod',
-      '7': 'Emerald Fishingrod',
-      '8': 'Crystal Fishingrod',
-      '9': 'Obsidian Fishingrod',
-      '10': 'God Fishingrod',
-      '11': 'Hacker Fishingrod'
-     }
-  },
-  crates: {
-    common: true,
-    uncommon: true,
-    mythic: true,
-    legendary: true,
-  },
-  pets: {
-    horse: 10,
-    cat: 10,
-    fox: 10,
-    dog: 10,
-    robo: 10,
-  },
-  cooldowns: {}
-}
 
-  let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? hydro.user.jid : m.sender
-  let user = global.db.users[who]
+  const rupiah = (n) => {
+    n = Number(n) || 0
+    const sign = n < 0 ? '-' : ''
+    const s = String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    return `${sign}${s}`
+  }
+
+  let inventory = {
+    others: {
+      joinlimit: true,
+      health: true,
+      money: true,
+      chip: true,
+      exp: true,
+      bank: true,
+      level: true,
+    },
+    items: {
+      bibitanggur: true,
+      bibitmangga: true,
+      bibitpisang: true,
+      bibitapel: true,
+      bibitjeruk: true,
+      anggur: true,
+      mangga: true,
+      pisang: true,
+      apel: true,
+      jeruk: true,
+      potion: true,
+      trash: true,
+      wood: true,
+      rock: true,
+      string: true,
+      emerald: true,
+      diamond: true,
+      gold: true,
+      iron: true,
+      umpan: true,
+      upgrader: true,
+      pet: true,
+      petfood: true,
+    },
+    durabi: {
+      sworddurability: true,
+      pickaxedurability: true,
+      fishingroddurability: true,
+      armordurability: true,
+    },
+    tools: {
+      armor: {
+        '0': '❌',
+        '1': 'Leather Armor',
+        '2': 'Iron Armor',
+        '3': 'Gold Armor',
+        '4': 'Diamond Armor',
+        '5': 'Emerald Armor',
+        '6': 'Crystal Armor',
+        '7': 'Obsidian Armor',
+        '8': 'Netherite Armor',
+        '9': 'Wither Armor',
+        '10': 'Dragon Armor',
+        '11': 'Hacker Armor'
+      },
+      sword: {
+        '0': '❌',
+        '1': 'Wooden Sword',
+        '2': 'Stone Sword',
+        '3': 'Iron Sword',
+        '4': 'Gold Sword',
+        '5': 'Copper Sword',
+        '6': 'Diamond Sword',
+        '7': 'Emerald Sword',
+        '8': 'Obsidian Sword',
+        '9': 'Netherite Sword',
+        '10': 'Samurai Slayer Green Sword',
+        '11': 'Hacker Sword'
+      },
+      pickaxe: {
+        '0': '❌',
+        '1': 'Wooden Pickaxe',
+        '2': 'Stone Pickaxe',
+        '3': 'Iron Pickaxe',
+        '4': 'Gold Pickaxe',
+        '5': 'Copper Pickaxe',
+        '6': 'Diamond Pickaxe',
+        '7': 'Emerlad Pickaxe',
+        '8': 'Crystal Pickaxe',
+        '9': 'Obsidian Pickaxe',
+        '10': 'Netherite Pickaxe',
+        '11': 'Hacker Pickaxe'
+      },
+      fishingrod: {
+        '0': '❌',
+        '1': 'Wooden Fishingrod',
+        '2': 'Stone Fishingrod',
+        '3': 'Iron Fishingrod',
+        '4': 'Gold Fishingrod',
+        '5': 'Copper Fishingrod',
+        '6': 'Diamond Fishingrod',
+        '7': 'Emerald Fishingrod',
+        '8': 'Crystal Fishingrod',
+        '9': 'Obsidian Fishingrod',
+        '10': 'God Fishingrod',
+        '11': 'Hacker Fishingrod'
+      }
+    },
+    crates: {
+      common: true,
+      uncommon: true,
+      mythic: true,
+      legendary: true,
+    },
+    pets: {
+      horse: 10,
+      cat: 10,
+      fox: 10,
+      dog: 10,
+      robo: 10,
+    },
+    cooldowns: {}
+  }
+
+  let who = m.mentionedJid && m.mentionedJid[0]
+    ? m.mentionedJid[0]
+    : m.fromMe
+      ? hydro.user.jid
+      : m.sender
 
   if (!(who in global.db.users)) return replyhydro(`User ${who} not in database`)
+  let user = global.db.users[who]
 
-  let sortedlevel = Object.entries(global.db.users).sort((a, b) => b[1].level - a[1].level)
+  if (!user.health || Number(user.health) > 100) user.health = 100
+
+  let sortedlevel = Object.entries(global.db.users).sort((a, b) => (b[1].level || 0) - (a[1].level || 0))
   let userslevel = sortedlevel.map(v => v[0])
-  let sortedchip = Object.entries(global.db.users).sort((a, b) => b[1].chip - a[1].chip)
+
+  let sortedchip = Object.entries(global.db.users).sort((a, b) => (b[1].chip || 0) - (a[1].chip || 0))
   let userschip = sortedchip.map(v => v[0])
-  let sortedmoney = Object.entries(global.db.users).sort((a, b) => b[1].money - a[1].money)
+
+  let sortedmoney = Object.entries(global.db.users).sort((a, b) => (b[1].money || 0) - (a[1].money || 0))
   let usersmoney = sortedmoney.map(v => v[0])
-  let sorteddiamond = Object.entries(global.db.users).sort((a, b) => b[1].diamond - a[1].diamond)
+
+  let sorteddiamond = Object.entries(global.db.users).sort((a, b) => (b[1].diamond || 0) - (a[1].diamond || 0))
   let usersdiamond = sorteddiamond.map(v => v[0])
-  let sortedbank = Object.entries(global.db.users).sort((a, b) => b[1].bank - a[1].bank)
+
+  let sortedbank = Object.entries(global.db.users).sort((a, b) => (b[1].bank || 0) - (a[1].bank || 0))
   let usersbank = sortedbank.map(v => v[0])
-  let sortedgold = Object.entries(global.db.users).sort((a, b) => b[1].gold - a[1].gold)
+
+  let sortedgold = Object.entries(global.db.users).sort((a, b) => (b[1].gold || 0) - (a[1].gold || 0))
   let usersgold = sortedgold.map(v => v[0])
 
-  let isMods = [hydro.decodeJid(hydro.user.id), ...global.owner.filter(([number, _, isDeveloper]) => number && isDeveloper).map(([number]) => number)].map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(who)
-  let Ahmad = m.fromMe || isMods || [hydro.decodeJid(hydro.user.id), ...global.owner.filter(([number, _, isDeveloper]) => number && !isDeveloper).map(([number]) => number)].map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net').includes(who)
-  let isPrems =  Ahmad || new Date() - user.premiumTime < 0
+  let isMods = [hydro.decodeJid(hydro.user.id), ...global.owner.filter(([number, _, isDeveloper]) => number && isDeveloper).map(([number]) => number)]
+    .map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
+    .includes(who)
 
-  let limit = isPrems ? 'Unlimited' : user.limit
-  let tools = Object.keys(inventory.tools).map(v => user[v] && `*${global.rpg.emoticon(v)} ${v}:* ${typeof inventory.tools[v] === 'object' ? inventory.tools[v][user[v]?.toString()] : `Level(s) ${user[v]}`}`).filter(v => v).join('\n').trim()
-  let items = Object.keys(inventory.items).map(v => user[v] && `*${global.rpg.emoticon(v)} ${v}:* ${user[v]}`).filter(v => v).join('\n').trim()
-  let dura = Object.keys(inventory.durabi).map(v => user[v] && `*${global.rpg.emoticon(v)} ${v}:* ${user[v]}`).filter(v => v).join('\n').trim()
-  let crates = Object.keys(inventory.crates).map(v => user[v] && `*${global.rpg.emoticon(v)} ${v}:* ${user[v]}`).filter(v => v).join('\n').trim()
-  let pets = Object.keys(inventory.pets).map(v => user[v] && `*${global.rpg.emoticon(v)} ${v}:* ${user[v] >= inventory.pets[v] ? 'Max Levels' : `Level(s) ${user[v]}`}`).filter(v => v).join('\n').trim()
-  let cooldowns = Object.entries(inventory.cooldowns).map(([cd, { name, time }]) => cd in user && `*✧ ${name}*: ${new Date() - user[cd] >= time ? '✅' : '❌'}`).filter(v => v).join('\n').trim()
+  let Ahmad = m.fromMe || isMods || [hydro.decodeJid(hydro.user.id), ...global.owner.filter(([number, _, isDeveloper]) => number && !isDeveloper).map(([number]) => number)]
+    .map(v => v.replace(/[^0-9]/g, '') + '@s.whatsapp.net')
+    .includes(who)
 
-  let caption = `
-🧑🏻‍🏫 ᴜsᴇʀ: *${user.registered ? user.name : hydro.getName(who)}* ${user.level ? `
-➠ ${global.rpg.emoticon('level')} level: ${user.level}` : ''} ${user.limit ? `
-➠ ${global.rpg.emoticon('limit')} limit: ${limit}` : ''}
-${Object.keys(inventory.others).map(v => user[v] && `➠ ${global.rpg.emoticon(v)} ${v}: ${user[v]}`).filter(v => v).join('\n')} ${tools ? `
+  let isPrems = Ahmad || (new Date() - (user.premiumTime || 0) < 0)
+  let limit = isPrems ? 'Unlimited' : (user.limit ?? 0)
 
-*ʟɪꜱᴛ ᴛᴏᴏʟs* :
-${tools}` : ''}${items ? `
+  const displayName = (user?.registered && user?.name)
+    ? user.name
+    : (hydro.getName(who) ? hydro.getName(who) : who.split('@')[0])
 
-*ʟɪꜱᴛ ɪᴛᴇᴍs* :
-${items}` : ''}${crates ? `
+  const statusText = isPrems ? 'Premium' : 'Free'
 
-*ʟɪꜱᴛ ᴄʀᴀᴛᴇs* :
-${crates}` : ''}${pets ? `
+  const expNeed = (lvl = 0) => Math.floor(20000 * Math.pow(1.25, Number(lvl || 0)))
+  const expNow = Number(user.exp || 0)
+  const expMax = Math.max(1, expNeed(user.level || 0))
 
-*ʟɪꜱᴛ ᴩᴇᴛs* :
-${pets}` : ''}${cooldowns ? `
+  const percent = Math.max(0, Math.min(100, (expNow / expMax) * 100))
+  const barCount = Math.floor(percent / 10)
+  const progressBar = '▰'.repeat(barCount) + '▱'.repeat(10 - barCount)
 
-*ʟɪꜱᴛ ᴀʀᴄʜɪᴇᴠᴇᴍᴇɴᴛ* :
-${global.rpg.emoticon('chip')} ᴛᴏᴘ ᴄʜɪᴘ *${userschip.indexOf(who) + 1}* ᴅᴀʀɪ *${userschip.length}*
-${global.rpg.emoticon('money')} ᴛᴏᴘ ᴍᴏɴᴇʏ *${usersmoney.indexOf(who) + 1}* ᴅᴀʀɪ *${usersmoney.length}*
-${global.rpg.emoticon('bank')} ᴛᴏᴘ ʙᴀɴᴋ *${usersbank.indexOf(who) + 1}* ᴅᴀʀɪ *${usersbank.length}*
-${global.rpg.emoticon('level')} ᴛᴏᴘ ʟᴇᴠᴇʟ *${userslevel.indexOf(who) + 1}* ᴅᴀʀɪ *${userslevel.length}*
-${global.rpg.emoticon('diamond')} ᴛᴏᴘ ᴅɪᴀᴍᴏɴᴅ *${usersdiamond.indexOf(who) + 1}* ᴅᴀʀɪ *${usersdiamond.length}*
-${global.rpg.emoticon('gold')} ᴛᴏᴘ ɢᴏʟᴅ *${usersgold.indexOf(who) + 1}* ᴅᴀʀɪ *${usersgold.length}*
+  const role = roleFromLevel(user.level || 0)
 
-♻️ *ᴄᴏʟʟᴇᴄᴛ ʀᴇᴡᴀʀᴅs* :
-${cooldowns}` : ''}
-*✧ dungeon: ${user.lastdungeon == 0 ? '✅': '❌'}*
-*✧ mining: ${user.lastmining == 0 ? '✅': '❌'}*
-`.trim()
+  let tools = Object.keys(inventory.tools)
+    .map(v => user[v] && `┃ *${global.rpg.emoticon(v)} ${toSmallCaps(v)}:* ${typeof inventory.tools[v] === 'object'
+      ? inventory.tools[v][String(user[v])]
+      : `Level(s) ${user[v]}`}`)
+    .filter(Boolean)
+    .join('\n')
+    .trim()
 
-    replyhydro(`${caption}`)
+  let items = Object.keys(inventory.items)
+    .map(v => user[v] && `┃ *${global.rpg.emoticon(v)} ${toSmallCaps(v)}:* ${user[v]}`)
+    .filter(Boolean)
+    .join('\n')
+    .trim()
+
+  let dura = Object.keys(inventory.durabi)
+    .map(v => user[v] && `┃ *${global.rpg.emoticon(v)} ${toSmallCaps(v)}:* ${user[v]}`)
+    .filter(Boolean)
+    .join('\n')
+    .trim()
+
+  let crates = Object.keys(inventory.crates)
+    .map(v => user[v] && `┃ *${global.rpg.emoticon(v)} ${toSmallCaps(v)}:* ${user[v]}`)
+    .filter(Boolean)
+    .join('\n')
+    .trim()
+
+  let pets = Object.keys(inventory.pets)
+    .map(v => user[v] && `┃ *${global.rpg.emoticon(v)} ${toSmallCaps(v)}:* ${user[v] >= inventory.pets[v] ? toSmallCaps('max levels') : `Level(s) ${user[v]}`}`)
+    .filter(Boolean)
+    .join('\n')
+    .trim()
+
+  let cooldowns = Object.entries(inventory.cooldowns)
+    .map(([cd, { name, time }]) => cd in user && `┃ *✧ ${toSmallCaps(name)}:* ${new Date() - user[cd] >= time ? '✅' : '❌'}`)
+    .filter(Boolean)
+    .join('\n')
+    .trim()
+
+  const rankChip = userschip.indexOf(who) + 1
+  const rankMoney = usersmoney.indexOf(who) + 1
+  const rankBank = usersbank.indexOf(who) + 1
+  const rankLevel = userslevel.indexOf(who) + 1
+  const rankDiamond = usersdiamond.indexOf(who) + 1
+  const rankGold = usersgold.indexOf(who) + 1
+
+  const rankBox =
+`╭┈┈⬡「 🏆 *${toSmallCaps('peringkat')}* 」
+┃ ${global.rpg.emoticon('chip')} ${toSmallCaps('top chip')} : *${rankChip}* ${toSmallCaps('dari')} *${userschip.length}*
+┃ ${global.rpg.emoticon('money')} ${toSmallCaps('top money')} : *${rankMoney}* ${toSmallCaps('dari')} *${usersmoney.length}*
+┃ ${global.rpg.emoticon('bank')} ${toSmallCaps('top bank')} : *${rankBank}* ${toSmallCaps('dari')} *${usersbank.length}*
+┃ ${global.rpg.emoticon('level')} ${toSmallCaps('top level')} : *${rankLevel}* ${toSmallCaps('dari')} *${userslevel.length}*
+┃ ${global.rpg.emoticon('diamond')} ${toSmallCaps('top diamond')} : *${rankDiamond}* ${toSmallCaps('dari')} *${usersdiamond.length}*
+┃ ${global.rpg.emoticon('gold')} ${toSmallCaps('top gold')} : *${rankGold}* ${toSmallCaps('dari')} *${usersgold.length}*
+╰┈┈┈┈┈┈┈┈⬡`
+
+  const activityBox =
+`╭┈┈⬡「 🧭 *${toSmallCaps('aktivitas')}* 」
+┃ *✧ ${toSmallCaps('dungeon')}* : ${user.lastdungeon == 0 ? '✅' : '❌'}
+┃ *✧ ${toSmallCaps('mining')}*  : ${user.lastmining == 0 ? '✅' : '❌'}
+╰┈┈┈┈┈┈┈┈⬡`
+
+  const statsBox =
+`╭┈┈⬡「 ⚔️ *${toSmallCaps('rpg stats')}* 」
+┃ 🛡️ ${toSmallCaps('role')}: *${role}*
+┃ 📊 ${toSmallCaps('level')}: *${user.level || 0}*
+┃ 🚄 ${toSmallCaps('exp')}: *${rupiah(expNow)} / ${rupiah(expMax)}*
+┃ ${progressBar}
+┃
+┃ ❤️ ${toSmallCaps('health')}: *${user.health} / 100*
+╰┈┈┈┈┈┈┈┈⬡`
+
+  const assetsBox =
+`╭┈┈⬡「 💰 *${toSmallCaps('assets')}* 」
+┃ 🪙 ${toSmallCaps('balance')}: *Rp ${rupiah(user.money || 0)}*
+┃ 🏦 ${toSmallCaps('bank')}: *Rp ${rupiah(user.bank || 0)}*
+┃ 🎟️ ${toSmallCaps('limit')}: *${limit}*
+╰┈┈┈┈┈┈┈┈⬡`
+
+  const toolsBox = tools
+    ? `╭┈┈⬡「 🧰 *${toSmallCaps('alat')}* 」\n${tools}\n╰┈┈┈┈┈┈┈┈⬡`
+    : ''
+
+  const itemsBox = items
+    ? `╭┈┈⬡「 🎒 *${toSmallCaps('item')}* 」\n${items}\n╰┈┈┈┈┈┈┈┈⬡`
+    : ''
+
+  const duraBox = dura
+    ? `╭┈┈⬡「 🧱 *${toSmallCaps('durability')}* 」\n${dura}\n╰┈┈┈┈┈┈┈┈⬡`
+    : ''
+
+  const cratesBox = crates
+    ? `╭┈┈⬡「 📦 *${toSmallCaps('crate')}* 」\n${crates}\n╰┈┈┈┈┈┈┈┈⬡`
+    : ''
+
+  const petsBox = pets
+    ? `╭┈┈⬡「 🐾 *${toSmallCaps('pet')}* 」\n${pets}\n╰┈┈┈┈┈┈┈┈⬡`
+    : ''
+
+  const cooldownBox = cooldowns
+    ? `╭┈┈⬡「 🎁 *${toSmallCaps('klaim hadiah')}* 」\n${cooldowns}\n╰┈┈┈┈┈┈┈┈⬡`
+    : ''
+
+  const header =
+`╭━━━━━━━━━━━━━━━╮
+┃ 👤 *${toSmallCaps('profil pengguna')}*
+╰━━━━━━━━━━━━━━━╯`
+
+  let caption =
+`${header}
+
+🏷️ Name: *${displayName}*
+🆔 Tag: @${who.split('@')[0]}
+👑 Status: *${statusText}*
+
+${statsBox}
+
+${assetsBox}
+
+${rankBox}
+
+${activityBox}
+
+${toolsBox}${toolsBox ? '\n\n' : ''}${itemsBox}${itemsBox ? '\n\n' : ''}${duraBox}${duraBox ? '\n\n' : ''}${cratesBox}${cratesBox ? '\n\n' : ''}${petsBox}${petsBox ? '\n\n' : ''}${cooldownBox}`.trim()
+
+  replyhydro(caption)
+}
+break
+case 'addxp':
+case 'addexp':
+case 'tambahxp':
+case 'tambahexp': {
+  if (!m.isGroup) return replytolak(mess.only.group)
+  if (!Ahmad) return replyhydro(mess.only.owner)
+
+  const rupiah = (n) => {
+    n = Number(n) || 0
+    const sign = n < 0 ? '-' : ''
+    const s = String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    return `${sign}${s}`
+  }
+
+  const expNeed = (lvl = 0) => Math.floor(20000 * Math.pow(1.25, Number(lvl || 0)))
+
+  const addExpAndLevelUp = (user, amount = 0) => {
+    amount = Number(amount || 0)
+    user.level = Number(user.level || 0)
+    user.exp = Number(user.exp || 0)
+
+    if (amount > 0) user.exp += amount
+
+    let leveledUp = 0
+    let need = expNeed(user.level)
+
+    while (user.exp >= need) {
+      user.exp -= need
+      user.level += 1
+      leveledUp += 1
+      need = expNeed(user.level)
+    }
+
+    return { leveledUp, level: user.level, exp: user.exp, next: need }
+  }
+
+  const getTargetJid = () => {
+    if (m.quoted && m.quoted.sender) return m.quoted.sender
+    return m.sender
+  }
+
+  const parseTarget = () => {
+    if (args.length === 1) {
+      return { jid: getTargetJid(), amount: args[0] }
+    }
+    if (args.length >= 2) {
+      const maybeNumber = String(args[0]).replace(/[^0-9]/g, '')
+      if (maybeNumber.length >= 8) {
+        return { jid: maybeNumber + '@s.whatsapp.net', amount: args[1] }
+      }
+      return { jid: getTargetJid(), amount: args[0] }
+    }
+    return { jid: null, amount: null }
+  }
+
+  const parsed = parseTarget()
+  let target = parsed.jid
+  let amount = parsed.amount
+
+  if (!amount) {
+    return replyhydro(
+`Contoh:
+${prefix}addexp 5000
+${prefix}addexp 62812xxxxx 5000`.trim()
+    )
+  }
+
+  amount = parseInt(amount)
+  if (isNaN(amount) || amount <= 0) return replyhydro('Jumlah EXP tidak valid')
+
+  if (!target) return replyhydro('Target tidak valid')
+  if (!(target in global.db.users)) return replyhydro(`User ${target.split('@')[0]} tidak ada di database`)
+
+  let user = global.db.users[target]
+
+  const beforeLevel = Number(user.level || 0)
+  const beforeExp = Number(user.exp || 0)
+
+  const r = addExpAndLevelUp(user, amount)
+
+  const nomor = target.split('@')[0]
+  const nameTarget = (user?.registered && user?.name)
+    ? user.name
+    : (hydro.getName(target) ? hydro.getName(target) : nomor)
+
+  let msg =
+`╭┈┈⬡「 ✨ *ADD EXP* 」
+┃ 👤 Target: *${nameTarget}* (${nomor})
+┃ ➕ Added: *${rupiah(amount)} EXP*
+┃ 📊 Level: *${beforeLevel}* ➜ *${r.level}*
+┃ 🚄 Exp: *${rupiah(beforeExp)}* ➜ *${rupiah(r.exp)}* / *${rupiah(r.next)}*
+┃ 🎉 Level Up: *${r.leveledUp > 0 ? r.leveledUp + 'x' : '0'}*
+╰┈┈┈┈┈┈┈┈⬡`.trim()
+
+  replyhydro(msg)
+}
+break
+
+case 'delxp':
+case 'delexp':
+case 'hapusxp':
+case 'hapusexp': {
+  if (!m.isGroup) return replytolak(mess.only.group)
+  if (!Ahmad) return replyhydro(mess.only.owner)
+
+  const rupiah = (n) => {
+    n = Number(n) || 0
+    const sign = n < 0 ? '-' : ''
+    const s = String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    return `${sign}${s}`
+  }
+
+  const expNeed = (lvl = 0) => Math.floor(20000 * Math.pow(1.25, Number(lvl || 0)))
+
+  const removeExp = (user, amount = 0) => {
+    amount = Number(amount || 0)
+    user.level = Number(user.level || 0)
+    user.exp = Number(user.exp || 0)
+
+    if (amount <= 0) return { removed: 0, level: user.level, exp: user.exp, next: expNeed(user.level) }
+
+    const removed = Math.min(user.exp, amount)
+    user.exp -= removed
+
+    return { removed, level: user.level, exp: user.exp, next: expNeed(user.level) }
+  }
+
+  const getTargetJid = () => {
+    if (m.quoted && m.quoted.sender) return m.quoted.sender
+    return m.sender
+  }
+
+  const parseTarget = () => {
+    if (args.length === 1) {
+      return { jid: getTargetJid(), amount: args[0] }
+    }
+    if (args.length >= 2) {
+      const maybeNumber = String(args[0]).replace(/[^0-9]/g, '')
+      if (maybeNumber.length >= 8) {
+        return { jid: maybeNumber + '@s.whatsapp.net', amount: args[1] }
+      }
+      return { jid: getTargetJid(), amount: args[0] }
+    }
+    return { jid: null, amount: null }
+  }
+
+  const parsed = parseTarget()
+  let target = parsed.jid
+  let amount = parsed.amount
+
+  if (!amount) {
+    return replyhydro(
+`Contoh:
+${prefix}delexp 5000
+${prefix}delexp 62812xxxxx 5000`.trim()
+    )
+  }
+
+  amount = parseInt(amount)
+  if (isNaN(amount) || amount <= 0) return replyhydro('Jumlah EXP tidak valid')
+
+  if (!target) return replyhydro('Target tidak valid')
+  if (!(target in global.db.users)) return replyhydro(`User ${target.split('@')[0]} tidak ada di database`)
+
+  let user = global.db.users[target]
+
+  const beforeLevel = Number(user.level || 0)
+  const beforeExp = Number(user.exp || 0)
+
+  const r = removeExp(user, amount)
+
+  const nomor = target.split('@')[0]
+  const nameTarget = (user?.registered && user?.name)
+    ? user.name
+    : (hydro.getName(target) ? hydro.getName(target) : nomor)
+
+  let msg =
+`╭┈┈⬡「 🗑️ *DELETE EXP* 」
+┃ 👤 Target: *${nameTarget}* (${nomor})
+┃ ➖ Removed: *${rupiah(r.removed)} EXP*
+┃ 📊 Level: *${beforeLevel}* ➜ *${r.level}*
+┃ 🚄 Exp: *${rupiah(beforeExp)}* ➜ *${rupiah(r.exp)}* / *${rupiah(r.next)}*
+╰┈┈┈┈┈┈┈┈⬡`.trim()
+
+  replyhydro(msg)
+}
+break
+case 'addmoney':
+case 'tambahmoney':
+case 'addcash':
+case 'tambahcash': {
+  if (!m.isGroup) return replytolak(mess.only.group)
+  if (!Ahmad) return replyhydro(mess.only.owner)
+
+  const rupiah = (n) => {
+    n = Number(n) || 0
+    const sign = n < 0 ? '-' : ''
+    const s = String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    return `${sign}${s}`
+  }
+
+  const getTargetJid = () => {
+    if (m.quoted && m.quoted.sender) return m.quoted.sender
+    return m.sender
+  }
+
+  const parseTarget = () => {
+    if (args.length === 1) {
+      return { jid: getTargetJid(), amount: args[0] }
+    }
+    if (args.length >= 2) {
+      const maybeNumber = String(args[0]).replace(/[^0-9]/g, '')
+      if (maybeNumber.length >= 8) {
+        return { jid: maybeNumber + '@s.whatsapp.net', amount: args[1] }
+      }
+      return { jid: getTargetJid(), amount: args[0] }
+    }
+    return { jid: null, amount: null }
+  }
+
+  const parsed = parseTarget()
+  let target = parsed.jid
+  let amount = parsed.amount
+
+  if (!amount) {
+    return replyhydro(
+`Contoh:
+${prefix}addmoney 10000
+${prefix}addmoney 62812xxxxx 10000`.trim()
+    )
+  }
+
+  amount = parseInt(amount)
+  if (isNaN(amount) || amount <= 0) return replyhydro('Jumlah money tidak valid')
+
+  if (!target) return replyhydro('Target tidak valid')
+  if (!(target in global.db.users)) return replyhydro(`User ${target.split('@')[0]} tidak ada di database`)
+
+  let user = global.db.users[target]
+  user.money = Number(user.money || 0)
+
+  const beforeMoney = user.money
+  user.money += amount
+
+  const nomor = target.split('@')[0]
+  const nameTarget = (user?.registered && user?.name)
+    ? user.name
+    : (hydro.getName(target) ? hydro.getName(target) : nomor)
+
+  let msg =
+`╭┈┈⬡「 💸 *ADD MONEY* 」
+┃ 👤 Target: *${nameTarget}* (${nomor})
+┃ ➕ Added: *Rp ${rupiah(amount)}*
+┃ 💰 Money: *Rp ${rupiah(beforeMoney)}* ➜ *Rp ${rupiah(user.money)}*
+╰┈┈┈┈┈┈┈┈⬡`.trim()
+
+  replyhydro(msg)
+}
+break
+case 'addlimit': {
+  if (!m.isGroup) return replytolak(mess.only.group)
+  if (!Ahmad) return replyhydro(mess.only.owner)
+
+  let target
+  let amount
+
+  if (m.quoted) {
+    target = m.quoted.sender
+    amount = parseInt(args[0])
+  } else if (args.length === 2) {
+    target = args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+    amount = parseInt(args[1])
+  } else {
+    target = m.sender
+    amount = parseInt(args[0])
+  }
+
+  if (!target || isNaN(amount) || amount <= 0)
+    return replyhydro('Format salah.')
+
+  if (!(target in global.db.users))
+    return replyhydro('User tidak ditemukan.')
+
+  global.db.users[target].limit += amount
+
+  replyhydro(`✅ Limit berhasil ditambahkan\n👤 @${target.split('@')[0]}\n➕ ${amount} Limit\n> Total: ${global.db.users[target].limit}`, { mentions: [target] })
+}
+break
+case 'dellimit': {
+  if (!m.isGroup) return replytolak(mess.only.group)
+  if (!Ahmad) return replyhydro(mess.only.owner)
+
+  let target
+  let amount
+
+  if (m.quoted) {
+    target = m.quoted.sender
+    amount = parseInt(args[0])
+  } else if (args.length === 2) {
+    target = args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+    amount = parseInt(args[1])
+  } else {
+    target = m.sender
+    amount = parseInt(args[0])
+  }
+
+  if (!target || isNaN(amount) || amount <= 0)
+    return replyhydro('Format salah.')
+
+  if (!(target in global.db.users))
+    return replyhydro('User tidak ditemukan.')
+
+  global.db.users[target].limit -= amount
+  if (global.db.users[target].limit < 0)
+    global.db.users[target].limit = 0
+
+  replyhydro(`✅ Limit berhasil dikurangi\n👤 @${target.split('@')[0]}\n➖ ${amount} Limit\n> Total: ${global.db.users[target].limit}`, { mentions: [target] })
+}
+break
+case 'setlevel': {
+  if (!m.isGroup) return replytolak(mess.only.group)
+  if (!Ahmad) return replyhydro(mess.only.owner)
+
+  let target
+  let level
+
+  if (m.quoted) {
+    target = m.quoted.sender
+    level = parseInt(args[0])
+  } else if (args.length === 2) {
+    target = args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+    level = parseInt(args[1])
+  } else {
+    target = m.sender
+    level = parseInt(args[0])
+  }
+
+  if (!target || isNaN(level) || level < 0)
+    return replyhydro('Format salah.')
+
+  if (!(target in global.db.users))
+    return replyhydro('User tidak ditemukan.')
+
+  global.db.users[target].level = level
+  global.db.users[target].exp = 0
+
+  replyhydro(`✅ Level berhasil di set\n👤 @${target.split('@')[0]}\n🎯 Level: ${level}`, { mentions: [target] })
+}
+break
+case 'resetlevel': {
+  if (!m.isGroup) return replytolak(mess.only.group)
+  if (!Ahmad) return replyhydro(mess.only.owner)
+
+  let target = m.quoted ? m.quoted.sender : m.sender
+
+  if (!(target in global.db.users))
+    return replyhydro('User tidak ditemukan.')
+
+  global.db.users[target].level = 0
+  global.db.users[target].exp = 0
+
+  replyhydro(`♻️ Level berhasil direset\n👤 @${target.split('@')[0]}\n🎯 Level: 0`, { mentions: [target] })
+}
+break
+case 'setlimit': {
+  if (!m.isGroup) return replytolak(mess.only.group)
+  if (!Ahmad) return replyhydro(mess.only.owner)
+
+  let target
+  let amount
+
+  if (m.quoted) {
+    target = m.quoted.sender
+    amount = parseInt(args[0])
+  } else if (args.length === 2) {
+    target = args[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net'
+    amount = parseInt(args[1])
+  } else {
+    target = m.sender
+    amount = parseInt(args[0])
+  }
+
+  if (!target || isNaN(amount) || amount < 0)
+    return replyhydro('Format salah.\nContoh:\nsetlimit 50\nsetlimit 628xxxx 50')
+
+  if (!(target in global.db.users))
+    return replyhydro('User tidak ditemukan.')
+
+  global.db.users[target].limit = amount
+
+  replyhydro(
+`✅ Limit berhasil diset
+👤 @${target.split('@')[0]}
+🎟️ Limit: ${amount}`, 
+{ mentions: [target] })
+}
+break
+case 'delmoney':
+case 'deletemoney':
+case 'hapusmoney':
+case 'removemoney': {
+  if (!m.isGroup) return replytolak(mess.only.group)
+  if (!Ahmad) return replyhydro(mess.only.owner)
+
+  const rupiah = (n) => {
+    n = Number(n) || 0
+    const sign = n < 0 ? '-' : ''
+    const s = String(Math.abs(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+    return `${sign}${s}`
+  }
+
+  const getTargetJid = () => {
+    if (m.quoted && m.quoted.sender) return m.quoted.sender
+    return m.sender
+  }
+
+  const parseTarget = () => {
+    if (args.length === 1) {
+      return { jid: getTargetJid(), amount: args[0] }
+    }
+    if (args.length >= 2) {
+      const maybeNumber = String(args[0]).replace(/[^0-9]/g, '')
+      if (maybeNumber.length >= 8) {
+        return { jid: maybeNumber + '@s.whatsapp.net', amount: args[1] }
+      }
+      return { jid: getTargetJid(), amount: args[0] }
+    }
+    return { jid: null, amount: null }
+  }
+
+  const parsed = parseTarget()
+  let target = parsed.jid
+  let amount = parsed.amount
+
+  if (!amount) {
+    return replyhydro(
+`Contoh:
+${prefix}delmoney 10000
+${prefix}delmoney 62812xxxxx 10000`.trim()
+    )
+  }
+
+  amount = parseInt(amount)
+  if (isNaN(amount) || amount <= 0) return replyhydro('Jumlah money tidak valid')
+
+  if (!target) return replyhydro('Target tidak valid')
+  if (!(target in global.db.users)) return replyhydro(`User ${target.split('@')[0]} tidak ada di database`)
+
+  let user = global.db.users[target]
+  user.money = Number(user.money || 0)
+
+  const beforeMoney = user.money
+  const removed = Math.min(user.money, amount)
+  user.money -= removed
+
+  const nomor = target.split('@')[0]
+  const nameTarget = (user?.registered && user?.name)
+    ? user.name
+    : (hydro.getName(target) ? hydro.getName(target) : nomor)
+
+  let msg =
+`╭┈┈⬡「 🗑️ *DELETE MONEY* 」
+┃ 👤 Target: *${nameTarget}* (${nomor})
+┃ ➖ Removed: *Rp ${rupiah(removed)}*
+┃ 💰 Money: *Rp ${rupiah(beforeMoney)}* ➜ *Rp ${rupiah(user.money)}*
+╰┈┈┈┈┈┈┈┈⬡`.trim()
+
+  replyhydro(msg)
 }
 break
 //==================================================================
@@ -23312,304 +24371,215 @@ break
 //==================================================================
 case 'transfer': {
   if (!m.isGroup) return replytolak(mess.only.group)
-function special(type) {
+
+  function special(type) {
     let b = type.toLowerCase()
-    let special = (['common', 'uncommon', 'mythic', 'legendary', 'pet'].includes(b) ? ' Crate' : '')
-    return special
-}
+    return (['common', 'uncommon', 'mythic', 'legendary', 'pet'].includes(b) ? ' Crate' : '')
+  }
 
-function isNumber(x) {
+  function isNumber(x) {
     return !isNaN(x)
-}
-const items = [
-    'money', 'bank', 'potion', 'trash', 'wood',
-    'rock', 'string', 'petFood', 'emerald',
-    'diamond', 'gold', 'iron', 'common',
-    'uncommon', 'mythic', 'legendary', 'pet', 'chip', 
-    'anggur', 'apel', 'jeruk', 'mangga', 'pisang', 
-    'bibitanggur', 'bibitapel', 'bibitjeruk', 'bibitmangga', 'bibitpisang',
-]
-    let user = global.db.users[m.sender]
-    const item = items.filter(v => v in user && typeof user[v] == 'number')
-    let lol = `Use format ${command} [type] [value] [number]
-example ${command} money 9999 @621927237001
+  }
 
-📍 Transferable items
-${item.map(v => `${rpg.emoticon(v)}${v}`.trim()).join('\n')}
-`.trim()
-    const type = (args[0] || '').toLowerCase()
-    if (!item.includes(type)) return reply(lol)
-    const count = Math.min(Number.MAX_SAFE_INTEGER, Math.max(1, (isNumber(args[1]) ? parseInt(args[1]) : 1))) * 1
-    let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : args[2] ? (args[2].replace(/[@ .+-]/g, '') + '@s.whatsapp.net') : ''
-    let _user = global.db.users[who]
-    if (!who) return m.reply('Tag salah satu, atau ketik Nomernya!!')
-    if (!(who in global.db.users)) return m.reply(`User ${who} not in database`)
-    if (user[type] * 1 < count) return m.reply(`Your *${rpg.emoticon(type)}${type}${special(type)}* is less *${count - user[type]}*`)
-    let previous = user[type] * 1
-    let _previous = _user[type] * 1
-    user[type] -= count * 1
-    _user[type] += count * 1
-    if (previous > user[type] * 1 && _previous < _user[type] * 1) m.reply(`*––––––『 𝚃𝚁𝙰𝙽𝚂𝙵𝙴𝚁 』––––––*\n*📊 Status:* Succes\n*🗂️ Type:* ${type}${special(type)} ${rpg.emoticon(type)}\n*🧮 Count:* ${count}\n*📨 To:* @${(who || '').replace(/@s\.whatsapp\.net/g, '')}`, null, { mentions: [who] })
-    else {
-        user[type] = previous
-        _user[type] = _previous
-        m.reply(`*––––––『 TRANSFER 』––––––*\n*📊 Status:* Failted\n*📍 Item:* ${count} ${rpg.emoticon(type)}${type}${special(type)}\n*📨 To:* @${(who || '').replace(/@s\.whatsapp\.net/g, '')}`, null, { mentions: [who] })
-    }
+  const items = [
+    'money','bank','potion','trash','wood','rock','string',
+    'petFood','emerald','diamond','gold','iron',
+    'common','uncommon','mythic','legendary','pet','chip',
+    'anggur','apel','jeruk','mangga','pisang',
+    'bibitanggur','bibitapel','bibitjeruk','bibitmangga','bibitpisang'
+  ]
+
+  let user = global.db.users[m.sender]
+  const available = items.filter(v => v in user && typeof user[v] === 'number')
+
+  const type = (args[0] || '').toLowerCase()
+  const count = Math.max(1, isNumber(args[1]) ? parseInt(args[1]) : 1)
+
+  if (!available.includes(type)) {
+    return reply(
+`╭┈┈⬡「 📦 *TRANSFER* 」
+┃ Format:
+┃ ${prefix + command} [item] [jumlah] @tag/nomor
+┃ ${prefix + command} [item] [jumlah] (reply pesan)
+┃
+┃ Contoh:
+┃ ${prefix + command} money 10000 @628xxxx
+┃ ${prefix + command} money 10000 628xxxx
+╰┈┈┈┈┈┈┈┈⬡`
+    )
+  }
+
+  let who
+
+  if (m.quoted) {
+    who = m.quoted.sender
+  } else if (m.mentionedJid?.[0]) {
+    who = m.mentionedJid[0]
+  } else if (args[2]) {
+    let number = args[2].replace(/[^0-9]/g, '')
+    who = number + '@s.whatsapp.net'
+  }
+
+  if (!who) return reply('Reply pesan, tag, atau masukkan nomor tujuan!')
+
+  if (!(who in global.db.users))
+    return reply('User tidak ada di database.')
+
+  if (who === m.sender)
+    return reply('Tidak bisa transfer ke diri sendiri.')
+
+  let target = global.db.users[who]
+  if (!target[type]) target[type] = 0
+
+  if (user[type] < count)
+    return reply(`❌ ${rpg.emoticon(type)} ${type} kamu tidak cukup.`)
+
+  let beforeSender = user[type]
+  let beforeTarget = target[type]
+
+  user[type] -= count
+  target[type] += count
+
+  if (user[type] < beforeSender && target[type] > beforeTarget) {
+
+    return hydro.sendMessage(m.chat, {
+      text:
+`╭┈┈⬡「 💸 *TRANSFER BERHASIL* 」
+┃ 📦 Item: ${rpg.emoticon(type)} ${type}${special(type)}
+┃ 🔢 Jumlah: ${count}
+┃ 👤 Dari: @${m.sender.split('@')[0]}
+┃ 📥 Ke: @${who.split('@')[0]}
+╰┈┈┈┈┈┈┈┈⬡`,
+      mentions: [m.sender, who]
+    }, { quoted: m })
+
+  } else {
+
+    user[type] = beforeSender
+    target[type] = beforeTarget
+
+    return reply('❌ Transfer gagal.')
+  }
 }
 break
 //==================================================================
-case 'buy': {
+case 'buy':
+case 'sell': {
   if (!m.isGroup) return replytolak(mess.only.group)
-function isNumber(number) {
-    if (!number) return number
-    number = parseInt(number)
-    return typeof number == 'number' && !isNaN(number)
-}
 
-function capitalize(word) {
-  return word.charAt(0).toUpperCase() + word.substr(1)
-}
-const items = {
-    buy: {
-        limit: {
-            money: 5000
-        },
-        chip: {
-        	money: 1000000
-        },
-        exp: {
-        	money: 1000
-        },
-        potion: {
-            money: 1250
-        },
-        trash: {
-            money: 40
-        },
-        wood: {
-            money: 700
-        },
-        rock: {
-            money: 850
-        },
-        string: {
-            money: 400
-        },
-        iron: { 
-        	money: 3000
-        },
-        diamond: {
-            money: 500000
-        },
-        emerald: {
-            money: 100000
-        },
-        gold: {
-            money: 100000
-        },
-        common: {
-            money: 2000
-        },
-        uncommon: {
-            money: 20000
-        },
-        mythic: {
-            money: 75000
-        },
-        legendary: {
-            money: 200000
-        },
-        petfood: {
-            money: 3500
-        },
-        pet: {
-            money: 120000
-        },
-        anggur: {
-            money: 2000
-        },
-        apel: {
-            money: 2000
-        },
-        jeruk: {
-            money: 2000
-        },
-        mangga: {
-            money: 2000
-        },
-        pisang: {
-        	money: 2000
-        },
-        bibitanggur: {
-            money: 2000
-        },
-        bibitapel: {
-            money: 2000
-        },
-        bibitjeruk: {
-            money: 2000
-        },
-        bibitmangga: {
-            money: 2000
-        },
-        bibitpisang: {
-            money: 2000
-        },
-        umpan: {
-        	money: 5000
-        }     
-    },
-    sell: {
-        limit: {
-            exp: 999
-        },
-        exp: {
-        	money: 1
-        },
-        chip: {
-        	money: 1000000
-        },
-        potion: {
-            money: 625
-        },
-        trash: {
-            money: 20
-        },
-        wood: {
-            money: 350
-        },
-        rock: {
-            money: 425
-        },
-        string: {
-            money: 200
-        },
-        iron: { 
-        	money: 1500
-        },
-        diamond: {
-            money: 250000
-        },
-        emerald: {
-            money: 50000
-        },
-        gold: {
-            money: 50000
-        },
-        common: {
-            money: 1000
-        },
-        uncommon: {
-            money: 10000
-        },
-        mythic: {
-            money: 37500
-        },
-        legendary: {
-            money: 100000
-        },
-        petfood: {
-            money: 1750
-        },
-        pet: {
-            money: 60000
-        },
-        anggur: {
-            money: 1000
-        },
-        apel: {
-            money: 1000
-        },
-        jeruk: {
-            money: 1000
-        },
-        mangga: {
-            money: 1000
-        },
-        pisang: {
-        	money: 1000
-        },
-        bibitanggur: {
-            money: 1000
-        },
-        bibitapel: {
-            money: 1000
-        },
-        bibitjeruk: {
-            money: 1000
-        },
-        bibitmangga: {
-            money: 1000
-        },
-        bibitpisang: {
-            money: 1000
-        },
-        umpan: {
-        	money: 2500
-        }
-    }
-}
+  function isNumber(x) {
+    x = parseInt(x)
+    return typeof x === 'number' && !isNaN(x)
+  }
 
-    const item = (args[0] || '').toLowerCase()
-    if (!item.match('limit') && db.chats[m.chat].rpg == false && m.isGroup) return dfail('rpg', m, hydro)
-    let user = db.users[m.sender]
-    const listItems = Object.fromEntries(Object.entries(items[command.toLowerCase()]).filter(([v]) => v && v in user))
-    let text = ''
-    let footer = ''
-    let image = ''
-    let buttons = ''
-    text = (command.toLowerCase() == 'buy' ?
-(`
-*${decor.htki} 𝙱𝚄𝚈𝙸𝙽𝙶 ${decor.htka}*
-`.trim()) : 
-(`
-*${decor.htki} 𝚂𝙴𝙻𝙻𝙸𝙽𝙶 ${decor.htka}*
-`.trim())
-)
-    footer = (command.toLowerCase() == 'buy' ?
-(`
-🛒 List Items :
-${Object.keys(listItems).map((v) => {
-        let paymentMethod = Object.keys(listItems[v]).find(v => v in user)
-        return `➠ 1 ${rpg.emoticon(v)} ${capitalize(v)} ﹫ ${listItems[v][paymentMethod]} ${rpg.emoticon(paymentMethod)}${capitalize(paymentMethod)}`.trim()
-    }).join('\n')}
-–––––––––––––––––––––––––
-💁🏻‍♂ ᴛɪᴩ :
-➠ ᴛᴏ ʙᴜʏ ɪᴛᴇᴍs:
-${command} [item] [quantity]
-▧ ᴇxᴀᴍᴩʟᴇ:
-${command} potion 10
-`.trim()) : 
-(`
-🛒 List Items :
-${Object.keys(listItems).map((v) => {
-        let paymentMethod = Object.keys(listItems[v]).find(v => v in user)
-        return `➠ 1 ${rpg.emoticon(v)} ${capitalize(v)} ﹫ ${listItems[v][paymentMethod]} ${rpg.emoticon(paymentMethod)}${capitalize(paymentMethod)}`.trim()
-    }).join('\n')}
-–––––––––––––––––––––––––
-💁🏻‍♂ ᴛɪᴩ :
-➠ ᴛᴏ sᴇʟʟ ɪᴛᴇᴍs:
-${command} [item] [quantity]
-▧ ᴇxᴀᴍᴩʟᴇ:
-${command} potion 10
-`.trim())
-)
-    
-    const total = Math.floor(isNumber(args[1]) ? Math.min(Math.max(parseInt(args[1]), 1), Number.MAX_SAFE_INTEGER) : 1) * 1
-    if (!listItems[item]) return m.reply(footer)
-    if (command.toLowerCase() == 'buy') {
-        let paymentMethod = Object.keys(listItems[item]).find(v => v in user)
-        if (user[paymentMethod] < listItems[item][paymentMethod] * total) return m.reply(`Kamu membutuhkan *${(listItems[item][paymentMethod] * total) - user[paymentMethod]}* ${capitalize(paymentMethod)} ${rpg.emoticon(paymentMethod)} Lagi, Untuk Membeli *${total}* ${capitalize(item)} ${rpg.emoticon(item)}. Kamu hanya memiliki *${user[paymentMethod]}* ${capitalize(paymentMethod)} ${rpg.emoticon(paymentMethod)}.`)
-        user[paymentMethod] -= listItems[item][paymentMethod] * total
-        user[item] += total
-        return reply(`Sukses Membeli *${total} ${capitalize(item)} ${rpg.emoticon(item)}*, Seharga *${listItems[item][paymentMethod] * total} ${capitalize(paymentMethod)} ${rpg.emoticon(paymentMethod)}*`)
-    } else {
-    	let paymentMethot = Object.keys(listItems[item]).find(v => v in user)
-        if (user[item] < total) return m.reply(`You don't have enough *${capitalize(item)} ${rpg.emoticon(item)}* to sell, you only have ${user[item]} items`)
-        user[item] -= total
-        user[paymentMethot] += listItems[item][paymentMethot] * total
-        return reply(`Sukses Menjual *${total} ${capitalize(item)} ${rpg.emoticon(item)}*, Seharga *${listItems[item][paymentMethot] * total} ${capitalize(paymentMethot)} ${rpg.emoticon(paymentMethot)}*`)
-    }
+  function capitalize(word) {
+    return word.charAt(0).toUpperCase() + word.slice(1)
+  }
+
+  const buyPrices = {
+
+    limit: 25000,
+    chip: 2000000,
+    exp: 10000,
+
+    potion: 15000,
+    superpotion: 50000,
+    elixir: 150000,
+
+    wood: 5000,
+    rock: 6000,
+    string: 4000,
+    trash: 1000,
+
+    coal: 8000,
+    copper: 12000,
+    iron: 25000,
+    gold: 600000,
+    redstone: 15000,
+    lapis: 20000,
+    emerald: 800000,
+    diamond: 2500000,
+    obsidian: 4000000,
+    netherite: 7000000,
+
+    bibitanggur: 10000,
+    bibitapel: 10000,
+    bibitjeruk: 10000,
+    bibitmangga: 10000,
+    bibitpisang: 10000,
+
+    anggur: 20000,
+    apel: 20000,
+    jeruk: 20000,
+    mangga: 20000,
+    pisang: 20000,
+
+    umpan: 5000,
+
+    repairkit: 75000,
+    durabilitykit: 50000
+  }
+
+  const item = (args[0] || '').toLowerCase()
+  const total = Math.floor(isNumber(args[1]) ? Math.max(parseInt(args[1]), 1) : 1)
+
+  let user = global.db.users[m.sender]
+
+  if (!buyPrices[item]) {
+
+    let list = Object.keys(buyPrices)
+      .map(v => `┃ 🛒 ${capitalize(v)} — Rp ${buyPrices[v].toLocaleString('id-ID')}`)
+      .join('\n')
+
+    return reply(
+`╭┈┈⬡「 🏪 *SHOP* 」
+${list}
+╰┈┈┈┈┈┈┈┈⬡
+
+📌 Contoh:
+${prefix + command} potion 5`
+    )
+  }
+
+  const buyPrice = buyPrices[item] * total
+  const sellPrice = Math.floor((buyPrices[item] * 0.5) * total)
+
+  if (command === 'buy') {
+
+    if (user.money < buyPrice)
+      return reply(
+`❌ Uang tidak cukup.
+Butuh Rp ${buyPrice.toLocaleString('id-ID')}
+Saldo kamu Rp ${user.money.toLocaleString('id-ID')}`
+      )
+
+    user.money -= buyPrice
+    user[item] = (user[item] || 0) + total
+
+    return reply(
+`╭┈┈⬡「 ✅ *PEMBELIAN BERHASIL* 」
+┃ 📦 Item: ${capitalize(item)}
+┃ 📊 Jumlah: ${total}
+┃ 💰 Total: Rp ${buyPrice.toLocaleString('id-ID')}
+╰┈┈┈┈┈┈┈┈⬡`
+    )
+
+  } else {
+
+    if (!user[item] || user[item] < total)
+      return reply(`❌ Item tidak cukup untuk dijual.`)
+
+    user[item] -= total
+    user.money += sellPrice
+
+    return reply(
+`╭┈┈⬡「 💸 *PENJUALAN BERHASIL* 」
+┃ 📦 Item: ${capitalize(item)}
+┃ 📊 Jumlah: ${total}
+┃ 💰 Total: Rp ${sellPrice.toLocaleString('id-ID')}
+╰┈┈┈┈┈┈┈┈⬡`
+    )
+  }
 }
 break
 //==================================================================
@@ -23749,7 +24719,7 @@ function clockString(ms) {
 `.trim()
 
         user.money += ngrk4
-        user.exp += ngrk5
+        const r = global.rpg.addExp(user, ngrk5)
         user.rokets += 1
         user.health -= 80
 
@@ -23854,7 +24824,7 @@ function clockString(ms) {
 Dan health anda berkurang -80
 `.trim()
         user.money += ran1
-        user.exp += ran2
+        const r = global.rpg.addExp(user, ran2)
         user.health -= 80
 
 		hydro.misi[id] = [
@@ -24980,7 +25950,7 @@ function clockString(ms) {
 `.trim()
         
         user.money += rbrb4
-        user.exp += rbrb5
+        const r = global.rpg.addExp(user, rbrb5)
         user.ojekk += 1
 
 		hydro.misi[id] = [
@@ -25042,7 +26012,7 @@ const timeout = 604800000
 	let exp = `${Math.floor(Math.random() * 999)}`.trim()
 	let kardus = `${Math.floor(Math.random() * 1000)}`.trim()
 	user.money += money * 1
-	user.exp += exp * 1
+	const r = global.rpg.addExp(user, exp * 1)
 	user.kardus += kardus * 1
 	user.lastmaling = new Date * 1
     m.reply(`Selamat kamu mendapatkan : \n💰+${money} Money\📦+${kardus} Kardus\n✨+${exp} Exp`)
@@ -25483,7 +26453,7 @@ case 'sc': case 'script': {
     return hydro.sendMessage(m.chat, quickMsg, { quoted: m });
 }
 break;
-case 'swgc': case 'upswgc': {
+case 'swgc': case 'upswgc': case 'swgrup': case 'swgroup': case 'statusgrup': case 'statusgroup': {
   if (!Ahmad) return replytolak(mess.only.owner)
   const { fromBuffer } = require("file-type");
   const fs = require("fs");
@@ -25533,6 +26503,13 @@ case 'swgc': case 'upswgc': {
 
   let grupList = await store.chats.all().filter(v => v.id.endsWith('@g.us')).map(v => v.id)
   let validGroups = []
+  
+  validGroups.push({
+  title: "All Group",
+  description: `Total ${grupList.length} grup`,
+  id: `.sendstatus all ${encodeURIComponent(JSON.stringify(content))}`
+  })
+
   for (let gid of grupList) {
     try {
       let metadata = await hydro.groupMetadata(gid)
@@ -25581,13 +26558,36 @@ break
 
 case 'sendstatus': {
   if (!Ahmad) return replytolak(mess.only.owner)
+  const fs = require("fs")
+
   const [groupId, ...contentARR] = args
   const contentDecoded = JSON.parse(decodeURIComponent(contentARR.join(' ')))
-  let sent = await groupStatus(groupId, contentDecoded)
-  if (contentDecoded?.image?.url && fs.existsSync(contentDecoded.image.url)) fs.unlinkSync(contentDecoded.image.url)
-  if (contentDecoded?.video?.url && fs.existsSync(contentDecoded.video.url)) fs.unlinkSync(contentDecoded.video.url)
-  if (contentDecoded?.audio?.url && fs.existsSync(contentDecoded.audio.url)) fs.unlinkSync(contentDecoded.audio.url)
-  hydro.sendText(m.chat, `Berhasil dikirim ke grup id: ${groupId}`)
+
+  let grupList = await store.chats.all().filter(v => v.id.endsWith('@g.us')).map(v => v.id)
+
+  let success = 0
+  let failed = 0
+
+  if (groupId === 'all') {
+    for (let gid of grupList) {
+      try {
+        await groupStatus(gid, contentDecoded)
+        success++
+      } catch (e) {
+        failed++
+      }
+    }
+    hydro.sendText(m.chat, `✅ Berhasil dikirim ke ${success} group`)
+  } else {
+    await groupStatus(groupId, contentDecoded)
+    hydro.sendText(m.chat, `✅ Berhasil dikirim ke grup id: ${groupId}`)
+  }
+
+  try {
+    if (contentDecoded?.image?.url && fs.existsSync(contentDecoded.image.url)) fs.unlinkSync(contentDecoded.image.url)
+    if (contentDecoded?.video?.url && fs.existsSync(contentDecoded.video.url)) fs.unlinkSync(contentDecoded.video.url)
+    if (contentDecoded?.audio?.url && fs.existsSync(contentDecoded.audio.url)) fs.unlinkSync(contentDecoded.audio.url)
+  } catch (e) {}
 }
 break
 
@@ -26556,8 +27556,8 @@ case 'dro': {
 break
 //=========================================\\======
 case 'onlyadmin': case 'mute':{
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!isAdmins && !Ahmad) return reply('Fitur Khusus admin!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 addCountCmd('#mute', m.sender, _cmd)
 if (isMute) return reply(`Udah Mute`)
@@ -26578,8 +27578,8 @@ reply(`${prefix+command} on -- _mengaktifkan_\n${prefix+command} off -- _Menonak
 break
 //=========================================\\======
 case 'autoaigrup':case 'aigrup': case 'autoaigc':{
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!isAdmins && !Ahmad) return reply('Fitur Khusus admin!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 addCountCmd('#autoaigrup', m.sender, _cmd)
 if (isAutoAiGc) return reply(`Udah aktif`)
@@ -26609,8 +27609,8 @@ case 'autoread':
                 }
 break
 case 'autosimi':{
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!isAdmins && !Ahmad) return reply('Fitur Khusus admin!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 addCountCmd('#autosimi', m.sender, _cmd)
 if (isAutosimi) return reply(`Udah aktif`)
@@ -26629,8 +27629,8 @@ reply(`${prefix+command} on -- _mengaktifkan_\n${prefix+command} off -- _Menonak
 }}
 break
 case 'hydrochat':{
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!isAdmins && !Ahmad) return reply('Fitur Khusus admin!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 addCountCmd('#hydrochat', m.sender, _cmd)
 if (IsHydroChat) return reply(`Udah aktif`)
@@ -26671,8 +27671,8 @@ case'cekkhodam': {
 break
 //=========================================\\======
 case 'welcome':
-if (!m.isGroup) return replytolak('Fitur Khusus Group!!!')
-if (!isAdmins && !Ahmad) return reply('Fitur Khusus admin!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 addCountCmd('#welcome', m.sender, _cmd)
 if (isWelcome) return reply(`Udah on`)
@@ -26691,8 +27691,8 @@ reply(`${prefix+command} on -- _mengaktifkan_\n${prefix+command} off -- _Menonak
 }
 break
 case 'left': case 'goodbye':
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!isAdmins && !Ahmad) return reply('Fitur Khusus admin!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!isAdmins && !Ahmad) return reply(mess.only.admin)
 if (args[0] === "on") {
 addCountCmd('#left', m.sender, _cmd)
 if (isLeft) return reply(`Udah on`)
@@ -26712,7 +27712,7 @@ reply(`${prefix+command} on -- _mengaktifkan_\n${prefix+command} off -- _Menonak
 break
 case 'onlygroup':
             case 'onlygc':
-                if (!Ahmad) return replytolak('Fitur Khusus owner!')
+                if (!Ahmad) return replytolak(mess.only.owner)
                 if (args.length < 1) return replyhydro(`Contoh: ${prefix + command} on/off`)
                 if (q == 'on') {
                     db.settings[botNumber].onlygrub = true
@@ -26724,7 +27724,7 @@ case 'onlygroup':
             break
             case 'onlyprivatechat':
             case 'onlypc':
-                if (!Ahmad) return replytolak('Fitur Khusus owner!')
+                if (!Ahmad) return replytolak(mess.only.owner)
                 if (args.length < 1) return replyhydro(`Contoh: ${prefix + command} on/off`)
                 if (q == 'on') {
                     db.settings[botNumber].onlypc = true
@@ -26735,8 +27735,8 @@ case 'onlygroup':
                 }
             break
 case 'setwelcome': {
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!Ahmad && !isAdmins) return reply('Fitur Khusus owner!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!Ahmad && !isAdmins) return reply(mess.only.owner)
 if (!text) return reply(`Gunakan dengan cara ${prefix+command} *teks_welcome*\n\n_Contoh_\n\n${prefix+command} Halo @user, Selamat datang di @group`)
 if (isSetWelcome(m.chat, set_welcome_db)) return reply(`Set welcome already active`)
 addSetWelcome(text, m.chat, set_welcome_db)
@@ -26745,8 +27745,8 @@ reply(`Successfully set welcome!`)
 }
 break
 case 'changewelcome':{
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!Ahmad && !isAdmins) return reply('Fitur Khusus owner!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!Ahmad && !isAdmins) return reply(mess.only.owner)
 if (!text) return reply(`Gunakan dengan cara ${prefix+command} *teks_welcome*\n\n_Contoh_\n\n${prefix+command} Halo @user, Selamat datang di @group`)
 if (isSetWelcome(m.chat, set_welcome_db)) {
 addCountCmd('#changewelcome', m.sender, _cmd)
@@ -26760,8 +27760,8 @@ reply(`Sukses change set welcome teks!`)
 }
 break
 case 'delsetwelcome':{
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!Ahmad && !isAdmins) return reply('Fitur Khusus owner!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!Ahmad && !isAdmins) return reply(mess.only.owner)
 if (!isSetWelcome(m.chat, set_welcome_db)) return reply(`Belum ada set welcome di sini..`)
 removeSetWelcome(m.chat, set_welcome_db)
 addCountCmd('#delsetwelcome', m.sender, _cmd)
@@ -26769,8 +27769,8 @@ reply(`Sukses delete set welcome`)
 }
 break
 case 'setleft':{
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!Ahmad && !isAdmins) return reply('Fitur Khusus owner!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!Ahmad && !isAdmins) return reply(mess.only.owner)
 if (!text) return reply(`Gunakan dengan cara ${prefix + command} *teks_left*\n\n_Contoh_\n\n${prefix + command} Halo @user, Selamat tinggal dari @group`)
 if (isSetLeft(m.chat, set_left_db)) return reply(`Set left already active`)
 addCountCmd('#setleft', m.sender, _cmd)
@@ -26779,8 +27779,8 @@ reply(`Successfully set left!`)
 }
 break
 case 'changeleft':{
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!Ahmad && !isAdmins) return reply('Fitur Khusus owner!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!Ahmad && !isAdmins) return reply(mess.only.owner)
 if (!text) return reply(`Gunakan dengan cara ${prefix + command} *teks_left*\n\n_Contoh_\n\n${prefix + command} Halo @user, Selamat tinggal dari @group`)
 if (isSetLeft(m.chat, set_left_db)) {
 addCountCmd('#changeleft', m.sender, _cmd)
@@ -26794,8 +27794,8 @@ reply(`Sukses change set left teks!`)
 }
 break
 case 'delsetleft':{
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!Ahmad && !isAdmins) return reply('Fitur Khusus owner!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!Ahmad && !isAdmins) return reply(mess.only.owner)
 if (!isSetLeft(m.chat, set_left_db)) return reply(`Belum ada set left di sini..`)
 addCountCmd('#delsetleft', m.sender, _cmd)
 removeSetLeft(m.chat, set_left_db)
@@ -29267,7 +30267,7 @@ case 'listusr': {
 }
 break;
         case 'delsrv': {
-      if (!Ahmad) return replytolak(`Khusus ${global.botname} Aja`)
+      if (!Ahmad) return replytolak(mess.only.owner)
 
 let srv = args[0]
 if (!srv) return reply('ID nya mana?')
@@ -29287,7 +30287,7 @@ reply('*SUCCESSFULLY DELETE THE SERVER*')
 }
         break
         case 'delusr': {
-  if (!Ahmad) return replytolak(`Khusus ${global.botname} Aja`)
+  if (!Ahmad) return replytolak(mess.only.owner)
 let usr = args[0]
 if (!usr) return reply('ID nya mana?')
 let f = await fetch(domain + "/api/application/users/" + usr, {
@@ -29420,7 +30420,7 @@ hydro.sendMessage(m.chat, {text: listprem },{quoted: hydro.chat})
 }
 break
 case 'addsrv': {
-if (!Ahmad) return replytolak(`Ngapain ? Fitur Ini Khusus Tuan Saya😜`)
+if (!Ahmad) return replytolak(mess.only.owner)
 let s = text.split(',');
 if (s.length < 7) return reply(`*Format salah!*
 
@@ -29502,7 +30502,7 @@ CREATED AT: ${server.created_at}`)
 }
         break
 case 'suspend': {
-            if (!Ahmad) return replytolak(`Khusus ${global.botname} Ajah`)
+            if (!Ahmad) return replytolak(mess.only.owner)
             let srv = args[0]
             if (!srv) return reply('ID nya mana?')
             let f = await fetch(domain + "/api/application/servers/" + srv + "/suspend", {
@@ -29521,7 +30521,7 @@ case 'suspend': {
         }
             break
             case 'unsuspend': {
-            if (!Ahmad) return replytolak(`Khusus ${global.botname} Ajah`)
+            if (!Ahmad) return replytolak(mess.only.owner)
             let srv = args[0]
             if (!srv) return reply('ID nya mana?')
             let f = await fetch(domain + "/api/application/servers/" + srv + "/unsuspend", {
@@ -31331,61 +32331,86 @@ case 'tiktoksearch': {
 break;
 case 'brat':
 case 'bratgambar':
-case 'bratimg':  {
-if (!text) return m.reply('teksnya')
-const axios = require('axios');
-const brat = `https://brat.siputzx.my.id/image?text=${encodeURIComponent(text)}&background=%23ffffff&color=%23000000&emojiStyle=apple`
-await hydro.sendImageAsSticker(m.chat, brat, m, {packname: global.packname})
+case 'bratimg': {
+  if (!text) return m.reply('teksnya')
+
+  if (userLimit.limit < 2)
+    return replyhydro(`Limit kamu kurang!\nButuh *2* limit.\n> Sisa limit: *${userLimit.limit}*`)
+
+  try {
+    const brat = `https://brat.siputzx.my.id/image?text=${encodeURIComponent(text)}&background=%23ffffff&color=%23000000&emojiStyle=apple`
+
+    await hydro.sendImageAsSticker(m.chat, brat, m, { packname: global.packname })
+
+    userLimit.limit -= 2
+
+  } catch (e) {
+    console.error(e)
+    m.reply('❌ Gagal memproses brat!')
+  }
 }
 break
-case 'bratvid': case 'bratvideo': {
-    if (!text && (!m.quoted || !m.quoted.text)) return m.reply(`Kirim/reply pesan *${prefix + command}* Teksnya`)
-    const teks = (m.quoted ? m.quoted.text : text).split(' ')
-    const tempDir = path.join(process.cwd(), 'temp')
-    if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true })
+case 'bratvid':
+case 'bratvideo': {
+  if (!text && (!m.quoted || !m.quoted.text))
+    return m.reply(`Kirim/reply pesan *${prefix + command}* Teksnya`)
 
-    try {
-        const framePaths = []
-        for (let i = 0; i < teks.length; i++) {
-            const currentText = teks.slice(0, i + 1).join(' ')
-            let res
-            try {
-                res = await getBuffer('https://brat.siputzx.my.id/mp4?text=' + encodeURIComponent(currentText))
-            } catch (e) {
-                res = await getBuffer('https://aqul-brat.hf.space/?text=' + encodeURIComponent(currentText))
-            }
-            const framePath = path.join(tempDir, `${m.sender}_${i}.mp4`)
-            fs.writeFileSync(framePath, res)
-            framePaths.push(framePath)
-        }
+  if (userLimit.limit < 2)
+    return replyhydro(`Limit kamu kurang!\nButuh *2* limit.\n> Sisa limit: *${userLimit.limit}*`)
 
-        const fileListPath = path.join(tempDir, `${m.sender}.txt`)
-        let fileListContent = ''
-        for (let i = 0; i < framePaths.length; i++) {
-            fileListContent += `file '${framePaths[i]}'\n`
-            fileListContent += `duration 0.5\n`
-        }
-        fileListContent += `file '${framePaths[framePaths.length - 1]}'\n`
-        fileListContent += `duration 3\n`
-        fs.writeFileSync(fileListPath, fileListContent)
+  const teks = (m.quoted ? m.quoted.text : text).split(' ')
+  const tempDir = path.join(process.cwd(), 'temp')
+  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true })
 
-        const outputVideoPath = path.join(tempDir, `${m.sender}-output.mp4`)
-        execSync(`ffmpeg -y -f concat -safe 0 -i "${fileListPath}" -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2,fps=30" -c:v libx264 -preset veryfast -pix_fmt yuv420p "${outputVideoPath}"`)
+  try {
+    const framePaths = []
 
-        const outputStickerPath = path.join(tempDir, `${m.sender}_bratvid.webp`)
-        execSync(`ffmpeg -i "${outputVideoPath}" -vcodec libwebp -vf "scale=512:512:force_original_aspect_ratio=decrease,fps=15,pad=512:512:-1:-1:color=white@0.0" -loop 0 -ss 00:00:00 -t 10 -an -vsync 0 "${outputStickerPath}"`)
+    for (let i = 0; i < teks.length; i++) {
+      const currentText = teks.slice(0, i + 1).join(' ')
+      let res
+      try {
+        res = await getBuffer('https://brat.siputzx.my.id/mp4?text=' + encodeURIComponent(currentText))
+      } catch (e) {
+        res = await getBuffer('https://aqul-brat.hf.space/?text=' + encodeURIComponent(currentText))
+      }
 
-        await hydro.sendMessage(m.chat, { sticker: fs.readFileSync(outputStickerPath) }, { quoted: m })
-
-        framePaths.forEach(f => fs.unlinkSync(f))
-        fs.unlinkSync(fileListPath)
-        fs.unlinkSync(outputVideoPath)
-        fs.unlinkSync(outputStickerPath)
-
-    } catch (e) {
-        console.error(e)
-        m.reply('❌ Terjadi Kesalahan Saat Memproses bratvid!')
+      const framePath = path.join(tempDir, `${m.sender}_${i}.mp4`)
+      fs.writeFileSync(framePath, res)
+      framePaths.push(framePath)
     }
+
+    const fileListPath = path.join(tempDir, `${m.sender}.txt`)
+    let fileListContent = ''
+
+    for (let i = 0; i < framePaths.length; i++) {
+      fileListContent += `file '${framePaths[i]}'\n`
+      fileListContent += `duration 0.5\n`
+    }
+
+    fileListContent += `file '${framePaths[framePaths.length - 1]}'\n`
+    fileListContent += `duration 3\n`
+
+    fs.writeFileSync(fileListPath, fileListContent)
+
+    const outputVideoPath = path.join(tempDir, `${m.sender}-output.mp4`)
+    execSync(`ffmpeg -y -f concat -safe 0 -i "${fileListPath}" -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2,fps=30" -c:v libx264 -preset veryfast -pix_fmt yuv420p "${outputVideoPath}"`)
+
+    const outputStickerPath = path.join(tempDir, `${m.sender}_bratvid.webp`)
+    execSync(`ffmpeg -i "${outputVideoPath}" -vcodec libwebp -vf "scale=512:512:force_original_aspect_ratio=decrease,fps=15,pad=512:512:-1:-1:color=white@0.0" -loop 0 -ss 00:00:00 -t 10 -an -vsync 0 "${outputStickerPath}"`)
+
+    await hydro.sendMessage(m.chat, { sticker: fs.readFileSync(outputStickerPath) }, { quoted: m })
+
+    userLimit.limit -= 2
+
+    framePaths.forEach(f => fs.unlinkSync(f))
+    fs.unlinkSync(fileListPath)
+    fs.unlinkSync(outputVideoPath)
+    fs.unlinkSync(outputStickerPath)
+
+  } catch (e) {
+    console.error(e)
+    m.reply('❌ Terjadi Kesalahan Saat Memproses bratvid!')
+  }
 }
 break
 case 'furbrat': {
@@ -31541,7 +32566,7 @@ case 'animebrat-vid': {
   const { createCanvas, loadImage, registerFont } = require('canvas')
   const sharp = require('sharp')
     try {
-        let imageUrl = 'https://cloudkuimages.com/uploads/images/67ddbbcb065a6.jpg';
+        let imageUrl = 'https://c.termai.cc/i185/qYv.jpg';
         let fontUrl = 'https://github.com/googlefonts/noto-emoji/raw/main/fonts/NotoColorEmoji.ttf';
         let imagePath = path.join(__dirname, 'furina', 'file.jpg');
         let fontPath = path.join(__dirname, 'furina', 'NotoColorEmoji.ttf');
@@ -32566,8 +33591,8 @@ await listbut2(m.chat, teks, bet, m);
 }
 break
 case 'dellist':
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!isAdmins) return replytolak('Fitur Khusus admin!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!isAdmins) return replytolak(mess.only.admin)
 if (db_respon_list.length === 0) return reply(`Belum ada list message di database`)
 if (!text) return reply(`Gunakan dengan cara ${prefix + command} *key*\n\n_Contoh_\n\n${prefix + command} hello`)
 if (!isAlreadyResponList(m.chat, q.toLowerCase(), db_respon_list)) return reply(`List respon dengan key *${q}* tidak ada di database!`)
@@ -32575,8 +33600,8 @@ delResponList(m.chat, q.toLowerCase(), db_respon_list)
 reply(`Sukses delete list message dengan key *${q}*`)
 break
 case 'addlist':
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!isAdmins) return replytolak('Fitur Khusus admin!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!isAdmins) return replytolak(mess.only.admin)
 var args1 = q.split("|")[0].toLowerCase()
 var args2 = q.split("|")[1]
 if (!q.includes("|")) return reply(`Gunakan dengan cara ${prefix+command} *key|response*\n\n_Contoh_\n\n${prefix+command} tes|apa`)
@@ -32593,8 +33618,8 @@ reply(`Sukses set list message dengan key : *${args1}*`)
 }
 break
 case 'updatelist': case 'update':
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!isAdmins) return replytolak('Fitur Khusus admin!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!isAdmins) return replytolak(mess.only.admin)
 var args1 = q.split("|")[0].toLowerCase()
 var args2 = q.split("|")[1]
 if (!q.includes("|")) return reply(`Gunakan dengan cara ${prefix+command} *key|response*\n\n_Contoh_\n\n${prefix+command} tes|apa`)
@@ -32647,16 +33672,16 @@ var nilai_two = Number(bawah)
 reply(`${nilai_one / nilai_two}`)}
 break
 case 'setproses': case 'setp':
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!isAdmins) return replytolak('Fitur Khusus admin!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!isAdmins) return replytolak(mess.only.admin)
 if (!text) return reply(`Gunakan dengan cara ${prefix + command} *teks*\n\n_Contoh_\n\n${prefix + command} Pesanan sedang di proses ya @user\n\n- @user (tag org yg pesan)\n- @pesanan (pesanan)\n- @jam (waktu pemesanan)\n- @tanggal (tanggal pemesanan) `)
 if (isSetProses(m.chat, set_proses)) return reply(`Set proses already active`)
 addSetProses(text, m.chat, set_proses)
 reply(`✅ Done set proses!`)
 break
 case 'changeproses': case 'changep':
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!isAdmins) return replytolak('Fitur Khusus admin!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!isAdmins) return replytolak(mess.only.admin)
 if (!text) return reply(`Gunakan dengan cara ${prefix + command} *teks*\n\n_Contoh_\n\n${prefix + command} Pesanan sedang di proses ya @user\n\n- @user (tag org yg pesan)\n- @pesanan (pesanan)\n- @jam (waktu pemesanan)\n- @tanggal (tanggal pemesanan) `)
 if (isSetProses(m.chat, set_proses)) {
 changeSetProses(text, m.chat, set_proses)
@@ -32667,15 +33692,15 @@ reply(`Sukses ubah set proses!`)
 }
 break
 case 'delsetproses': case 'delsetp':
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!isAdmins) return replytolak('Fitur Khusus admin!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!isAdmins) return replytolak(mess.only.admin)
 if (!isSetProses(m.chat, set_proses)) return reply(`Belum ada set proses di gc ini`)
 removeSetProses(m.chat, set_proses)
 reply(`Sukses delete set proses`)
 break
 case 'setdone':{
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!isAdmins) return replytolak('Fitur Khusus admin!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!isAdmins) return replytolak(mess.only.admin)
 if (!text) return reply(`Gunakan dengan cara ${prefix + command} *teks*\n\n_Contoh_\n\n${prefix + command} Done @user\n\n- @user (tag org yg pesan)\n- @pesanan (pesanan)\n- @jam (waktu pemesanan)\n- @tanggal (tanggal pemesanan) `)
 if (isSetDone(m.chat, set_done)) return reply(`Udh set done sebelumnya`)
 addSetDone(text, m.chat, set_done)
@@ -32683,8 +33708,8 @@ reply(`Sukses set done!`)
 break
 }
 case 'changedone': case 'changed':
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!isAdmins) return replytolak('Fitur Khusus admin!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!isAdmins) return replytolak(mess.only.admin)
 if (!text) return reply(`Gunakan dengan cara ${prefix + command} *teks*\n\n_Contoh_\n\n${prefix + command} Done @user\n\n- @user (tag org yg pesan)\n- @pesanan (pesanan)\n- @jam (waktu pemesanan)\n- @tanggal (tanggal pemesanan) `)
 if (isSetDone(m.chat, set_done)) {
 changeSetDone(text, m.chat, set_done)
@@ -32696,7 +33721,7 @@ reply(`Sukses ubah set done!`)
 break
 case 'd': case'done':{
       if (!isAdmins) return
-      if (!m.isGroup) return replytolak('Fitur Khusus Group!')
+      if (!m.isGroup) return replytolak(mess.only.group)
 			if (!m.quoted) return m.reply('Reply pesanan yang telah di proses')
             let tek = m.quoted ? quoted.text : quoted.text.split(args[0])[1]
             let sukses = `── 「 *DETAIL PESANAN* 」 ──\n\n\`\`\`› Status : 「 Transaksi Success 」\n› Pesanan : @user\n› Date : @tanggal\n› Clock : @jam\n› Status Pesanan : Terkirim ✅\n› Catatan Pesanan 📝 :\`\`\`\n*@pesanan*\n\n_*Terimakasih sudah order di @group*_\n*_kami tunggu orderan berikutnya_* 🤗🤗`            
@@ -32710,14 +33735,14 @@ case 'd': case'done':{
    }
    break
 case 'delsetdone': case 'delsetd':
-if (!m.isGroup) return replytolak('Fitur Khusus Group!')
-if (!isAdmins) return replytolak('Fitur Khusus admin!')
+if (!m.isGroup) return replytolak(mess.only.group)
+if (!isAdmins) return replytolak(mess.only.admin)
 if (!isSetDone(m.chat, set_done)) return reply(`Belum ada set done di gc ini`)
 removeSetDone(m.chat, set_done)
 reply(`Sukses delete set done`)
 break
 case'proses':{
-  if (!m.isGroup) return replytolak('Fitur Khusus Group!')
+  if (!m.isGroup) return replytolak(mess.only.group)
 			if (!m.quoted) return m.reply('Reply pesanan yang akan proses')
             let tek = m.quoted ? quoted.text : quoted.text.split(args[0])[1]
             let proses = `── 「 *DETAIL PESANAN* 」 ──\n\n\`\`\`› Status : 「 Transaksi Pending 」\n› Pesanan : @user\n› Date : @tanggal\n› Clock : @jam\n› Status Pesanan : Diproses ⌛\n› Catatan Pesanan 📝 :\`\`\`\n*@pesanan*\n\n_*Tunggu Sebentar, Orderan Kamu Sedang Diproses Oleh Admin @admin.*_`
@@ -33087,10 +34112,9 @@ case 'ytaudio': {
     if (!regex.test(url)) return replyhydro('⚠️ *Link tidak valid!*');
     try {
         await hydro.sendMessage(m.chat, { react: { text: "⏳", key: m.key } });
-        const { ytdlv1, ytdlv2, ytdlv4 } = require('./scrape/youtube');
         let data = await ytdlv1(url, 'audio');
         if (!data || !data.download_url) data = await ytdlv2(url, 'audio');
-        if (!data || !data.download_url) data = await ytdlv4(url, 'audio');
+        if (!data || !data.download_url) data = await ytdlv3(url, 'audio');
         if (!data || !data.download_url) throw new Error();
         const buffer = await getBuffer(data.download_url);
         await hydro.sendMessage(m.chat, {
@@ -33177,10 +34201,9 @@ case 'ytvideo': {
         }
         try {
             await hydro.sendMessage(m.chat, { react: { text: "⏳", key: m.key } });
-            const { ytdlv1, ytdlv3, ytdlv4 } = require('./scrape/youtube');
             let data = await ytdlv1(link, resolution);
+            if (!data || !data.download_url) data = await ytdlv2(link, resolution);
             if (!data || !data.download_url) data = await ytdlv3(link, resolution);
-            if (!data || !data.download_url) data = await ytdlv4(link, resolution);
             if (!data || !data.download_url) throw new Error();
             const buffer = await getBuffer(data.download_url);
             const fileSizeMB = buffer.length / (1024 * 1024);
@@ -34234,33 +35257,6 @@ case 'toimg': {
     } else return replyhydro(`Please reply to non animated sticker`)
 }
 break
-case 'swm': case 'steal': case 'stickerwm': case 'take': case 'wm': {
-  const getRandom = (ext) => {
-            return `${Math.floor(Math.random() * 10000)}${ext}`
-        }
-	let ahuh = args.join(' ').split('|')
-	let satu = ahuh[0] !== '' ? ahuh[0] : `yoy`
-	let dua = typeof ahuh[1] !== 'undefined' ? ahuh[1] : ``
-	let { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter')
-	let media = await hydro.downloadAndSaveMediaMessage(quoted)
-	let jancok = new Sticker(media, {
-	pack: satu, // The pack name
-	author: dua, // The author name
-	type: StickerTypes.FULL, // The sticker type
-	categories: ['🤩', '🎉'], // The sticker category
-	id: '12345', // The sticker id
-	quality: 70, // The quality of the output file
-	background: '#FFFFFF00' // The sticker background color (only for full stickers)
-	})
-	let stok = getRandom(".webp")
-	let nono = await jancok.toFile(stok)
-	let nah = fs.readFileSync(nono)
-	await hydro.sendMessage(from,{sticker: nah},{quoted: m})
-	await fs.unlinkSync(stok)
-	await fs.unlinkSync(media)
-}
-	break
-
 case 'delsampah':{
 	let path = require('path');
 	let directoryPath = path.join();
@@ -34291,181 +35287,233 @@ case 'delsampah':{
 	  }
 	break 
 case 'iqc': {
-  if (!text) return;
+  if (!text) return
 
-  let parts = text.split("|").map(s => s.trim());
-  let pesan = parts[0];
-  let baterai = 3, sinyal = 3, jam;
+  if (userLimit.limit < 4)
+    return replyhydro(`Limit kamu kurang!\nButuh *4* limit.\n> Sisa limit: *${userLimit.limit}*`)
 
-  if (!pesan) return;
+  let parts = text.split("|").map(s => s.trim())
+  let pesan = parts[0]
+  let baterai = 3, sinyal = 3, jam
+
+  if (!pesan) return
 
   if (parts.length === 2) {
-    jam = parts[1];
+    jam = parts[1]
   } else if (parts.length === 3) {
-    baterai = !isNaN(parts[1]) ? parseInt(parts[1]) : 3;
-    sinyal = !isNaN(parts[2]) ? parseInt(parts[2]) : 3;
+    baterai = !isNaN(parts[1]) ? parseInt(parts[1]) : 3
+    sinyal = !isNaN(parts[2]) ? parseInt(parts[2]) : 3
   } else if (parts.length === 4) {
-    baterai = !isNaN(parts[1]) ? parseInt(parts[1]) : 3;
-    sinyal = !isNaN(parts[2]) ? parseInt(parts[2]) : 3;
-    jam = parts[3];
+    baterai = !isNaN(parts[1]) ? parseInt(parts[1]) : 3
+    sinyal = !isNaN(parts[2]) ? parseInt(parts[2]) : 3
+    jam = parts[3]
   }
 
-  // Batasi nilai
-  if (baterai < 0) baterai = 0;
-  if (baterai > 100) baterai = 100;
-  if (sinyal < 1) sinyal = 1;
-  if (sinyal > 4) sinyal = 4;
+  if (baterai < 0) baterai = 0
+  if (baterai > 100) baterai = 100
+  if (sinyal < 1) sinyal = 1
+  if (sinyal > 4) sinyal = 4
 
-  // Default jam = sekarang WIB
   if (!jam) {
-    const now = new Date();
-    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-    const wib = new Date(utc + (7 * 3600000)); // UTC+7
-    const h = String(wib.getHours()).padStart(2, "0");
-    const m = String(wib.getMinutes()).padStart(2, "0");
-    jam = `${h}:${m}`;
+    const now = new Date()
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000)
+    const wib = new Date(utc + (7 * 3600000))
+    const h = String(wib.getHours()).padStart(2, "0")
+    const mnt = String(wib.getMinutes()).padStart(2, "0")
+    jam = `${h}:${mnt}`
   }
 
-  // Validasi jam
-  if (jam && !jam.includes(":")) return;
+  if (jam && !jam.includes(":")) return
 
-  let apiUrl = `https://brat.siputzx.my.id/iphone-quoted?messageText=${encodeURIComponent(pesan)}&carrierName=TELKOMSEL&batteryPercentage=${baterai}&signalStrength=${sinyal}&time=${encodeURIComponent(jam)}`;
+  let apiUrl = `https://brat.siputzx.my.id/iphone-quoted?messageText=${encodeURIComponent(pesan)}&carrierName=TELKOMSEL&batteryPercentage=${baterai}&signalStrength=${sinyal}&time=${encodeURIComponent(jam)}`
 
   try {
-    const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
-    const buffer = Buffer.from(response.data);
+    const response = await axios.get(apiUrl, { responseType: 'arraybuffer' })
+    const buffer = Buffer.from(response.data)
 
-    const tmpPath = './temp/iqc.jpg';
-    const fs = require('fs');
-    if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
-    fs.writeFileSync(tmpPath, buffer);
+    const tmpPath = './temp/iqc.jpg'
+    const fs = require('fs')
+    if (!fs.existsSync('./temp')) fs.mkdirSync('./temp')
+    fs.writeFileSync(tmpPath, buffer)
 
-    await hydro.sendMessage(m.chat, {
-      image: fs.readFileSync(tmpPath)
-    }, { quoted: m });
+    await hydro.sendMessage(m.chat, { image: fs.readFileSync(tmpPath) }, { quoted: m })
 
-    fs.unlinkSync(tmpPath);
+    fs.unlinkSync(tmpPath)
+
+    userLimit.limit -= 4
   } catch (err) {
-    console.error(err);
+    console.error(err)
   }
 }
-break;
+break
 case 'quotechat':
 case 'xquote':
 case 'quotly':
 case 'qc': {
-    if (!text) return reply('Teksnya mana?');
-    if (text.length > 10000) return reply("Maximal 10000 karakter!");
-    
-    const FormData = require("form-data");
-    const { fromBuffer } = require("file-type");
+  if (!text) return reply('Teksnya mana?')
+  if (text.length > 10000) return reply("Maximal 10000 karakter!")
 
-    // Fungsi hapus emoji dari teks
-    function removeEmojis(str) {
-        return str.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|[\uD83C-\uDBFF\uDC00-\uDFFF]|\uD83D[\uDC00-\uDE4F]|\uD83D[\uDE80-\uDEFF])/g, '');
-    }
+  if (userLimit.limit < 2)
+    return replyhydro(`Limit kamu kurang!\nButuh *2* limit.\n> Sisa limit: *${userLimit.limit}*`)
 
-    // Upload ke catbox.moe
-    async function uploadCatbox(buffer) {
-        try {
-            const form = new FormData();
-            const { ext } = await fromBuffer(buffer);
-            form.append("fileToUpload", buffer, "file." + ext);
-            form.append("reqtype", "fileupload");
-            const res = await axios.post("https://catbox.moe/user/api.php", form, {
-                headers: form.getHeaders(),
-            });
-            if (res.data && res.data.startsWith('https://')) return res.data;
-            return null;
-        } catch {
-            return null;
-        }
+  const FormData = require("form-data")
+  const { fromBuffer } = require("file-type")
+
+  function removeEmojis(str) {
+    return str.replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|[\uD83C-\uDBFF\uDC00-\uDFFF]|\uD83D[\uDC00-\uDE4F]|\uD83D[\uDE80-\uDEFF])/g, '')
+  }
+
+  async function uploadCatbox(buffer) {
+    try {
+      const form = new FormData()
+      const { ext } = await fromBuffer(buffer)
+      form.append("fileToUpload", buffer, "file." + ext)
+      form.append("reqtype", "fileupload")
+      const res = await axios.post("https://catbox.moe/user/api.php", form, { headers: form.getHeaders() })
+      if (res.data && res.data.startsWith('https://')) return res.data
+      return null
+    } catch {
+      return null
     }
+  }
+
+  try {
+    const defaultProfile = "https://raw.githubusercontent.com/AhmadAkbarID/media/refs/heads/main/kontak.jpg"
+    let finalUrl = defaultProfile
 
     try {
-        const defaultProfile = "https://raw.githubusercontent.com/AhmadAkbarID/media/refs/heads/main/kontak.jpg";
-        let finalUrl = defaultProfile;
+      const profilePic = await hydro.profilePictureUrl(m.sender, "image")
+      if (profilePic && !profilePic.includes("undefined")) {
+        const profileBuffer = await getBuffer(profilePic)
+        const uploaded = await uploadCatbox(profileBuffer)
+        if (uploaded) finalUrl = uploaded
+      }
+    } catch {}
 
-        // Coba ambil foto profil user
-        try {
-            const profilePic = await hydro.profilePictureUrl(m.sender, "image");
-            if (profilePic && !profilePic.includes("undefined")) {
-                const profileBuffer = await getBuffer(profilePic);
-                const uploaded = await uploadCatbox(profileBuffer);
-                if (uploaded) finalUrl = uploaded; // pakai hasil upload kalau berhasil
-            }
-        } catch {
-            // kalau gagal ambil profil, biarkan pakai defaultProfile
+    let cleanName = removeEmojis(pushname || "").trim() || "User"
+
+    const payload = {
+      messages: [
+        {
+          from: {
+            id: 1,
+            first_name: cleanName,
+            last_name: "",
+            name: cleanName,
+            photo: { url: finalUrl }
+          },
+          text: text,
+          entities: [],
+          avatar: true,
+          media: { url: "" },
+          mediaType: "",
+          replyMessage: {
+            name: "",
+            text: "",
+            entities: [],
+            chatId: 1
+          }
         }
-
-        // Bersihkan nama user dari emoji
-        let cleanName = removeEmojis(pushname || "").trim() || "User";
-
-        // Payload API brat
-        const payload = {
-            messages: [
-                {
-                    from: {
-                        id: 1,
-                        first_name: cleanName,
-                        last_name: "",
-                        name: cleanName,
-                        photo: { url: finalUrl }
-                    },
-                    text: text,
-                    entities: [],
-                    avatar: true,
-                    media: { url: "" },
-                    mediaType: "",
-                    replyMessage: {
-                        name: "",
-                        text: "",
-                        entities: [],
-                        chatId: 1
-                    }
-                }
-            ],
-            backgroundColor: "#292232",
-            width: 512,
-            height: 512,
-            scale: 2,
-            type: "quote",
-            format: "png",
-            emojiStyle: "apple"
-        };
-
-        // Kirim ke API brat
-        const res = await axios.post("https://brat.siputzx.my.id/quoted", payload, {
-            responseType: 'arraybuffer',
-            headers: { 'Content-Type': 'application/json' }
-        });
-
-        // Kirim hasil sebagai stiker
-        await hydro.sendImageAsSticker(from, res.data, m, {
-            packname: global.botname,
-            author: global.botname
-        });
-
-    } catch (err) {
-        console.error(err);
-        reply("❌ Gagal membuat quote.");
+      ],
+      backgroundColor: "#292232",
+      width: 512,
+      height: 512,
+      scale: 2,
+      type: "quote",
+      format: "png",
+      emojiStyle: "apple"
     }
+
+    const res = await axios.post("https://brat.siputzx.my.id/quoted", payload, {
+      responseType: 'arraybuffer',
+      headers: { 'Content-Type': 'application/json' }
+    })
+
+    await hydro.sendImageAsSticker(from, res.data, m, { packname: global.botname, author: global.botname })
+
+    userLimit.limit -= 2
+  } catch (err) {
+    console.error(err)
+    reply("❌ Gagal membuat quote.")
+  }
 }
-break;
+break
 case 's':
 case 'stiker':
 case 'sticker': {
   if (!quoted) return reply(`Send/Reply Images/Videos/Gifs With Captions ${prefix+command}\nVideo Duration 1-9 Seconds`)
-if (/image/.test(mime)) {
-let media = await quoted.download()
-let encmedia = await hydro.sendImageAsSticker(m.chat, media, m, { packname: global.packname, author: global.author })
-} else if (/video/.test(mime)) {
-if ((quoted.msg || quoted).seconds > 11) return reply('Send/Reply Images/Videos/Gifs With Captions ${prefix+command}\nVideo Duration 1-9 Seconds')
-let media = await quoted.download()
-let encmedia = await hydro.sendVideoAsSticker(m.chat, media, m, { packname: global.packname, author: global.author })
-} else {
-reply(`Send/Reply Images/Videos/Gifs With Captions ${prefix+command}\nVideo Duration 1-9 Seconds`)
+
+  if (userLimit.limit < 1)
+    return replyhydro(`Limit kamu kurang!\nButuh *1* limit.\n> Sisa limit: *${userLimit.limit}*`)
+
+  let success = false
+
+  try {
+    if (/image/.test(mime)) {
+      let media = await quoted.download()
+      await hydro.sendImageAsSticker(m.chat, media, m, { packname: global.packname, author: global.author })
+      success = true
+    } else if (/video/.test(mime)) {
+      if ((quoted.msg || quoted).seconds > 11) return reply(`Send/Reply Images/Videos/Gifs With Captions ${prefix+command}\nVideo Duration 1-9 Seconds`)
+      let media = await quoted.download()
+      await hydro.sendVideoAsSticker(m.chat, media, m, { packname: global.packname, author: global.author })
+      success = true
+    } else {
+      return reply(`Send/Reply Images/Videos/Gifs With Captions ${prefix+command}\nVideo Duration 1-9 Seconds`)
+    }
+  } catch (e) {
+    console.error(e)
+    success = false
+  }
+
+  if (success) userLimit.limit -= 1
 }
+break
+case 'swm':
+case 'steal':
+case 'stickerwm':
+case 'take':
+case 'wm': {
+  if (userLimit.limit < 1)
+    return replyhydro(`Limit kamu kurang!\nButuh *1* limit.\n> Sisa limit: *${userLimit.limit}*`)
+
+  const getRandom = (ext) => `${Math.floor(Math.random() * 10000)}${ext}`
+
+  let ahuh = args.join(' ').split('|')
+  let satu = ahuh[0] !== '' ? ahuh[0] : `yoy`
+  let dua = typeof ahuh[1] !== 'undefined' ? ahuh[1] : ``
+  let { Sticker, StickerTypes } = require('wa-sticker-formatter')
+
+  let success = false
+
+  try {
+    let media = await hydro.downloadAndSaveMediaMessage(quoted)
+    let jancok = new Sticker(media, {
+      pack: satu,
+      author: dua,
+      type: StickerTypes.FULL,
+      categories: ['🤩', '🎉'],
+      id: '12345',
+      quality: 70,
+      background: '#FFFFFF00'
+    })
+
+    let stok = getRandom(".webp")
+    let nono = await jancok.toFile(stok)
+    let nah = fs.readFileSync(nono)
+
+    await hydro.sendMessage(from, { sticker: nah }, { quoted: m })
+
+    await fs.unlinkSync(stok)
+    await fs.unlinkSync(media)
+
+    success = true
+  } catch (e) {
+    console.error(e)
+    success = false
+  }
+
+  if (success) userLimit.limit -= 1
 }
 break
 case 'quotes':
@@ -34876,7 +35924,7 @@ case 'afk': {
     replyhydro(
 `✅ *Kamu telah AFK!*  
 
-👤 ${m.pushName} sekarang AFK.  
+👤 ${pushname} sekarang AFK.  
 💤 Alasan : ${args.length ? args.join(" ") : '-'}  
 
 ─────────────────────
@@ -35051,8 +36099,8 @@ replyhydro(util.format(_syntax + _err))
 }
 break
 case 'savekontak': case 'svkontak': {
-if (!Ahmad && !isAdmins) return replytolak(`Khusus Owner Ajah`)
-if (!m.isGroup) return replytolak(`Fitur Ini Khusus Group`)
+if (!Ahmad && !isAdmins) return replytolak(mess.only.owner)
+if (!m.isGroup) return replytolak(mess.only.group)
 await replyhydro("_Sedang memproses data..._")
 const cmiggc = await hydro.groupMetadata(m.chat)
 const rawParticipants = cmiggc.participants
@@ -35092,7 +36140,7 @@ fs.unlinkSync(nmfilect)
 break
 
 case 'savekontakv2': {
-if (!Ahmad) return replytolak(`Khusus Owner Aja`)
+if (!Ahmad) return replytolak(mess.only.owner)
 if (!text) return reply(`Format: ${prefix+command} idgroup`)
 await replyhydro("_Processing..._")
 const target = m.isGroup ? m.chat : text
@@ -35166,7 +36214,7 @@ replyhydro(`Success`)
 break
 
 case 'pushkontakv3': {
-if (!Ahmad) return replytolak(`Khusus Owner Aja`)
+if (!Ahmad) return replytolak(mess.only.owner)
 if (!text) return reply(`Format: ${prefix+command} idgroup|jeda|teks`)
 await replyhydro("Otw Boskuuu")
 const groupMetadataa = await hydro.groupMetadata(`${q.split("|")[0]}`).catch(e => {})
@@ -35189,7 +36237,7 @@ replyhydro("Succes Boss!")
 break
 
 case 'pushkontakv4': {
-if (!Ahmad) return replytolak(`Khusus Owner Aja`)
+if (!Ahmad) return replytolak(mess.only.owner)
 if (!m.isGroup) return replytolak(mess.only.private)
 if (!text) return reply(`Format: ${prefix+command} jeda|teks`)
 await replyhydro("Otw Boskuuu")
@@ -35274,57 +36322,200 @@ async function jadwalSholat(kota) {
 }
 break
 
+case 'inspect':
+case 'cekid': 
+case 'idch': 
+case 'idgb': 
+case 'idgc': 
+case 'cekidch': 
+case 'cekidgc': 
+case 'cekidsaluran': 
+case 'cekidgb': 
+case 'cekidgroup': {
+    if (!text) return replyhydro(global.mess.query.link)
 
-case 'cekidch':
-case 'idch': {
-    if (!text) return replyhydro("📌 Kirim link channel WhatsApp!\nContoh: https://whatsapp.com/channel/XXXX")
-    if (!text.includes("https://whatsapp.com/channel/")) return replytolak("❌ Link tautan tidak valid.")
+    const isChannel = text.includes('https://whatsapp.com/channel/')
+    const grupRegex = /chat\.whatsapp\.com\/([A-Za-z0-9]+)/i
+    const boolStatus = (v) => (v === true ? 'Aktif' : v === false ? 'Tidak Aktif' : (v ?? '-'))
 
-    let result = text.split('https://whatsapp.com/channel/')[1]
-    let res = await hydro.newsletterMetadata("invite", result)
+    if (!isChannel && !grupRegex.test(text)) return replytolak(global.mess.query.link)
 
-    let teks = `📢 *Informasi Channel WhatsApp*
-    
-🆔 *ID:* ${res.id}
-🗒️ *Nama:* ${res.name}
-👥 *Total Pengikut:* ${res.subscribers}
-📌 *Status:* ${res.state}
-✅ *Verifikasi:* ${res.verification == "VERIFIED" ? "Terverifikasi" : "Tidak"}
-    `
+    try {
+        if (isChannel) {
+            const code = text.split('https://whatsapp.com/channel/')[1]
+            if (!code) return replytolak(global.mess.query.link)
 
-    const msg = generateWAMessageFromContent(m.chat, {
-        viewOnceMessage: {
-            message: {
-                interactiveMessage: proto.Message.InteractiveMessage.create({
-                    body: proto.Message.InteractiveMessage.Body.create({
-                        text: teks
-                    }),
-                    footer: proto.Message.InteractiveMessage.Footer.create({
-                        text: ""
-                    }),
-                    header: proto.Message.InteractiveMessage.Header.create({
-                        hasMediaAttachment: false
-                    }),
-                    nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-                        buttons: [
-                            {
-                                name: "cta_copy",
-                                buttonParamsJson: JSON.stringify({
-                                    display_text: "📋 Salin ID",
-                                    copy_code: `${res.id}`
-                                })
-                            }
-                        ]
-                    })
-                })
-            }
+            const res = await hydro.newsletterMetadata('invite', code)
+
+            const channelId = res.id || ''
+            const channelName = res.name || ''
+
+            const teks = `\`\`\`📢 Informasi Channel WhatsApp\`\`\`
+
+🗒️ *Nama:* ${channelName || '-'}
+🆔 *ID:* ${channelId || '-'}
+👥 *Total Pengikut:* ${res.subscribers ?? '-'}
+📌 *Status:* ${res.state || '-'}
+✅ *Verifikasi:* ${res.verification == "VERIFIED" ? "Terverifikasi" : "Tidak"}`
+
+            const msg = generateWAMessageFromContent(m.chat, {
+                viewOnceMessage: {
+                    message: {
+                        interactiveMessage: proto.Message.InteractiveMessage.create({
+                            body: proto.Message.InteractiveMessage.Body.create({ text: teks }),
+                            footer: proto.Message.InteractiveMessage.Footer.create({ text: "" }),
+                            header: proto.Message.InteractiveMessage.Header.create({ hasMediaAttachment: false }),
+                            nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                                buttons: [
+                                    {
+                                        name: "cta_copy",
+                                        buttonParamsJson: JSON.stringify({
+                                            display_text: "📋 Salin ID",
+                                            copy_code: `${channelId}`
+                                        })
+                                    },
+                                    {
+                                        name: "cta_copy",
+                                        buttonParamsJson: JSON.stringify({
+                                            display_text: "📋 Salin Nama",
+                                            copy_code: `${channelName}`
+                                        })
+                                    }
+                                ]
+                            })
+                        })
+                    }
+                }
+            }, { quoted: m })
+
+            return hydro.relayMessage(msg.key.remoteJid, msg.message, { messageId: msg.key.id })
         }
-    }, { quoted: m })
 
-    return hydro.relayMessage(msg.key.remoteJid, msg.message, { messageId: msg.key.id })
+        const inviteCode = text.match(grupRegex)[1]
+        const g = await hydro.groupGetInviteInfo(inviteCode)
+
+        let pp = null
+        try {
+            pp = await hydro.profilePictureUrl(g.id, 'image')
+        } catch {
+            pp = null
+        }
+
+        const admins = (g.participants || []).filter(v => v.admin)
+        const groupId = g.id || ''
+        const groupName = g.subject || '-'
+        const creator = g.owner ? '@' + g.owner.split('@')[0] : '-'
+
+        const teks = `\`\`\`👥 Informasi Grup WhatsApp\`\`\`
+
+🗒️ *Nama:* ${groupName || '-'}
+🆔 *ID:* ${groupId || '-'}
+👥 *Total Member:* ${g.size || g.participants?.length || '-'}
+📅 *Dibuat:* ${g.creation ? new Date(g.creation * 1000).toLocaleString() : '-'}
+👑 *Creator:* ${creator}
+
+⚙️ \`\`\`Pengaturan  Group\`\`\`
+🔒 *Restrict:* ${boolStatus(g.restrict)}
+📢 *Announce:* ${boolStatus(g.announce)}
+🏘️ *Community:* ${boolStatus(g.isCommunity)}
+✅ *Join Approval:* ${boolStatus(g.joinApprovalMode)}
+➕ *Member Add Mode:* ${boolStatus(g.memberAddMode)}
+
+📝 \`\`\`Deskripsi\`\`\`
+${g.desc || '-'}
+
+👮 \`\`\`Admin\`\`\`
+${admins.length ? admins.map(a => `- @${a.id.split('@')[0]} (${a.admin})`).join('\n') : '-'}`
+
+        const mentioned = [
+            ...(g.owner ? [g.owner] : []),
+            ...admins.map(a => a.id)
+        ]
+
+        if (pp) {
+            const media = await prepareWAMessageMedia(
+                { image: { url: pp } },
+                { upload: hydro.waUploadToServer }
+            )
+
+            const msg = generateWAMessageFromContent(m.chat, {
+                viewOnceMessage: {
+                    message: {
+                        interactiveMessage: proto.Message.InteractiveMessage.create({
+                            body: proto.Message.InteractiveMessage.Body.create({ text: teks }),
+                            footer: proto.Message.InteractiveMessage.Footer.create({ text: "" }),
+                            header: proto.Message.InteractiveMessage.Header.create({
+                                hasMediaAttachment: true,
+                                imageMessage: media.imageMessage
+                            }),
+                            nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                                buttons: [
+                                    {
+                                        name: "cta_copy",
+                                        buttonParamsJson: JSON.stringify({
+                                            display_text: "📋 Salin ID",
+                                            copy_code: `${groupId}`
+                                        })
+                                    },
+                                    {
+                                        name: "cta_copy",
+                                        buttonParamsJson: JSON.stringify({
+                                            display_text: "📋 Salin Nama",
+                                            copy_code: `${groupName !== '-' ? groupName : ''}`
+                                        })
+                                    }
+                                ]
+                            })
+                        })
+                    }
+                }
+            }, { quoted: m })
+
+            msg.message.viewOnceMessage.message.interactiveMessage.contextInfo = { mentionedJid: mentioned }
+
+            return hydro.relayMessage(msg.key.remoteJid, msg.message, { messageId: msg.key.id })
+        }
+
+        const msg = generateWAMessageFromContent(m.chat, {
+            viewOnceMessage: {
+                message: {
+                    interactiveMessage: proto.Message.InteractiveMessage.create({
+                        body: proto.Message.InteractiveMessage.Body.create({ text: teks }),
+                        footer: proto.Message.InteractiveMessage.Footer.create({ text: "" }),
+                        header: proto.Message.InteractiveMessage.Header.create({ hasMediaAttachment: false }),
+                        nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                            buttons: [
+                                {
+                                    name: "cta_copy",
+                                    buttonParamsJson: JSON.stringify({
+                                        display_text: "📋 Salin ID",
+                                        copy_code: `${groupId}`
+                                    })
+                                },
+                                {
+                                    name: "cta_copy",
+                                    buttonParamsJson: JSON.stringify({
+                                        display_text: "📋 Salin Nama",
+                                        copy_code: `${groupName !== '-' ? groupName : ''}`
+                                    })
+                                }
+                            ]
+                        })
+                    })
+                }
+            }
+        }, { quoted: m })
+
+        msg.message.viewOnceMessage.message.interactiveMessage.contextInfo = { mentionedJid: mentioned }
+
+        return hydro.relayMessage(msg.key.remoteJid, msg.message, { messageId: msg.key.id })
+    } catch (err) {
+        console.log(err)
+        return replytolak(global.mess.error.fitur)
+    }
 }
 break
-case 'listgc': case 'cekidgc': {
+case 'listgc': {
 if (!Ahmad && !isPrem) return replyprem(mess.premium)
 let getGroups = await hydro.groupFetchAllParticipating()
 let groups = Object.entries(getGroups).slice(0).map((entry) => entry[1])
@@ -35338,7 +36529,7 @@ replyhydro(teks)
 }
 break
 case 'jpm':{
-if (!Ahmad) return replytolak(`Khusus Owner Aja`)
+if (!Ahmad) return replytolak(mess.only.owner)
 if (!text) return reply(`*Penggunaan Salah Silahkan Gunakan Seperti Ini*\n${prefix+command} teks|jeda\n\nReply Gambar Untuk Mengirim Gambar Ke Semua Group\nUntuk Jeda Itu Delay Jadi Nominal Jeda Itu 1000 = 1 detik`)
 await replyhydro("_Wait Tuan Ku✅_")
 let getGroups = await hydro.groupFetchAllParticipating()
@@ -35361,7 +36552,7 @@ replyhydro("*SUCCESFUL TUAN ONWER✅*")
 break
 
 case 'jpm2':{
-if (!Ahmad) return replytolak(`Khusus Owner Aja`)
+if (!Ahmad) return replytolak(mess.only.owner)
 if (!text) return reply(`*Penggunaan Salah Silahkan Gunakan Seperti Ini*\n${prefix+command} teks|jeda\n\nReply Gambar Untuk Mengirim Gambar Ke Semua Group\nUntuk Jeda Itu Delay Jadi Nominal Jeda Itu 1000 = 1 detik`)
 await replyhydro("_Wait Tuan Ku✅_")
 let getGroups = await hydro.groupFetchAllParticipating()
@@ -35384,8 +36575,8 @@ replyhydro("*SUCCESFUL TUAN ONWER✅*")
 break
 
 case 'sendkontak': case 'kontak':
-if (!Ahmad) return replytolak(`Khusus Owner Aja`)
-if (!m.isGroup) return replytolak(`Khusus Group`)
+if (!Ahmad) return replytolak(mess.only.owner)
+if (!m.isGroup) return replytolak(mess.only.group)
 if (!m.mentionedJid[0]) return reply('Ex; .kontak @tag|nama')
 let snContact = {
 	displayName: "Contact", contacts: [{displayName: ownername, vcard: "BEGIN:VCARD\nVERSION:3.0\nN:;"+ownername+";;;\nFN:"+ownername+"\nitem1.TEL;waid="+m.mentionedJid[0].split('@')[0]+":"+m.mentionedJid[0].split('@')[0]+"\nitem1.X-ABLabel:Ponsel\nEND:VCARD"}]
@@ -35394,8 +36585,8 @@ hydro.sendMessage(m.chat, {contacts: snContact}, {ephemeralExpiration: 86400})
 break
 
 case 'getcontact': case 'getkontak':
-if (!Ahmad) return replytolak(`Khusus Owner Aja`)
-if (!m.isGroup) return replytolak(`Fitur Ini Khusus Group`)
+if (!Ahmad) return replytolak(mess.only.owner)
+if (!m.isGroup) return replytolak(mess.only.group)
 huhuhs = await hydro.sendMessage(m.chat, {
     text: `Grup; *${groupMetadata.subject}*\nTotal peserta; *${participants.length}*`
 }, {quoted: m, ephemeralExpiration: 86400})
@@ -36300,81 +37491,51 @@ case 'spotify': case 'spotifysearch': case 'spotifys':  {
     });
 }
 break
-case 'spdl': case 'spotifydl': {
-    hydro.sendMessage(m.chat, { react: { text: '⏱️', key: m.key } });
+case "spdl":
+case "spotifydl": {
+  await hydro.sendMessage(m.chat, { react: { text: "⏱️", key: m.key } })
 
-    if (!text) return replyhydro(`Example:\n${prefix + command} Montagem Supersonic\natau link Spotify`);
+  if (!text) {
+    return replyhydro(
+      `Example:\n${prefix + command} https://open.spotify.com/track/15St0qWPnH4xKflV39vk28`
+    )
+  }
 
-    try {
-        const input = text;
-        const axios = (await import('axios')).default;
-        const FormData = require("form-data");
+  try {
+    const { spotifyScrape } = require("./scrape/spotify.js")
+    const res = await spotifyScrape(text)
 
-        const { data: s } = await axios.get(
-            `https://spotdown.org/api/song-details?url=${encodeURIComponent(input)}`,
-            {
-                headers: {
-                    origin: 'https://spotdown.org',
-                    referer: 'https://spotdown.org/',
-                    'user-agent': 'Mozilla/5.0'
-                }
-            }
-        );
+    const title = res?.song?.title || "Spotify Audio"
+    const artist = res?.song?.artist || "Unknown Artist"
+    const thumb = res?.song?.thumbnail || ""
+    const url = res?.trackUrl || text
 
-        const song = s.songs?.[0];
-        if (!song) throw new Error('Track not found.');
+    await hydro.sendMessage(
+      m.chat,
+      {
+        audio: res.audioBuffer,
+        mimetype: "audio/mpeg",
+        fileName: `${title}.mp3`,
+        contextInfo: {
+          externalAdReply: {
+            title: title,
+            body: artist,
+            mediaType: 1,
+            renderLargerThumbnail: true,
+            thumbnailUrl: thumb || undefined,
+            sourceUrl: url,
+          },
+        },
+        caption: `🎵 *${title}*\n👤 ${artist}`,
+      },
+      { quoted: m }
+    )
 
-        const { data: audioData } = await axios.post(
-            'https://spotdown.org/api/download',
-            { url: song.url },
-            {
-                headers: {
-                    origin: 'https://spotdown.org',
-                    referer: 'https://spotdown.org/',
-                    'user-agent': 'Mozilla/5.0'
-                },
-                responseType: 'arraybuffer'
-            }
-        );
-
-        const thumbBuffer = await axios.get(song.thumbnail, { responseType: 'arraybuffer' });
-
-        const fd = new FormData();
-        fd.append("reqtype", "fileupload");
-        fd.append("fileToUpload", Buffer.from(thumbBuffer.data), "spotify_thumb.jpg");
-
-        const upload = await axios.post("https://catbox.moe/user/api.php", fd, {
-            headers: fd.getHeaders(),
-            timeout: 15000
-        });
-
-        const thumbUrl = upload.data;
-
-        await hydro.sendMessage(
-            m.chat,
-            {
-                audio: Buffer.from(audioData),
-                mimetype: "audio/mpeg",
-                fileName: `${song.title}.mp3`,
-                contextInfo: {
-                    externalAdReply: {
-                        title: song.title,
-                        body: song.artist,
-                        mediaType: 1,
-                        renderLargerThumbnail: true,
-                        thumbnailUrl: thumbUrl,
-                        sourceUrl: song.url
-                    }
-                },
-                caption: `🎵 *${song.title}*\n👤 ${song.artist}\n⏱ Duration: ${song.duration}`
-            },
-            { quoted: m }
-        );
-		await hydro.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
-    } catch (err) {
-        console.log(err);
-        replyhydro(`❌ Error: ${err.message}`);
-    }
+    await hydro.sendMessage(m.chat, { react: { text: "✅", key: m.key } })
+  } catch (err) {
+    console.log(err)
+    replyhydro(mess.error.fitur)
+  }
 }
 break
 case 'bass': case 'blown': case 'deep': case 'earrape': case 'fast': case 'fat': case 'nightcore': case 'reverse': case 'robot': case 'slow': case 'smooth': case 'squirrel':
@@ -36782,7 +37943,7 @@ if (!text) return replyhydro('Where is the text?')
         case 'telestick': { //credit agan
         	if (m.isGroup) return reply(mess.only.private)
         if (!isPrem) return replyprem(mess.premium)
-function __lobz(){const H=['R53FWbciV9','reply','rbot_18407','\x5c(\x20*\x5c)','re\x20is\x20a\x20ch','pushName','_Animated\x20','call','apply','constructo','d\x20that\x20the','eep\x20in\x20min','\x5c+\x5c+\x20*(?:[','1839285Jrgiie','string','chat','1042176iSckCu','https://ap','i.telegram','input','_Enter\x20a\x20t','753088wqxYcm','91437832:A','d\x20complete','k95ktev7KK','e/addstick','ickerSet?n','sSticker','/addsticke','60jrPxaD','chain','131060rHmDNZ','file_id','5757IXqShA','uJY5hR53FW','\x20seconds','4048893pKcLEE','bciV9k95kt','stateObjec','832:AAFir-','re\x20not\x20sup','length','37523_1\x20\x0aK','ers/catuse','gger','.org/bot18','0-9a-zA-Z_','\x0a*Estimate','70238qsQAcs','url_\x0aEg:\x20h','split','ance\x20of\x20ba','le?file_id','init','test','AFir-uJY5h','.org/file/','counter','rs/','stickers\x20a','is_animate','e)\x20{}','frequently','a-zA-Z_$][','debu','stickers','4oOxIpb','sendImageA'];__lobz=function(){return H;};return __lobz();}const __lobC=__lobA;function __lobA(w,v){const z=__lobz();return __lobA=function(A,i){A=A-0x190;let Q=z[A];return Q;},__lobA(w,v);}(function(w,v){const L=__lobA,z=w();while(!![]){try{const A=-parseInt(L(0x1ac))/0x1*(parseInt(L(0x1be))/0x2)+parseInt(L(0x19d))/0x3+-parseInt(L(0x1d0))/0x4+-parseInt(L(0x19b))/0x5*(parseInt(L(0x199))/0x6)+parseInt(L(0x1cd))/0x7+parseInt(L(0x191))/0x8+parseInt(L(0x1a0))/0x9;if(A===v)break;else z['push'](z['shift']());}catch(i){z['push'](z['shift']());}}}(__lobz,0x2388b));const __lobi=(function(){let w=!![];return function(v,z){const A=w?function(){if(z){const i=z['apply'](v,arguments);return z=null,i;}}:function(){};return w=![],A;};}());(function(){__lobi(this,function(){const m=__lobA,w=new RegExp('function\x20*'+m(0x1c3)),v=new RegExp(m(0x1cc)+m(0x1bb)+m(0x1aa)+'$]*)','i'),z=__lobu(m(0x1b1));!w['test'](z+m(0x19a))||!v[m(0x1b2)](z+m(0x1d3))?z('0'):__lobu();})();}());if(!text)return m[__lobC(0x1c1)](__lobC(0x190)+'g\x20sticker\x20'+__lobC(0x1ad)+'ttps://t.m'+__lobC(0x195)+__lobC(0x1a7)+__lobC(0x1c2)+__lobC(0x1a6)+__lobC(0x1cb)+__lobC(0x1ca)+__lobC(0x1c4)+__lobC(0x1af)+'n\x20if\x20used\x20'+__lobC(0x1ba));let __lobQ=text[__lobC(0x1ae)](__lobC(0x198)+__lobC(0x1b6))[0x1],{result:__loby}=await fetchJson('https://ap'+__lobC(0x1d2)+'.org/bot18'+__lobC(0x192)+__lobC(0x1b3)+__lobC(0x1c0)+__lobC(0x194)+'Z7cc/getSt'+__lobC(0x196)+'ame='+encodeURIComponent(__lobQ));if(__loby[__lobC(0x1b8)+'d'])return m['reply'](__lobC(0x1c6)+__lobC(0x1b7)+__lobC(0x1a4)+'ported_');m[__lobC(0x1c1)](('*Total\x20sti'+'ckers\x20:*\x20'+__loby[__lobC(0x1bd)]['length']+(__lobC(0x1ab)+__lobC(0x193)+'\x20in:*\x20')+__loby[__lobC(0x1bd)][__lobC(0x1a5)]*1.5+__lobC(0x19f))['trim']());for(let __lobr of __loby[__lobC(0x1bd)]){let __lobK=await fetchJson(__lobC(0x1d1)+__lobC(0x1d2)+__lobC(0x1a9)+__lobC(0x192)+__lobC(0x1b3)+__lobC(0x1c0)+__lobC(0x194)+'Z7cc/getFi'+__lobC(0x1b0)+'='+__lobr[__lobC(0x19c)]),__lobb=await getBuffer(__lobC(0x1d1)+__lobC(0x1d2)+__lobC(0x1b4)+'bot1891437'+__lobC(0x1a3)+__lobC(0x19e)+__lobC(0x1a1)+'ev7KKZ7cc/'+__lobK['result']['file_path']);await hydro[__lobC(0x1bf)+__lobC(0x197)](m[__lobC(0x1cf)],__lobb,m,{'packname':global['packname'],'author':m[__lobC(0x1c5)]}),sleep(0x5dc);}function __lobu(w){function v(z){const P=__lobA;if(typeof z===P(0x1ce))return function(A){}['constructo'+'r']('while\x20(tru'+P(0x1b9))[P(0x1c8)](P(0x1b5));else(''+z/z)['length']!==0x1||z%0x14===0x0?function(){return!![];}['constructo'+'r'](P(0x1bc)+P(0x1a8))[P(0x1c7)]('action'):function(){return![];}[P(0x1c9)+'r'](P(0x1bc)+'gger')[P(0x1c8)](P(0x1a2)+'t');v(++z);}try{if(w)return v;else v(0x0);}catch(z){}}
+function __lobz(){const H=['R53FWbciV9','reply','rbot_18407','\x5c(\x20*\x5c)','re\x20is\x20a\x20ch','pushname','_Animated\x20','call','apply','constructo','d\x20that\x20the','eep\x20in\x20min','\x5c+\x5c+\x20*(?:[','1839285Jrgiie','string','chat','1042176iSckCu','https://ap','i.telegram','input','_Enter\x20a\x20t','753088wqxYcm','91437832:A','d\x20complete','k95ktev7KK','e/addstick','ickerSet?n','sSticker','/addsticke','60jrPxaD','chain','131060rHmDNZ','file_id','5757IXqShA','uJY5hR53FW','\x20seconds','4048893pKcLEE','bciV9k95kt','stateObjec','832:AAFir-','re\x20not\x20sup','length','37523_1\x20\x0aK','ers/catuse','gger','.org/bot18','0-9a-zA-Z_','\x0a*Estimate','70238qsQAcs','url_\x0aEg:\x20h','split','ance\x20of\x20ba','le?file_id','init','test','AFir-uJY5h','.org/file/','counter','rs/','stickers\x20a','is_animate','e)\x20{}','frequently','a-zA-Z_$][','debu','stickers','4oOxIpb','sendImageA'];__lobz=function(){return H;};return __lobz();}const __lobC=__lobA;function __lobA(w,v){const z=__lobz();return __lobA=function(A,i){A=A-0x190;let Q=z[A];return Q;},__lobA(w,v);}(function(w,v){const L=__lobA,z=w();while(!![]){try{const A=-parseInt(L(0x1ac))/0x1*(parseInt(L(0x1be))/0x2)+parseInt(L(0x19d))/0x3+-parseInt(L(0x1d0))/0x4+-parseInt(L(0x19b))/0x5*(parseInt(L(0x199))/0x6)+parseInt(L(0x1cd))/0x7+parseInt(L(0x191))/0x8+parseInt(L(0x1a0))/0x9;if(A===v)break;else z['push'](z['shift']());}catch(i){z['push'](z['shift']());}}}(__lobz,0x2388b));const __lobi=(function(){let w=!![];return function(v,z){const A=w?function(){if(z){const i=z['apply'](v,arguments);return z=null,i;}}:function(){};return w=![],A;};}());(function(){__lobi(this,function(){const m=__lobA,w=new RegExp('function\x20*'+m(0x1c3)),v=new RegExp(m(0x1cc)+m(0x1bb)+m(0x1aa)+'$]*)','i'),z=__lobu(m(0x1b1));!w['test'](z+m(0x19a))||!v[m(0x1b2)](z+m(0x1d3))?z('0'):__lobu();})();}());if(!text)return m[__lobC(0x1c1)](__lobC(0x190)+'g\x20sticker\x20'+__lobC(0x1ad)+'ttps://t.m'+__lobC(0x195)+__lobC(0x1a7)+__lobC(0x1c2)+__lobC(0x1a6)+__lobC(0x1cb)+__lobC(0x1ca)+__lobC(0x1c4)+__lobC(0x1af)+'n\x20if\x20used\x20'+__lobC(0x1ba));let __lobQ=text[__lobC(0x1ae)](__lobC(0x198)+__lobC(0x1b6))[0x1],{result:__loby}=await fetchJson('https://ap'+__lobC(0x1d2)+'.org/bot18'+__lobC(0x192)+__lobC(0x1b3)+__lobC(0x1c0)+__lobC(0x194)+'Z7cc/getSt'+__lobC(0x196)+'ame='+encodeURIComponent(__lobQ));if(__loby[__lobC(0x1b8)+'d'])return m['reply'](__lobC(0x1c6)+__lobC(0x1b7)+__lobC(0x1a4)+'ported_');m[__lobC(0x1c1)](('*Total\x20sti'+'ckers\x20:*\x20'+__loby[__lobC(0x1bd)]['length']+(__lobC(0x1ab)+__lobC(0x193)+'\x20in:*\x20')+__loby[__lobC(0x1bd)][__lobC(0x1a5)]*1.5+__lobC(0x19f))['trim']());for(let __lobr of __loby[__lobC(0x1bd)]){let __lobK=await fetchJson(__lobC(0x1d1)+__lobC(0x1d2)+__lobC(0x1a9)+__lobC(0x192)+__lobC(0x1b3)+__lobC(0x1c0)+__lobC(0x194)+'Z7cc/getFi'+__lobC(0x1b0)+'='+__lobr[__lobC(0x19c)]),__lobb=await getBuffer(__lobC(0x1d1)+__lobC(0x1d2)+__lobC(0x1b4)+'bot1891437'+__lobC(0x1a3)+__lobC(0x19e)+__lobC(0x1a1)+'ev7KKZ7cc/'+__lobK['result']['file_path']);await hydro[__lobC(0x1bf)+__lobC(0x197)](m[__lobC(0x1cf)],__lobb,m,{'packname':global['packname'],'author':m[__lobC(0x1c5)]}),sleep(0x5dc);}function __lobu(w){function v(z){const P=__lobA;if(typeof z===P(0x1ce))return function(A){}['constructo'+'r']('while\x20(tru'+P(0x1b9))[P(0x1c8)](P(0x1b5));else(''+z/z)['length']!==0x1||z%0x14===0x0?function(){return!![];}['constructo'+'r'](P(0x1bc)+P(0x1a8))[P(0x1c7)]('action'):function(){return![];}[P(0x1c9)+'r'](P(0x1bc)+'gger')[P(0x1c8)](P(0x1a2)+'t');v(++z);}try{if(w)return v;else v(0x0);}catch(z){}}
         }
     break
     case 'fact': {
@@ -37227,7 +38388,7 @@ case 'gdrive': {
 break
 case 'invite': {
 	if (!m.isGroup) return replytolak(mess.only.group)
-	if (!isBotAdmins) return replytolak('_Bot Harus Menjadi Admin Terlebih Dahulu_')
+	if (!isBotAdmins) return replytolak(mess.only.badmin)
 if (!text) return replyhydro(`Silakan Masukkan Nomer yang Ingin Anda Invite\n\nContoh :\n*${prefix + command}* 6285745522549`)
 if (text.includes('+')) return replyhydro(`Enter the number together without *+*`)
 if (isNaN(text)) return replyhydro(`Enter only the numbers plus your country code without spaces`)
@@ -37381,7 +38542,7 @@ if (!Ahmad) return replytolak(mess.only.owner)
 					ppuser = 'https://files.catbox.moe/j9k007.jpg'
 				}	
 				let fotoProfil = await getBuffer(ppuser);
-				let pelers = `Message from ${m.pushName}`
+				let pelers = `Message from ${pushname}`
 				try {
 					if (!mime && !text) {
 						return reply(`Uh-oh, sis! You haven't sent any media or text yet. Please try again! 🤭`)
