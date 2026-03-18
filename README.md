@@ -1,13 +1,13 @@
 ## Information
 
 <div align="center">
-<a href="https://github.com/AhmadAkbarID/hydro/watchers"><img title="Watchers" src="https://img.shields.io/github/watchers/AhmadAkbarID/hydro?label=Watchers&color=green&style=flat-square"></a>
-<a href="https://github.com/AhmadAkbarID/hydro/network/members"><img title="Forks" src="https://img.shields.io/github/forks/AhmadAkbarID/hydro?label=Forks&color=blue&style=flat-square"></a>
-<a href="https://github.com/AhmadAkbarID/hydro/stargazers"><img title="Stars" src="https://img.shields.io/github/stars/AhmadAkbarID/hydro?label=Stars&color=yellow&style=flat-square"></a>
-<a href="https://github.com/AhmadAkbarID/hydro/issues"><img title="Issues" src="https://img.shields.io/github/issues/AhmadAkbarID/hydro?label=Issues&color=success&style=flat-square"></a>
-<a href="https://github.com/AhmadAkbarID/hydro/issues?q=is%3Aissue+is%3Aclosed"><img title="Issues" src="https://img.shields.io/github/issues-closed/AhmadAkbarID/hydro?label=Issues&color=red&style=flat-square"></a>
-<a href="https://github.com/AhmadAkbarID/hydro/pulls"><img title="Pull Request" src="https://img.shields.io/github/issues-pr/AhmadAkbarID/hydro?label=PullRequest&color=success&style=flat-square"></a>
-<a href="https://github.com/AhmadAkbarID/hydro/pulls?q=is%3Apr+is%3Aclosed"><img title="Pull Request" src="https://img.shields.io/github/issues-pr-closed/AhmadAkbarID/hydro?label=PullRequest&color=red&style=flat-square"></a>
+<a href="https://github.com/AhmadAkbarID/hydromd/watchers"><img title="Watchers" src="https://img.shields.io/github/watchers/AhmadAkbarID/hydromd?label=Watchers&color=green&style=flat-square"></a>
+<a href="https://github.com/AhmadAkbarID/hydromd/network/members"><img title="Forks" src="https://img.shields.io/github/forks/AhmadAkbarID/hydromd?label=Forks&color=blue&style=flat-square"></a>
+<a href="https://github.com/AhmadAkbarID/hydromd/stargazers"><img title="Stars" src="https://img.shields.io/github/stars/AhmadAkbarID/hydromd?label=Stars&color=yellow&style=flat-square"></a>
+<a href="https://github.com/AhmadAkbarID/hydromd/issues"><img title="Issues" src="https://img.shields.io/github/issues/AhmadAkbarID/hydromd?label=Issues&color=success&style=flat-square"></a>
+<a href="https://github.com/AhmadAkbarID/hydromd/issues?q=is%3Aissue+is%3Aclosed"><img title="Issues" src="https://img.shields.io/github/issues-closed/AhmadAkbarID/hydromd?label=Issues&color=red&style=flat-square"></a>
+<a href="https://github.com/AhmadAkbarID/hydromd/pulls"><img title="Pull Request" src="https://img.shields.io/github/issues-pr/AhmadAkbarID/hydromd?label=PullRequest&color=success&style=flat-square"></a>
+<a href="https://github.com/AhmadAkbarID/hydromd/pulls?q=is%3Apr+is%3Aclosed"><img title="Pull Request" src="https://img.shields.io/github/issues-pr-closed/AhmadAkbarID/hydromd?label=PullRequest&color=red&style=flat-square"></a>
 </div>
 
 ---
@@ -17,7 +17,7 @@
 I really appreciate the contributions you all have made, therefore I'm displaying them above.
 
 <a href="https://github.com/IbraDecode/socketon/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=AhmadAkbarID/hydro" alt="contributors" />
+  <img src="https://contrib.rocks/image?repo=AhmadAkbarID/hydromd" alt="contributors" />
 </a>
 
 ---
