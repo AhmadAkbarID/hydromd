@@ -44,7 +44,6 @@ modul: {
     qrcodeterminal: require('qrcode-terminal'),
     qrcode: require('qrcode'),
     request: require('request'),
-    scrapePrimbon: require('scrape-primbon'),
     speed: require('performance-now'),
     stream: require('stream'),
     syntaxerror: require('syntax-error'),
