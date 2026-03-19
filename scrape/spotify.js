@@ -1,8 +1,8 @@
 const https = require("https")
 const cheerio = require("cheerio")
 
-const client_id = "eafbc7b558274975be58df0026f22260"
-const client_secret = "79f20d1353954c968fda33a00aba5235"
+const client_id = "f8d0d37c39cc4ed68950b72fa9f85be9"
+const client_secret = "8531d4c9fa6745a0b56b9c8023bd75a0"
 
 function cleanInput(text = "") {
   return String(text || "").trim()
