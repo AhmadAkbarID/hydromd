@@ -1,6 +1,6 @@
 {
   "name": "Hydro-MD",
-  "version": "5.1",
+  "version": "5.2",
   "description": "Hydro Bot Using Baileys",
   "main": "index.js",
   "type": "commonjs",
@@ -119,4 +119,4 @@
     "yt-search": "^2.12.1",
     "zencf": "^1.2.3"
   }
-}
+  }
