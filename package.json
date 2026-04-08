@@ -6,7 +6,7 @@
   "type": "commonjs",
   "repository": {
     "type": "git",
-    "url": "https://github.com/AhmadAkbarID/hydro"
+    "url": "https://github.com/AhmadAkbarID/hydromd"
   },
   "engines": {
     "node": ">=20.0.0"
