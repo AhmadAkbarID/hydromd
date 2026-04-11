@@ -763,7 +763,7 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
         if (unitTime === 'h') duration = valTime * 3600000
         if (unitTime === 'd') duration = valTime * 86400000
 
-        reply(global.mess.wait)
+        replywait(global.mess.wait)
         
         try {
             const g = await hydro.groupGetInviteInfo(inviteCode)
@@ -909,6 +909,22 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
         reply(teks)
     }
         break
+    case 'creategc': {
+        if (!Ahmad) return replytolak(global.mess.only.owner)
+        if (!text) return replyquery(`Masukkan nama grup!\nContoh: *${prefix}creategc Namagrup*`)
+        
+        replywait(global.mess.wait)
+        try {
+            let group = await hydro.groupCreate(text, [m.sender])
+            let code = await hydro.groupInviteCode(group.id)
+            let link = `https://chat.whatsapp.com/${code}`
+            
+            replysuccess(`✅ Berhasil membuat grup!\n\n*${text}*\n${link}`)
+        } catch (e) {
+            replyfail(`❌ Gagal membuat grup!\nDetail: ${e.message || e}`)
+        }
+    }
+        break
 
 // ====== GROUP FEATURE ======
 
@@ -977,7 +993,7 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
             
             let [prov, kota] = text.split(',').map(v => v.trim());
             
-            reply(global.mess.wait);
+            replywait(global.mess.wait);
             try {
                 const { data } = await axios.post('https://equran.id/api/v2/shalat', {
                     provinsi: prov,
@@ -996,6 +1012,104 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
             } catch (e) {
                 replyfail('❌ Gagal menghubungi server jadwal sholat. Pastikan penulisan Provinsi dan Kota benar!');
             }
+        }
+    }
+        break
+    case 'promote': {
+        if (!m.isGroup) return replytolak(global.mess.only.group)
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin)
+        if (!isBotAdmins) return replytolak('❌ Gagal! Bot harus menjadi admin terlebih dahulu.')
+        
+        let users = m.quoted ? [m.quoted.sender] : text ? [text.replace(/[^0-9]/g, '') + '@s.whatsapp.net'] : []
+        if (!users[0]) return replyquery(`Balas pesan orangnya atau ketik nomornya!\nContoh: *${prefix}promote 6281234567890*`)
+        
+        await hydro.groupParticipantsUpdate(m.chat, users, 'promote')
+        replysuccess(`✅ Berhasil menaikkan jabatan anggota menjadi Admin!`)
+    }
+        break
+    case 'demote': {
+        if (!m.isGroup) return replytolak(global.mess.only.group)
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin)
+        if (!isBotAdmins) return replytolak('❌ Gagal! Bot harus menjadi admin terlebih dahulu.')
+        
+        let users = m.quoted ? [m.quoted.sender] : text ? [text.replace(/[^0-9]/g, '') + '@s.whatsapp.net'] : []
+        if (!users[0]) return replyquery(`Balas pesan orangnya atau ketik nomornya!\nContoh: *${prefix}demote 6281234567890*`)
+        
+        await hydro.groupParticipantsUpdate(m.chat, users, 'demote')
+        replysuccess(`✅ Berhasil menurunkan jabatan Admin menjadi Member biasa!`)
+    }
+        break
+    case 'kick': {
+        if (!m.isGroup) return replytolak(global.mess.only.group)
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin)
+        if (!isBotAdmins) return replytolak('❌ Gagal! Bot harus menjadi admin terlebih dahulu.')
+        
+        let users = m.quoted ? [m.quoted.sender] : text ? [text.replace(/[^0-9]/g, '') + '@s.whatsapp.net'] : []
+        if (!users[0]) return replyquery(`Balas pesan orangnya atau ketik nomornya!\nContoh: *${prefix}kick 6281234567890*`)
+        
+        await hydro.groupParticipantsUpdate(m.chat, users, 'remove')
+        replysuccess(`✅ Berhasil mengeluarkan anggota dari grup!`)
+    }
+        break
+    case 'setnamegc': {
+        if (!m.isGroup) return replytolak(global.mess.only.group)
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin)
+        if (!isBotAdmins) return replytolak('❌ Gagal! Bot harus menjadi admin terlebih dahulu.')
+        if (!text) return replyquery(`Masukkan nama grup yang baru!\nContoh: *${prefix}setnamegc Hydro Community*`)
+        
+        await hydro.groupUpdateSubject(m.chat, text)
+        replysuccess(`✅ Berhasil mengubah nama grup menjadi:\n*${text}*`)
+    }
+        break
+    case 'setdescgc': {
+        if (!m.isGroup) return replytolak(global.mess.only.group)
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin)
+        if (!isBotAdmins) return replytolak('❌ Gagal! Bot harus menjadi admin terlebih dahulu.')
+        if (!text) return replyquery(`Masukkan deskripsi grup yang baru!\nContoh: *${prefix}setdescgc Patuhi Aturan Grup!*`)
+        
+        await hydro.groupUpdateDescription(m.chat, text)
+        replysuccess(`✅ Berhasil memperbarui deskripsi grup!`)
+    }
+        break
+    case 'setppgc': {
+        if (!m.isGroup) return replytolak(global.mess.only.group)
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin)
+        if (!isBotAdmins) return replytolak('❌ Gagal! Bot harus menjadi admin terlebih dahulu.')
+        
+        let isImageMsg = (type === 'imageMessage' || (m.quoted && m.quoted.mtype === 'imageMessage'))
+        if (!isImageMsg) return replyquery(`Kirim gambar dengan caption *${prefix}setppgc* atau balas gambarnya!`)
+        
+        try {
+            reply(global.mess.wait)
+            let media = await hydro.downloadMediaMessage(m.quoted ? m.quoted : m)
+            await hydro.updateProfilePicture(m.chat, media)
+            replysuccess(`✅ Berhasil mengubah foto profil grup!`)
+        } catch (e) {
+            replyfail(`❌ Gagal mengubah foto profil. Pastikan gambar valid.`)
+        }
+    }
+        break
+    case 'welcome':
+    case 'left':
+    case 'groupinfo': {
+        if (!m.isGroup) return replytolak(global.mess.only.group)
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin)
+        
+        if (!global.db.groups[m.chat]) global.db.groups[m.chat] = {}
+        let gc = global.db.groups[m.chat]
+
+        if (args[0] === 'on') {
+            if (gc[command]) return replyquery(`Fitur *${command}* sudah aktif di grup ini!`)
+            gc[command] = true
+            fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2))
+            replysuccess(`✅ Fitur *${command}* berhasil diaktifkan!`)
+        } else if (args[0] === 'off') {
+            if (!gc[command]) return replyquery(`Fitur *${command}* memang sudah mati!`)
+            gc[command] = false
+            fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2))
+            replysuccess(`❌ Fitur *${command}* berhasil dimatikan!`)
+        } else {
+            replyquery(`Pilih on atau off!\nContoh: *${prefix + command} on*`)
         }
     }
         break
@@ -1031,7 +1145,7 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
            });
 
            }
-        break;
+        break
     
 // ===========================
 

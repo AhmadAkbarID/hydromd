@@ -4,6 +4,9 @@ const fs = require("fs")
 // ======================== Default True/False ===================== \\
 
 global.autosholat = true // true = aktif, false = mati, mengatur otomatis mengirim notif
+global.welcome = true // true = aktif, false = mati, mengatur notif pesan ketika ada yang masuk grup
+global.left = true // true = aktif, false = mati, mengatur notif pesan ketika ada yang keluar grup
+global.groupinfo = true // true = aktif, false = mati, mengatur notif pesan ketika ada perubahan di grup (nama, deskripsi, foto)
 
 // ======================== Setting Menu & Media ===================== \\
 

@@ -36,7 +36,16 @@ const colors = require('colors')
 
 let phoneNumber = "6285187063723" 
 
-global.db = { users: {}, groups: {}, chats: {}, database: {}, settings: {}, others: {} };
+if (fs.existsSync('./database/database.json')) {
+    try {
+        global.db = JSON.parse(fs.readFileSync('./database/database.json', 'utf-8'));
+    } catch (e) {
+        console.log('Gagal membaca database, membuat ulang...');
+        global.db = { users: {}, groups: {}, chats: {}, database: {}, settings: {}, others: {} };
+    }
+} else {
+    global.db = { users: {}, groups: {}, chats: {}, database: {}, settings: {}, others: {} };
+}
 
 const pairingCode = !!phoneNumber || process.argv.includes("--pairing-code")
 const useMobile = process.argv.includes("--mobile")
@@ -267,6 +276,14 @@ hydro.ev.on('messages.upsert', async chatUpdate => {
             console.log(err)
         }
     })
+
+hydro.ev.on('group-participants.update', async (anu) => {
+        require('./lib/group').participantsUpdate(hydro, anu);
+    });
+
+hydro.ev.on('groups.update', async (anu) => {
+        require('./lib/group').groupsUpdate(hydro, anu, store);
+    });
 
 
     hydro.decodeJid = (jid) => {
