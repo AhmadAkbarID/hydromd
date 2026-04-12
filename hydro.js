@@ -5,6 +5,7 @@
 */
 
 require('./settings');
+require('./lib/listmenu');
 
 // ====== REQUIRE AREA & LIB START ======
 
@@ -26,7 +27,10 @@ const {
     getBuffer
 } = require('./lib/function');
 const { 
-    initDatabase
+    initDatabase,
+    getLimitCost,
+    checkLimit,
+    useLimit
 } = require('./lib/database');
 
 // ====== LIB END & CONST START ======
@@ -62,7 +66,9 @@ const {
 
 // ====== MODULE END & SCRAPE START ======
 
-
+const { 
+    tiktokDl 
+} = require('./lib/scrape/tiktok.js')
 
 // ====== SCRAPE END & REQUIRE AREA ======
 
@@ -104,7 +110,7 @@ try {
     
     const msgHelper = require('./lib/src/message')(hydro, m, chatUpdate, store);
     m = msgHelper.m;
-    const { reply, replytolak, replyquery, replysuccess, replyfail, replywait, appenTextMessage } = msgHelper;
+    const { reply, replytolak, replyquery, replysuccess, replyfail, replywait, appenTextMessage, react, replylimit } = msgHelper;
     const rawContext = m.message?.[m.mtype]?.contextInfo;
     
     if (rawContext && rawContext.quotedMessage) {
@@ -330,26 +336,32 @@ initDatabase(m, isChannel);
 switch (command) {
     
     case 'menu': { 
-            let rata2 = '5.0';
-            let totalRating = 0;
-            
-            try {
-                if (typeof supabase !== 'undefined') {
-                    let { data, error } = await supabase.from('ratings').select('nilai'); 
-                    if (data) {
-                        let semuaRating = data.map(r => r.nilai);
-                        rata2 = (semuaRating.reduce((a, b) => a + b, 0) / semuaRating.length).toFixed(1);
-                        totalRating = semuaRating.length;
-                    }
+        if (args[0] === 'owner') return reply(global.ownermenu(prefix));
+        if (args[0] === 'group') return reply(global.groupmenu(prefix));
+        if (args[0] === 'downloader') return reply(global.downloadermenu(prefix));
+        if (args[0] === 'other' || args[0] === 'others') return reply(global.othermenu(prefix));
+        if (args[0] === 'all') return reply(global.allmenu(prefix));
+
+        let rata2 = '5.0';
+        let totalRating = 0;
+        
+        try {
+            if (typeof supabase !== 'undefined') {
+                let { data, error } = await supabase.from('ratings').select('nilai'); 
+                if (data) {
+                    let semuaRating = data.map(r => r.nilai);
+                    rata2 = (semuaRating.reduce((a, b) => a + b, 0) / semuaRating.length).toFixed(1);
+                    totalRating = semuaRating.length;
                 }
-            } catch (e) {}
+            }
+        } catch (e) {}
 
-            const fileContent = fs.readFileSync(__filename, 'utf8');
-            const totalFitur = (fileContent.match(/case '/g) || []).length;
+        const fileContent = fs.readFileSync(__filename, 'utf8');
+        const totalFitur = (fileContent.match(/case '/g) || []).length;
 
-            await hydro.sendMessage(m.chat, { react: { text: `🌊`, key: m.key }})
-            
-            let teks = (`✨━━━〔 🏞️ *𝐌𝐞𝐧𝐮 𝐔𝐭𝐚𝐦𝐚* 〕━━━✨
+        await react('🌊');
+        
+        let teks = (`✨━━━〔 🏞️ *𝐌𝐞𝐧𝐮 𝐔𝐭𝐚𝐦𝐚* 〕━━━✨
 
 ➤ 👤 Usᴇʀ : *${pushname}*
 ➤ 👑 Rᴀɴᴋ : *${Ahmad ? 'Pemilik 👨‍💻' : 'Free User'}*
@@ -383,29 +395,64 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
 
 🚀 *Pᴏᴡᴇʀᴇᴅ Bʏ ${global.botname}*`)
 
-            const bet = getMenuList();
-            await listbut2(hydro, m, teks, bet)
+        const bet = getMenuList(prefix);
+        await listbut2(hydro, m, teks, bet)
+        
+        if (global.music && typeof global.music === 'string' && global.music.trim() !== '') {
+            let audioSource;
+            let isAudioValid = false;
             
-            if (global.music && typeof global.music === 'string' && global.music.trim() !== '') {
-                let audioSource;
-                let isAudioValid = false;
-                
-                if (global.music.startsWith('http')) {
-                    audioSource = { url: global.music };
-                    isAudioValid = true;
-                } else if (fs.existsSync(global.music)) {
-                    audioSource = fs.readFileSync(global.music);
-                    isAudioValid = true;
-                }
+            if (global.music.startsWith('http')) {
+                audioSource = { url: global.music };
+                isAudioValid = true;
+            } else if (fs.existsSync(global.music)) {
+                audioSource = fs.readFileSync(global.music);
+                isAudioValid = true;
+            }
 
-                if (isAudioValid) {
-                    try {
-                        await hydro.sendMessage(m.chat, { audio: audioSource, mimetype: 'audio/mp4', ptt: true }, { quoted: m });
-                    } catch (e) {
-                    }
+            if (isAudioValid) {
+                try {
+                    await hydro.sendMessage(m.chat, { audio: audioSource, mimetype: 'audio/mp4', ptt: true }, { quoted: m });
+                } catch (e) {
                 }
             }
         }
+    }
+        break
+    case 'ownermenu':
+    case 'menuowner': {
+        let teks = global.ownermenu(prefix);
+        let bet = getMenuList(prefix);
+        await listbut2(hydro, m, teks, bet);
+    }
+        break
+    case 'downloadermenu':
+    case 'menudownloader': {
+        let teks = global.downloadermenu(prefix);
+        let bet = getMenuList(prefix);
+        await listbut2(hydro, m, teks, bet);
+    }
+    case 'groupmenu':
+    case 'menugroup': {
+        let teks = global.groupmenu(prefix);
+        let bet = getMenuList(prefix);
+        await listbut2(hydro, m, teks, bet);
+    }
+        break
+    case 'othermenu':
+    case 'othersmenu':
+    case 'menuother': {
+        let teks = global.othermenu(prefix);
+        let bet = getMenuList(prefix);
+        await listbut2(hydro, m, teks, bet);
+    }
+        break
+    case 'allmenu':
+    case 'menuall': {
+        let teks = global.allmenu(prefix);
+        let bet = getMenuList(prefix);
+        await listbut2(hydro, m, teks, bet);
+    }
         break
 
 // ====== OWNER FEATURE ======
@@ -417,7 +464,7 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
             if (m.quoted) num = m.quoted.sender.split('@')[0]
             else if (m.mentionedJid && m.mentionedJid[0]) num = m.mentionedJid[0].split('@')[0]
             else if (args[0]) num = args[0].replace(/[^0-9]/g, '')
-            else return replyquery('Tag orangnya, balas pesannya, atau ketik nomornya!\nContoh: *.addowner @user*')
+            else return replyquery('reply pesannya, atau ketik nomornya!\nContoh: *.addowner 628xx*')
             
             let targetJid = num + '@s.whatsapp.net'
 
@@ -439,7 +486,7 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
             if (m.quoted) num = m.quoted.sender.split('@')[0]
             else if (m.mentionedJid && m.mentionedJid[0]) num = m.mentionedJid[0].split('@')[0]
             else if (args[0]) num = args[0].replace(/[^0-9]/g, '')
-            else return replyquery('Tag orangnya, balas pesannya, atau ketik nomornya!\nContoh: *.delowner @user*')
+            else return replyquery('reply pesannya, atau ketik nomornya!\nContoh: *.delowner 628xx*')
             
             let targetJid = num + '@s.whatsapp.net'
 
@@ -909,22 +956,55 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
         reply(teks)
     }
         break
-    case 'creategc': {
+    case 'creategc':
+    case 'creategroup': {
         if (!Ahmad) return replytolak(global.mess.only.owner)
         if (!text) return replyquery(`Masukkan nama grup!\nContoh: *${prefix}creategc Namagrup*`)
         
         replywait(global.mess.wait)
         try {
-            let group = await hydro.groupCreate(text, [m.sender])
+            let group = await hydro.groupCreate(text, [])
             let code = await hydro.groupInviteCode(group.id)
-            let link = `https://chat.whatsapp.com/${code}`
             
-            replysuccess(`✅ Berhasil membuat grup!\n\n*${text}*\n${link}`)
+            let creationDate = moment(group.creation * 1000).tz("Asia/Jakarta").format("DD/MM/YYYY HH:mm:ss")
+            
+            let teks = `「 *Create Group* 」\n\n`
+            teks += `▸ *Name* : ${group.subject}\n`
+            teks += `▸ *Status* : Hanya Bot (Privat)\n`
+            teks += `▸ *Creation* : ${creationDate} WIB\n\n`
+            teks += `Silakan masuk melalui link di bawah ini:\n`
+            teks += `https://chat.whatsapp.com/${code}`
+
+            replysuccess(teks)
+
         } catch (e) {
             replyfail(`❌ Gagal membuat grup!\nDetail: ${e.message || e}`)
         }
     }
         break
+    case 'caselimit': {
+        if (!Ahmad) return replytolak(global.mess.only.owner);
+        if (!args[0] || !args[1]) return replyquery(`Format salah!\nContoh: *${prefix}caselimit tiktok 3*\n\n> Ketik angka 0 untuk menjadikannya tanpa limit.`);
+        
+        let cmdName = args[0].toLowerCase();
+        let limitCost = parseInt(args[1]);
+        
+        if (isNaN(limitCost) || limitCost < 0) return replyquery(`❌ Masukkan angka limit yang valid!`);
+        
+        if (!global.db.settings.cmdLimit) global.db.settings.cmdLimit = {};
+        
+        global.db.settings.cmdLimit[cmdName] = limitCost;
+        const fs = require('fs');
+        fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+        
+        if (limitCost === 0) {
+            replysuccess(`✅ Fitur *${cmdName}* sekarang di-set menjadi *NO LIMIT*`);
+        } else {
+            replysuccess(`✅ Berhasil mengatur biaya limit untuk fitur *${cmdName}* menjadi *${limitCost} limit* per penggunaan.`);
+        }
+    }
+        break
+
 
 // ====== GROUP FEATURE ======
 
@@ -947,7 +1027,7 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
             fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2))
             
             let listPrefix = newPrefixes.map(p => p === '' ? '[No Prefix]' : `[ ${p} ]`).join(', ')
-            replysuccess(`✅ Berhasil mengatur prefix khususmenjadi:\n${listPrefix}`)
+            replysuccess(`✅ Berhasil mengatur prefix khusus menjadi:\n${listPrefix}`)
         }
         break
     case 'ceksewa': {
@@ -1097,19 +1177,255 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
         
         if (!global.db.groups[m.chat]) global.db.groups[m.chat] = {}
         let gc = global.db.groups[m.chat]
+        
+        let currentStatus = (gc[command] !== undefined) ? gc[command] : global[command];
 
         if (args[0] === 'on') {
-            if (gc[command]) return replyquery(`Fitur *${command}* sudah aktif di grup ini!`)
+            if (currentStatus === true) return replyquery(`Fitur *${command}* sudah aktif!`)
             gc[command] = true
             fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2))
             replysuccess(`✅ Fitur *${command}* berhasil diaktifkan!`)
         } else if (args[0] === 'off') {
-            if (!gc[command]) return replyquery(`Fitur *${command}* memang sudah mati!`)
+            if (currentStatus === false) return replyquery(`Fitur *${command}* memang sudah mati!`)
             gc[command] = false
             fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2))
             replysuccess(`❌ Fitur *${command}* berhasil dimatikan!`)
         } else {
-            replyquery(`Pilih on atau off!\nContoh: *${prefix + command} on*`)
+            replyquery(`Status saat ini: *${currentStatus ? 'ON' : 'OFF'}*\n\nKetik *${prefix + command} on/off* untuk mengubah.`)
+        }
+    }
+    break
+    
+// ====== DOWNLOADER FEATURE ======
+
+    case 'tiktok':
+    case 'tt': {
+        if (!text) return replyquery(`📌 Contoh: ${prefix + command} https://vt.tiktok.com/...`)
+
+        let cost = getLimitCost('tiktok', 2);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        await react('⏱️')
+
+        try {
+            const { tiktokDl } = require('./lib/scrape/tiktok.js')
+            const data = await tiktokDl(text)
+            
+            if (!data || !data.status) {
+                await react('❌')
+                return replyfail(`❌ Gagal mengambil data.`)
+            }
+
+            const title = data.title || '-'
+            const author = data.author?.nickname || 'Unknown'
+            const stats = data.stats || { views: 0, likes: 0, comment: 0, share: 0 }
+            const audioUrl = data.music_info?.url
+
+            let sisaLimitTampil = totalLimit === "∞" ? "∞" : (totalLimit - cost);
+            const images = data.data.filter(v => v.type === 'photo').map(v => v.url)
+            let videoObj = data.data.find(v => v.type === 'nowatermark') || data.data.find(v => v.type === 'nowatermark_hd') || data.data[0];
+
+            if (images.length > 0) {
+                let cards = await Promise.all(images.map(async (url, i) => ({
+                    header: proto.Message.InteractiveMessage.Header.create({
+                        ...(await prepareWAMessageMedia({ image: { url } }, { upload: hydro.waUploadToServer })),
+                        title: '',
+                        subtitle: `Foto ${i + 1}/${images.length}`,
+                        hasMediaAttachment: true
+                    }),
+                    body: { text: '' },
+                    nativeFlowMessage: { buttons: [] }
+                })))
+
+                let captionText = `📸 *Tiktok Slides*\n👤 ${author}\n📝 ${title}\n📊 View: ${stats.views} | Like: ${stats.likes}\n\n> Sisa limit: ${sisaLimitTampil}`
+
+                let msg = generateWAMessageFromContent(m.chat, {
+                    viewOnceMessage: {
+                        message: {
+                            interactiveMessage: {
+                                body: { text: captionText },
+                                carouselMessage: { cards: cards, messageVersion: 1 }
+                            }
+                        }
+                    }
+                }, { quoted: m })
+
+                await hydro.relayMessage(m.chat, msg.message, { messageId: msg.key.id })
+            } else {
+                if (!videoObj || !videoObj.url) {
+                    await react('❌')
+                    return replyfail('❌ Video tidak ditemukan.')
+                }
+
+                let captionText = `🎥 *Tiktok Video*\n\n👤 Author: ${author}\n📝 Desc: ${title}\n\n📊 Views: ${stats.views} | ❤️ ${stats.likes}\n💬 ${stats.comment} | 🔄 ${stats.share}\n\n> Sisa limit: ${sisaLimitTampil}`
+
+                await hydro.sendMessage(m.chat, {
+                    video: { url: videoObj.url },
+                    caption: captionText
+                }, { quoted: m })
+            }
+
+            let audioSent = false;
+
+            if (audioUrl) {
+                try {
+                    await hydro.sendMessage(m.chat, { audio: { url: audioUrl }, mimetype: 'audio/mp4' }, { quoted: m });
+                    audioSent = true;
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            if (!audioSent && images.length === 0 && videoObj && videoObj.url) {
+                try {
+                    const axios = require('axios');
+                    const fs = require('fs');
+                    const path = require('path');
+                    const crypto = require('crypto');
+                    const { exec } = require('child_process');
+
+                    if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
+                    
+                    let ranId = crypto.randomBytes(4).toString('hex');
+                    let tmpVid = path.join('./temp', `${ranId}.mp4`);
+                    let tmpAud = path.join('./temp', `${ranId}.mp3`);
+
+                    let vidBuffer = await axios.get(videoObj.url, { responseType: 'arraybuffer' });
+                    fs.writeFileSync(tmpVid, vidBuffer.data);
+
+                    await new Promise((resolve, reject) => {
+                        exec(`ffmpeg -i ${tmpVid} -vn -b:a 128k ${tmpAud}`, (err) => {
+                            if (err) reject(err); else resolve();
+                        });
+                    });
+
+                    await hydro.sendMessage(m.chat, { audio: fs.readFileSync(tmpAud), mimetype: 'audio/mp4' }, { quoted: m });
+
+                    fs.unlinkSync(tmpVid);
+                    fs.unlinkSync(tmpAud);
+                } catch (err) {}
+            }
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                const fs = require('fs');
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+
+            await react('✅')
+
+        } catch (err) {
+            console.error(err)
+            await react('❌')
+            replyfail('❌ Error sistem.')
+        }
+    }
+        break
+    case 'tiktokmusic':
+    case 'tiktokaudio':
+    case 'ttmusic':
+    case 'ttaudio': {
+        if (!text) return replyquery(`📌 Contoh: ${prefix + command} https://vt.tiktok.com/...`)
+
+        let cost = getLimitCost('tiktokmusic', 1);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        await react('⏱️')
+
+        try {
+            const data = await tiktokDl(text)
+            
+            if (!data || !data.status) {
+                await react('❌')
+                return replyfail(`❌ Gagal mengambil data.`)
+            }
+
+            const audioUrl = data.music_info?.url;
+            let audioSent = false;
+            let audioContext = {
+                externalAdReply: {
+                    showAdAttribution: true,
+                    title: data.music_info?.title || "Tiktok Downloader",
+                    body: data.music_info?.author || "Original Audio",
+                    thumbnailUrl: 'https://raw.githubusercontent.com/AhmadAkbarID/media/main/tiktokmusic.png',
+                    sourceUrl: text,
+                    mediaType: 1,
+                    renderLargerThumbnail: true
+                }
+            };
+
+            if (audioUrl) {
+                try {
+                    await hydro.sendMessage(m.chat, { audio: { url: audioUrl }, mimetype: 'audio/mp4', contextInfo: audioContext }, { quoted: m });
+                    audioSent = true;
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            if (!audioSent) {
+                const images = data.data.filter(v => v.type === 'photo');
+                let videoObj = data.data.find(v => v.type === 'nowatermark') || data.data.find(v => v.type === 'nowatermark_hd') || data.data[0];
+
+                if (images.length > 0 || !videoObj || !videoObj.url) {
+                    await react('❌')
+                    return replyfail('❌ Audio tidak ditemukan dan ini adalah slide foto')
+                }
+
+                try {
+                    const axios = require('axios');
+                    const fs = require('fs');
+                    const path = require('path');
+                    const crypto = require('crypto');
+                    const { exec } = require('child_process');
+
+                    if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
+                    
+                    let ranId = crypto.randomBytes(4).toString('hex');
+                    let tmpVid = path.join('./temp', `${ranId}.mp4`);
+                    let tmpAud = path.join('./temp', `${ranId}.mp3`);
+
+                    let vidBuffer = await axios.get(videoObj.url, { responseType: 'arraybuffer' });
+                    fs.writeFileSync(tmpVid, vidBuffer.data);
+
+                    await new Promise((resolve, reject) => {
+                        exec(`ffmpeg -i ${tmpVid} -vn -b:a 128k ${tmpAud}`, (err) => {
+                            if (err) reject(err); else resolve();
+                        });
+                    });
+
+                    audioContext.externalAdReply.body = "Audio";
+                    await hydro.sendMessage(m.chat, { audio: fs.readFileSync(tmpAud), mimetype: 'audio/mp4', contextInfo: audioContext }, { quoted: m });
+
+                    fs.unlinkSync(tmpVid);
+                    fs.unlinkSync(tmpAud);
+                } catch (err) {
+                    console.error(err)
+                    await react('❌')
+                    return replyfail('❌ Gagal mengunduh dan mengkonversi audio dari video tersebut.')
+                }
+            }
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                const fs = require('fs');
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+
+            await react('✅')
+
+        } catch (err) {
+            console.error(err)
+            await react('❌')
+            replyfail('❌ Error sistem.')
         }
     }
         break

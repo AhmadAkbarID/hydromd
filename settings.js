@@ -63,14 +63,14 @@ global.nodeid1 = [1]; // ID Node
 
 // ======================== Respon Bot ===================== \\
 global.mess = {
-   wait: "*_Tunggu Sebentar.. Bot lagi berenang... 🏊_*",
+   wait: "*_Tunggu sebentar ya kak ^~^*",
    success: "Yay! Bot berhasil 🎉",
    on: "Yay! Nyala nih! 😝",
    off: "Ahh! Mati deh.. 😴",
    query: {
        text: "Teksnya mana? Aku kan gabisa baca pikiran kaka 😉",
        link: "Linknya dongg.. Aku gabisa tanpa link 😖",
-       image: "Gambarnya mana nih? jahat banget engga ngasi:<",
+       image: "Gambarnya mana nih? jahat banget engga ngasi:<"
    },
    error: {
        fitur: "Whoops! Eror nih.. laporkan ke owner agar diperbaiki 6285187063723 🙏",
@@ -88,7 +88,8 @@ global.mess = {
        query: "https://raw.githubusercontent.com/AhmadAkbarID/media/main/replyquery.png",
        success: "https://raw.githubusercontent.com/AhmadAkbarID/media/main/replysuccess.png",
        fail: "https://raw.githubusercontent.com/AhmadAkbarID/media/main/replyfail.png",
-       wait: "https://raw.githubusercontent.com/AhmadAkbarID/media/main/replywait.png"
+       wait: "https://raw.githubusercontent.com/AhmadAkbarID/media/main/replywait.png",
+       limit: "https://raw.githubusercontent.com/AhmadAkbarID/media/main/replylimit.png"
    }
 }
 
