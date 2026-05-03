@@ -32,6 +32,21 @@ const {
     checkLimit,
     useLimit
 } = require('./lib/database');
+const {
+    makeBrat,
+    makeBratVid,
+    toSticker,
+    makeQC,
+    addExif,
+    BALogo,
+    makeStoryIG
+} = require('./lib/maker');
+const { 
+    searchDaerah 
+} = require('./lib/jadwalsholat');
+const { 
+    antilinkDetector 
+} = require('./lib/protect');
 
 // ====== LIB END & CONST START ======
 
@@ -45,6 +60,7 @@ const {
     moment,
     crypto,
     fs,
+    yts,
     path,
     chalk,
     QuickChart  
@@ -69,6 +85,36 @@ const {
 const { 
     tiktokDl 
 } = require('./lib/scrape/tiktok.js')
+const {
+    igdl 
+} = require('./lib/scrape/instagram.js');
+const {
+    mathgpt
+} = require('./lib/scrape/mathgpt.js');  
+const { 
+    FeloClient 
+} = require('./lib/scrape/feloai.js');
+const { 
+    chatex 
+} = require('./lib/scrape/chatexai.js');
+const ReactChannel 
+  = require('./lib/scrape/reactch.js');
+const { 
+    searchPinterestAPI 
+} = require('./lib/scrape/pin-search.js')
+const {
+    searchDafont
+} = require('./lib/scrape/dafont.js')
+const { 
+    searchSpotify 
+} = require('./lib/scrape/naze.js');
+const {
+    ytmp3, 
+    ytmp4
+} = require('./lib/scrape/youtube.js');
+const { 
+    spotifyScrape 
+} = require("./lib/scrape/spotify.js");
 
 // ====== SCRAPE END & REQUIRE AREA ======
 
@@ -221,12 +267,16 @@ try {
     const rawId = String(m.key.id || '');
     const baseId = rawId.split('-')[0];
 
-    if (baseId.startsWith('BAE5') || baseId.length === 16) return;
+    const isStatusMsg = (m.mtype === 'groupStatusMentionMessage' || m.mtype === 'groupStatusMessageV2');
 
-    let isOtherBot = false;
-    if (baseId.match(/[^0-9A-F]/gi)) isOtherBot = true;
-    if (baseId.length !== 32 && !baseId.startsWith('3EB0') && !baseId.startsWith('3A')) isOtherBot = true;
-    if (isOtherBot && !Ahmad && !m.key.fromMe) return;
+    if (!isStatusMsg) {
+        if (baseId.startsWith('BAE5') || baseId.length === 16) return;
+
+        let isOtherBot = false;
+        if (baseId.match(/[^0-9A-F]/gi)) isOtherBot = true;
+        if (baseId.length !== 32 && !baseId.startsWith('3EB0') && !baseId.startsWith('3A')) isOtherBot = true;
+        if (isOtherBot && !Ahmad && !m.key.fromMe) return;
+    }
 
     if (!global.db.settings.public) {
         if (!Ahmad && !m.key.fromMe) return;
@@ -262,8 +312,32 @@ try {
     const isSticker = (type == 'stickerMessage')
 
     store.groupMetadata = store.groupMetadata || {};
-    const groupMetadata = m.isGroup ? store.groupMetadata[m.chat] || (store.groupMetadata[m.chat] = await hydro.groupMetadata(m.chat).catch(e => {})) : '';
-    const groupName = m.isGroup ? groupMetadata.subject : ''
+        const invalidMembers = [];
+
+        if (m.isGroup) {
+            for (const [gid, meta] of Object.entries(store.groupMetadata || {})) {
+                if (!meta.participants) continue;
+                const missing = meta.participants.filter(p => !p.jid && !p.lid && p.id);
+                if (missing.length) {
+                    invalidMembers.push({
+                        groupId: gid,
+                        groupName: meta.subject || "Tanpa Nama",
+                        members: missing
+                    });
+                }
+            }
+
+            if (Object.keys(store.groupMetadata).length === 0 || invalidMembers.length >= 1) {
+                store.groupMetadata = await hydro.groupFetchAllParticipating();
+            }
+        }
+
+        const groupMetadata = m.isGroup
+            ? store.groupMetadata[m.chat]
+            || (store.groupMetadata[m.chat] = await hydro.groupMetadata(m.chat).catch(e => {}))
+            : '';
+
+        const groupName = m.isGroup ? groupMetadata.subject : ''
     const participants = m.isGroup ? await groupMetadata.participants : ''
 
     if (m.isGroup && m.sender.endsWith("@lid")) {
@@ -274,6 +348,13 @@ try {
     const isBotAdmins = m.isGroup ? groupAdmins.includes(botNumber) : false
     const isGroupAdmins = m.isGroup ? groupAdmins.includes(m.sender) : false
     const isAdmins = m.isGroup ? groupAdmins.includes(m.sender) : false
+
+    if (m.isGroup && isCmd) {
+        if (!global.db.groups[m.chat]) global.db.groups[m.chat] = {}
+        if (global.db.groups[m.chat].mute && !isGroupAdmins && !Ahmad) {
+            return
+        }
+    }
     
     const sender = m.sender
     const senderNumber = sender ? sender.split('@')[0] : ''
@@ -327,6 +408,7 @@ try {
 // ====== FUNCTION AREA ======
 
 initDatabase(m, isChannel);
+await antilinkDetector(hydro, m, { budy, type, isAdmins, Ahmad, isBotAdmins, sender, senderNumber });
 
 
 
@@ -340,6 +422,9 @@ switch (command) {
         if (args[0] === 'group') return reply(global.groupmenu(prefix));
         if (args[0] === 'downloader') return reply(global.downloadermenu(prefix));
         if (args[0] === 'other' || args[0] === 'others') return reply(global.othermenu(prefix));
+        if (args[0] === 'maker') return reply(global.makermenu(prefix));
+        if (args[0] === 'convert') return reply(global.convertmenu(prefix));
+        if (args[0] === 'ai') return reply(global.aimenu(prefix));
         if (args[0] === 'all') return reply(global.allmenu(prefix));
 
         let rata2 = '5.0';
@@ -418,27 +503,30 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
             }
         }
     }
-        break
+            break
     case 'ownermenu':
     case 'menuowner': {
         let teks = global.ownermenu(prefix);
         let bet = getMenuList(prefix);
         await listbut2(hydro, m, teks, bet);
     }
-        break
+            break
+    case 'downloadmenu':
     case 'downloadermenu':
     case 'menudownloader': {
         let teks = global.downloadermenu(prefix);
         let bet = getMenuList(prefix);
         await listbut2(hydro, m, teks, bet);
     }
+            break
     case 'groupmenu':
     case 'menugroup': {
         let teks = global.groupmenu(prefix);
         let bet = getMenuList(prefix);
         await listbut2(hydro, m, teks, bet);
     }
-        break
+            break
+        
     case 'othermenu':
     case 'othersmenu':
     case 'menuother': {
@@ -446,14 +534,35 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
         let bet = getMenuList(prefix);
         await listbut2(hydro, m, teks, bet);
     }
-        break
+            break
     case 'allmenu':
     case 'menuall': {
         let teks = global.allmenu(prefix);
         let bet = getMenuList(prefix);
         await listbut2(hydro, m, teks, bet);
     }
-        break
+            break
+    case 'makermenu': 
+    case 'menumaker': {
+        let teks = global.makermenu(prefix);
+        let bet = getMenuList(prefix);
+        await listbut2(hydro, m, teks, bet);
+    }
+            break
+    case 'convertmenu': 
+    case 'menuconvert': {
+        let teks = global.convertmenu(prefix);
+        let bet = getMenuList(prefix);
+        await listbut2(hydro, m, teks, bet);
+    }
+            break
+    case 'aimenu':
+    case 'menuai': {
+        let teks = global.aimenu(prefix);
+        let bet = getMenuList(prefix);
+        await listbut2(hydro, m, teks, bet);
+    }
+            break
 
 // ====== OWNER FEATURE ======
 
@@ -706,7 +815,7 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
     let result = args[0].split('https://chat.whatsapp.com/')[1]
     if (!result) return replytolak('Link Invalid ❗')
 
-    replyhydro(mess.wait)
+    replywait(mess.wait)
 
     await hydro.groupAcceptInvite(result)
         .then((res) => {
@@ -991,10 +1100,17 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
         
         if (isNaN(limitCost) || limitCost < 0) return replyquery(`❌ Masukkan angka limit yang valid!`);
         
+        const fileContent = fs.readFileSync(__filename, 'utf8');
+        const availableFeatures = [...fileContent.matchAll(/case\s+'([^']+)'/g)].map(m => m[1]);
+        
+        if (!availableFeatures.includes(cmdName)) {
+            return replyquery(`❌ Gagal! Fitur *${cmdName}* tidak ditemukan di dalam sistem bot.`);
+        }
+        // ==========================================
+        
         if (!global.db.settings.cmdLimit) global.db.settings.cmdLimit = {};
         
         global.db.settings.cmdLimit[cmdName] = limitCost;
-        const fs = require('fs');
         fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
         
         if (limitCost === 0) {
@@ -1069,12 +1185,33 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
             return replysuccess('❌ Autosholat berhasil dimatikan di grup ini!');
         } else {
             let text = q;
-            if (!text.includes(',')) return replyquery(`❌ Format salah!\n\nContoh: *${prefix}jadwalsholat Jawa Barat,Kota Bogor*\nAtau *${prefix}jadwalsholat on/off*`);
-            
-            let [prov, kota] = text.split(',').map(v => v.trim());
+            if (!text) return replyquery(`❌ Masukkan nama Kota atau Kabupaten!\n\nContoh: \n*${prefix}jadwalsholat Metro*\n*${prefix}jadwalsholat on/off*`);
             
             replywait(global.mess.wait);
             try {
+                let matches = await searchDaerah(text);
+
+                if (matches.length === 0) {
+                    return replyfail(`❌ Kota/Kabupaten "${text}" tidak ditemukan.`);
+                }
+
+                if (matches.length > 1) {
+                    let txt = `🔍 Ditemukan beberapa kota yang mirip dengan "${text}".\n\n`;
+                    
+                    let limitSaran = matches.slice(0, 15);
+                    limitSaran.forEach((m, i) => {
+                        txt += `*- ${m.kota}*\n`;
+                    });
+                    
+                    if (matches.length > 15) txt += `*(Dan ${matches.length - 15} lainnya...)*\n`;
+                    
+                    txt += `\nSilakan ketik ulang, contoh:\n👉 *${prefix}jadwalsholat ${limitSaran[0].kota}*`;
+                    return reply(txt);
+                }
+
+                let prov = matches[0].provinsi;
+                let kota = matches[0].kota;
+
                 const { data } = await axios.post('https://equran.id/api/v2/shalat', {
                     provinsi: prov,
                     kabkota: kota
@@ -1085,12 +1222,13 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
                     gc.jadwalsholatData = null; 
                     gc.autosholat = true; 
                     fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
-                    replysuccess(`✅ Berhasil mengatur lokasi sholat ke *${kota}, ${prov}* dan Autosholat telah otomatis *diaktifkan* untuk grup ini!`);
+                    replysuccess(`✅ Berhasil mengatur lokasi sholat ke \n*${kota}* \nProvinsi *${prov}*`);
                 } else {
-                    replyfail('❌ Gagal menemukan lokasi tersebut. Pastikan penulisan Provinsi dan Kota benar sesuai API.\nContoh: Jawa Barat, Kota Bogor');
+                    replyfail(mess.fail);
                 }
             } catch (e) {
-                replyfail('❌ Gagal menghubungi server jadwal sholat. Pastikan penulisan Provinsi dan Kota benar!');
+                console.error(e);
+                replyfail(mess.fail);
             }
         }
     }
@@ -1194,7 +1332,160 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
             replyquery(`Status saat ini: *${currentStatus ? 'ON' : 'OFF'}*\n\nKetik *${prefix + command} on/off* untuk mengubah.`)
         }
     }
-    break
+        break
+    case 'mute':
+    case 'onlyadmin': {
+        if (!m.isGroup) return replytolak(global.mess.only.group)
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin)
+        
+        if (!global.db.groups[m.chat]) global.db.groups[m.chat] = {}
+        let gc = global.db.groups[m.chat]
+        
+        if (args[0] === 'on') {
+            if (gc.mute) return replyquery(`Bot sudah di-mute untuk member di grup ini!`)
+            gc.mute = true
+            fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2))
+            replysuccess(global.mess.on)
+        } else if (args[0] === 'off') {
+            if (!gc.mute) return replyquery(`Bot memang tidak sedang di-mute!`)
+            gc.mute = false
+            fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2))
+            replysuccess(global.mess.off)
+        } else {
+            replyquery(`Status Mute: *${gc.mute ? 'ON' : 'OFF'}*\n\nKetik \n*${prefix + command} on* untuk membisukan bot dari member.\n*${prefix + command} off* untuk mematikan mute.`)
+        }
+    }
+        break
+    case 'antilinkall':
+    case 'antilinkgc':
+    case 'antilinkch':
+    case 'antilinktt':
+    case 'antilinkig':
+    case 'antilinkyt':
+    case 'antilinkfb':
+    case 'antilinktw':
+    case 'antiwame':
+    case 'antitagsw':
+    case 'antiswgc':
+    case 'antiswgb':
+    case 'antitoxic':
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin);
+        
+        if (!global.db.groups[m.chat]) global.db.groups[m.chat] = {};
+        let gc = global.db.groups[m.chat];
+        
+        if (!gc.antilink) gc.antilink = { all: false, gc: false, ch: false, tt: false, ig: false, yt: false, fb: false, tw: false, wame: false, tagsw: false, swgc: false, toxic: false };
+
+        let typeLink = command.replace('anti', '').replace('link', '').replace('gb', 'gc'); 
+        
+        if (args[0] === 'on') {
+            if (gc.antilink[typeLink]) return replyquery(`⚠️ Anti *${typeLink.toUpperCase()}* sudah aktif sebelumnya!`);
+            gc.antilink[typeLink] = true;
+            replysuccess(`✅ Anti *${typeLink.toUpperCase()}* berhasil diaktifkan!`);
+        } else if (args[0] === 'off') {
+            if (!gc.antilink[typeLink]) return replyquery(`⚠️ Anti *${typeLink.toUpperCase()}* memang sudah mati!`);
+            gc.antilink[typeLink] = false;
+            replysuccess(`❌ Anti *${typeLink.toUpperCase()}* berhasil dimatikan!`);
+        } else {
+            replyquery(`Status Anti ${typeLink.toUpperCase()}: *${gc.antilink[typeLink] ? 'ON' : 'OFF'}*\nKetik: *${prefix + command} on/off*`);
+        }
+        
+        fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+        break;
+    case 'addtoxic':
+    case 'addbadword': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin);
+        if (!text) return replyquery(`*Contoh Penggunaan:*\n${prefix + command} qontol`);
+
+        if (!fs.existsSync('./database/badword.json')) fs.writeFileSync('./database/badword.json', JSON.stringify([]));
+        let bw = JSON.parse(fs.readFileSync('./database/badword.json'));
+
+        let word = text.toLowerCase().trim();
+        if (bw.includes(word)) return replytolak(`⚠️ Kata *${word}* sudah ada di dalam database toxic!`);
+
+        bw.push(word);
+        fs.writeFileSync('./database/badword.json', JSON.stringify(bw, null, 2));
+        replysuccess(`✅ Berhasil menambahkan kata *${word}* ke daftar toxic.`);
+    }
+        break;
+    case 'deltoxic':
+    case 'delbadword': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin);
+        if (!text) return replyquery(`*Contoh Penggunaan:*\n${prefix + command} puqimak`);
+
+        if (!fs.existsSync('./database/badword.json')) fs.writeFileSync('./database/badword.json', JSON.stringify([]));
+        let bw = JSON.parse(fs.readFileSync('./database/badword.json'));
+
+        let word = text.toLowerCase().trim();
+        if (!bw.includes(word)) return replytolak(`⚠️ Kata *${word}* tidak ditemukan di dalam database toxic!`);
+
+        bw = bw.filter(v => v !== word);
+        fs.writeFileSync('./database/badword.json', JSON.stringify(bw, null, 2));
+        replysuccess(`🗑️ Berhasil menghapus kata *${word}* dari daftar toxic.`);
+    }
+        break;
+    case 'listtoxic':
+    case 'listbadword': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin);
+
+        if (!fs.existsSync('./database/badword.json')) {
+            return replyquery('📂 Daftar kata toxic masih kosong.');
+        }
+
+        let bw = JSON.parse(fs.readFileSync('./database/badword.json'));
+        
+        if (bw.length === 0) {
+            return replyquery('📂 Daftar kata toxic masih kosong.');
+        }
+
+        let textList = `🤬 *DAFTAR KATA TOXIC (${bw.length})*\n\n`;
+        
+        textList += `\`\`\`\n`;
+        bw.forEach((word, index) => {
+            textList += `${index + 1}. ${word}\n`;
+        });
+        textList += `\`\`\`\n\n`;
+        textList += `> Ketik *${prefix}addtoxic <kata>* untuk menambah.\n`;
+        textList += `> Ketik *${prefix}deltoxic <kata>* untuk menghapus.`;
+
+        await hydro.sendMessage(m.chat, { text: textList }, { quoted: m });
+    }
+        break;
+    case 'setantilink': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin);
+
+        if (!global.db.groups[m.chat]) global.db.groups[m.chat] = {};
+        let gc = global.db.groups[m.chat];
+        
+        if (!gc.antilinkAction) gc.antilinkAction = 'silent';
+        if (!gc.antilinkWarnLimit) gc.antilinkWarnLimit = 3;
+
+        let action = args[0] ? args[0].toLowerCase() : '';
+        let limit = args[1] ? parseInt(args[1]) : 3;
+
+        if (['silent', 'delete', 'warn', 'kick'].includes(action)) {
+            gc.antilinkAction = action;
+            if (action === 'warn') {
+                if (!isNaN(limit) && limit > 0) gc.antilinkWarnLimit = limit;
+                replysuccess(`✅ Aksi Antilink diatur ke: *WARN*\nBatas peringatan: *> ${gc.antilinkWarnLimit} kali*`);
+            } else if (action === 'delete') {
+                replysuccess(`✅ Aksi Antilink diatur ke: *DELETE*\n> Menghapus pesan link disertai tag peringatan`);
+            } else if (action === 'silent') {
+                replysuccess(`✅ Aksi Antilink diatur ke: *SILENT*\n> Menghapus link tanpa notif peringatan`);
+            } else if (action === 'kick') {
+                replysuccess(`✅ Aksi Antilink diatur ke: *KICK*\n> Menghapus link dan langsung kick`);
+            }
+            fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+        } else {
+            replyquery(`📌 *Pengaturan Antilink*\n\n- Silent: Hapus pesan\n- Delete: Hapus dengan notif\n- Warn: Hapus & beri peringatan\n- Kick: Hapus & kick\n\n*Contoh Penggunaan:*\n${prefix + command} silent\n${prefix + command} warn 3`);
+        }
+    }
+    break;
     
 // ====== DOWNLOADER FEATURE ======
 
@@ -1212,7 +1503,6 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
         await react('⏱️')
 
         try {
-            const { tiktokDl } = require('./lib/scrape/tiktok.js')
             const data = await tiktokDl(text)
             
             if (!data || !data.status) {
@@ -1241,7 +1531,7 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
                     nativeFlowMessage: { buttons: [] }
                 })))
 
-                let captionText = `📸 *Tiktok Slides*\n👤 ${author}\n📝 ${title}\n📊 View: ${stats.views} | Like: ${stats.likes}\n\n> Sisa limit: ${sisaLimitTampil}`
+                let captionText = `📸 *Tiktok Slides*\n👤 ${author}\n📝 ${title}\n📊 View: ${stats.views} | Like: ${stats.likes}\n\nSisa limit: ${sisaLimitTampil}`
 
                 let msg = generateWAMessageFromContent(m.chat, {
                     viewOnceMessage: {
@@ -1273,20 +1563,15 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
 
             if (audioUrl) {
                 try {
-                    await hydro.sendMessage(m.chat, { audio: { url: audioUrl }, mimetype: 'audio/mp4' }, { quoted: m });
+                    let resAudio = await axios.get(audioUrl, { responseType: 'arraybuffer' });
+                    await hydro.sendMessage(m.chat, { audio: Buffer.from(resAudio.data), mimetype: 'audio/mp4' }, { quoted: m });
                     audioSent = true;
                 } catch (e) {
-                    console.error(e);
                 }
             }
 
             if (!audioSent && images.length === 0 && videoObj && videoObj.url) {
                 try {
-                    const axios = require('axios');
-                    const fs = require('fs');
-                    const path = require('path');
-                    const crypto = require('crypto');
-                    const { exec } = require('child_process');
 
                     if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
                     
@@ -1312,7 +1597,6 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
 
             if (cost > 0) {
                 useLimit(m.sender, cost, Ahmad);
-                const fs = require('fs');
                 fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
             }
 
@@ -1350,12 +1634,15 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
 
             const audioUrl = data.music_info?.url;
             let audioSent = false;
+            
+            let thumbUrl = data.music_info?.cover || 'https://raw.githubusercontent.com/AhmadAkbarID/media/main/tiktokmusic.png';
+
             let audioContext = {
                 externalAdReply: {
                     showAdAttribution: true,
                     title: data.music_info?.title || "Tiktok Downloader",
                     body: data.music_info?.author || "Original Audio",
-                    thumbnailUrl: 'https://raw.githubusercontent.com/AhmadAkbarID/media/main/tiktokmusic.png',
+                    thumbnailUrl: thumbUrl,
                     sourceUrl: text,
                     mediaType: 1,
                     renderLargerThumbnail: true
@@ -1364,10 +1651,10 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
 
             if (audioUrl) {
                 try {
-                    await hydro.sendMessage(m.chat, { audio: { url: audioUrl }, mimetype: 'audio/mp4', contextInfo: audioContext }, { quoted: m });
+                    let resAudio = await axios.get(audioUrl, { responseType: 'arraybuffer' });
+                    await hydro.sendMessage(m.chat, { audio: Buffer.from(resAudio.data), mimetype: 'audio/mp4', contextInfo: audioContext }, { quoted: m });
                     audioSent = true;
                 } catch (e) {
-                    console.error(e);
                 }
             }
 
@@ -1381,11 +1668,6 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
                 }
 
                 try {
-                    const axios = require('axios');
-                    const fs = require('fs');
-                    const path = require('path');
-                    const crypto = require('crypto');
-                    const { exec } = require('child_process');
 
                     if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
                     
@@ -1416,7 +1698,6 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
 
             if (cost > 0) {
                 useLimit(m.sender, cost, Ahmad);
-                const fs = require('fs');
                 fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
             }
 
@@ -1425,17 +1706,1703 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
         } catch (err) {
             console.error(err)
             await react('❌')
-            replyfail('❌ Error sistem.')
+            replyfail(mess.error.fitur)
         }
     }
         break
+    case 'instagram':
+    case 'igdl':
+    case 'ig':
+    case 'igvideo':
+    case 'igimage':
+    case 'igvid':
+    case 'igimg': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!text) return replyquery(`📌 Contoh: ${prefix + command} https://www.instagram.com/p/xxx/`);
+
+        let cost = getLimitCost('instagram', 2);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        await react('⏱️');
+
+        try {
+            const data = await igdl(text);
+            
+            if (!data || !data.status || !data.result || !data.result.downloadUrl || data.result.downloadUrl.length === 0) {
+                await react('❌');
+                return replyfail(`❌ Gagal mengambil data dari Instagram. Pastikan link valid dan akun tidak di-private.`);
+            }
+
+            const urls = data.result.downloadUrl;
+            let sisaLimitTampil = totalLimit === "∞" ? "∞" : (totalLimit - cost);
+            let captionText = `📸 *Instagram Downloader*\n\n> Sisa limit: ${sisaLimitTampil}`;
+
+            let captionSent = false;
+
+            for (let i = 0; i < urls.length; i++) {
+                try {
+                    let currentUrl = urls[i];
+                    let res = await axios.get(currentUrl, { responseType: 'arraybuffer' });
+                    let buffer = Buffer.from(res.data, 'binary');
+                    let mimeType = res.headers['content-type'] || '';
+
+                    if (mimeType.includes('video')) {
+                        await hydro.sendMessage(m.chat, {
+                            video: buffer,
+                            caption: !captionSent ? captionText : ''
+                        }, { quoted: m });
+                        captionSent = true;
+                    } else if (mimeType.includes('audio')) {
+                        if (!captionSent) {
+                            await hydro.sendMessage(m.chat, { text: captionText }, { quoted: m });
+                            captionSent = true;
+                        }
+                        await hydro.sendMessage(m.chat, {
+                            audio: buffer,
+                            mimetype: 'audio/mp4'
+                        }, { quoted: m });
+                    } else {
+                        await hydro.sendMessage(m.chat, {
+                            image: buffer,
+                            caption: !captionSent ? captionText : ''
+                        }, { quoted: m });
+                        captionSent = true;
+                    }
+                    
+                    if (urls.length > 1 && i < urls.length - 1) {
+                        await sleep(1000); 
+                    }
+                } catch (mediaErr) {
+                    console.error(`Gagal memproses media ke-${i}:`, mediaErr);
+                }
+            }
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+
+            await react('✅');
+
+        } catch (err) {
+            console.error(err);
+            await react('❌');
+            replyfail(`❌ Error sistem.`);
+        }
+    }
+        break
+    case 'igaudio':
+    case 'igmusic': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!text) return replyquery(`📌 Contoh: ${prefix + command} https://www.instagram.com/reel/xxx/`);
+
+        let cost = getLimitCost('igaudio', 1);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        await react('⏱️');
+
+        try {
+            const data = await igdl(text);
+            
+            if (!data || !data.status || !data.result || !data.result.downloadUrl || data.result.downloadUrl.length === 0) {
+                await react('❌');
+                return replyfail(`❌ Gagal mengambil data dari Instagram.`);
+            }
+
+            const videoUrl = data.result.downloadUrl.find(url => url.includes('.mp4'));
+
+            if (!videoUrl) {
+                await react('❌');
+                return replyfail(`❌ Tidak ada video yang ditemukan pada link tersebut untuk dikonversi menjadi audio.`);
+            }
+
+            try {
+
+                if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
+                
+                let ranId = crypto.randomBytes(4).toString('hex');
+                let tmpVid = path.join('./temp', `${ranId}.mp4`);
+                let tmpAud = path.join('./temp', `${ranId}.mp3`);
+
+                let vidBuffer = await axios.get(videoUrl, { responseType: 'arraybuffer' });
+                fs.writeFileSync(tmpVid, vidBuffer.data);
+
+                await new Promise((resolve, reject) => {
+                    exec(`ffmpeg -i ${tmpVid} -vn -b:a 128k ${tmpAud}`, (err) => {
+                        if (err) reject(err); else resolve();
+                    });
+                });
+
+                let audioContext = {
+                    externalAdReply: {
+                        showAdAttribution: true,
+                        title: "Instagram Audio",
+                        body: "Original Audio",
+                        thumbnailUrl: 'https://raw.githubusercontent.com/AhmadAkbarID/media/main/igmusic.png',
+                        sourceUrl: text,
+                        mediaType: 1,
+                        renderLargerThumbnail: true
+                    }
+                };
+
+                await hydro.sendMessage(m.chat, { 
+                    audio: fs.readFileSync(tmpAud), 
+                    mimetype: 'audio/mp4',
+                    contextInfo: audioContext
+                }, { quoted: m });
+
+                fs.unlinkSync(tmpVid);
+                fs.unlinkSync(tmpAud);
+
+                if (cost > 0) {
+                    useLimit(m.sender, cost, Ahmad);
+                    fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+                }
+
+                await react('✅');
+
+            } catch (err) {
+                console.error("FFmpeg Error:", err);
+                await react('❌');
+                return replyfail(`❌ Gagal mengunduh atau mengkonversi audio.`);
+            }
+
+        } catch (err) {
+            console.error(err);
+            await react('❌');
+            replyfail(`❌ Error sistem.`);
+        }
+    }
+        break;
+    case 'dafontdl':
+    case 'fontdl': {
+        if (!text) return replyquery(`📌 *Contoh Penggunaan Manual:*\n\n1. Link Halaman Font:\n*${prefix + command} https://www.dafont.com/arial.font*\n\n2. Link Direct Download:\n*${prefix + command} https://dl.dafont.com/dl/?f=arial*`);
+
+        let isManual = !text.includes('|');
+        let cost = isManual ? getLimitCost('dafont', 1) : 0; 
+        
+        if (cost > 0) {
+            let totalLimit = checkLimit(m.sender, Ahmad); 
+            if (totalLimit !== "∞" && totalLimit < cost) {
+                return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+            }
+        }
+
+        await react('⏱️');
+
+        let dlUrl, previewUrl, name;
+
+        if (!isManual) {
+            [dlUrl, previewUrl, name] = text.split('|');
+        } 
+        else {
+            let isUrl = text.match(/https?:\/\/[^\s]+/i);
+            if (!isUrl) {
+                await react('❌');
+                return replyfail('❌ Masukkan URL DaFont yang valid!');
+            }
+            
+            let rawUrl = isUrl[0];
+            previewUrl = null;
+
+            if (rawUrl.includes('dafont.com') && !rawUrl.includes('dl.dafont.com')) {
+                try {
+                    let { data } = await axios.get(rawUrl);
+                    let $ = cheerio.load(data);
+                    
+                    let dlHref = $('a.dl').attr('href');
+                    if (!dlHref) throw new Error('Tombol download tidak ditemukan');
+                    
+                    dlUrl = dlHref.startsWith('//') ? 'https:' + dlHref : dlHref;
+                    
+                    let style = $('.preview').first().attr('style');
+                    if (style) {
+                        previewUrl = 'https://www.dafont.com' + (style.match(/url\((.*?)\)/)?.[1] || '');
+                    }
+                    
+                    name = rawUrl.split('/').pop().replace('.font', '').replace(/-/g, ' ');
+                } catch (e) {
+                    await react('❌');
+                    return replyfail('❌ Gagal mengambil link download dari halaman tersebut.');
+                }
+            } 
+            else {
+                dlUrl = rawUrl.startsWith('//') ? 'https:' + rawUrl : rawUrl;
+                let matchName = dlUrl.match(/\?f=([^&]+)/);
+                name = matchName ? matchName[1].replace(/_/g, ' ') : 'DaFont_Download';
+            }
+        }
+
+        if (!dlUrl) {
+            await react('❌');
+            return replyfail('❌ URL Download tidak valid!');
+        }
+
+        try {
+            if (previewUrl && previewUrl !== 'null') {
+                await hydro.sendMessage(m.chat, { 
+                    image: { url: previewUrl }, 
+                    caption: `*${name.toUpperCase()}*\n\n⏳ Sedang mengunduh font...` 
+                }, { quoted: m });
+            } else {
+                replysuccess(`⏳ Sedang mengunduh *${name.toUpperCase()}*...`);
+            }
+
+            await hydro.sendMessage(m.chat, {
+                document: { url: dlUrl },
+                fileName: `${name}.zip`,
+                mimetype: 'application/zip'
+            }, { quoted: m });
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+
+            await react('✅');
+        } catch (e) {
+            console.error(e);
+            await react('❌');
+            replyfail('❌ Gagal mengunduh file font tersebut. Pastikan link yang diberikan valid.');
+        }
+    }
+        break;
+    case 'ytmp4':
+    case 'ytvideo':
+    case 'mp4': {
+        if (!text) {
+            return replyquery(
+                `🎬 *YouTube Video Downloader*\n\n` +
+                `📌 *Cara Penggunaan:*\n` +
+                `   • *${prefix + command}* <link> <resolusi>\n` +
+                `   • *${prefix + command}* <link>\n\n` +
+                `💡 *Contoh:*\n` +
+                `   ${prefix + command} https://youtu.be/abc123 720\n` +
+                `   ${prefix + command} https://youtu.be/abc123\n`
+            );
+        }
+
+        const argsList = text.split(' ');
+        const link = argsList[0];
+        const resolution = argsList[1];
+
+        const isUrl = (url) => url.match(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)/gi);
+        if (!isUrl(link) || !link.includes("youtu")) return replyfail('❌ Link tidak valid! Pastikan itu link YouTube.');
+
+        const limitMap = {
+            '144': 2, '240': 3, '360': 4, '480': 6, '720': 10, '1080': 15, '1440': 20, '2160': 30, '4320': 50
+        };
+
+        if (!resolution) {
+            try {
+                const reso = ['144', '240', '360', '480', '720', '1080', '1440', '2160', '4320'];
+                const rows = reso.map(r => ({
+                    header: "",
+                    title: `🎥 Resolusi ${r}p`,
+                    description: `Dibutuhkan ${limitMap[r]} Limit`,
+                    id: `${prefix}${command} ${link} ${r}`
+                }));
+
+                const msg = generateWAMessageFromContent(m.chat, {
+                    viewOnceMessage: {
+                        message: {
+                            messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
+                            interactiveMessage: {
+                                body: { text: `📥 *Pilih resolusi video yang tersedia untuk diunduh:*` },
+                                footer: { text: `💡 ${global.botname} — Downloader Cepat` },
+                                header: {
+                                    title: "📺 YouTube Video Downloader",
+                                    subtitle: "Format: MP4",
+                                    hasMediaAttachment: false,
+                                },
+                                nativeFlowMessage: {
+                                    buttons: [{
+                                        name: "single_select",
+                                        buttonParamsJson: JSON.stringify({
+                                            title: "🎯 Pilih Resolusi",
+                                            sections: [{ title: "Daftar Resolusi", rows }]
+                                        })
+                                    }]
+                                }
+                            }
+                        }
+                    }
+                }, { quoted: m }, {});
+
+                await hydro.relayMessage(msg.key.remoteJid, msg.message, { messageId: msg.key.id });
+            } catch (e) {
+                return replyfail(global.mess.error.fitur);
+            }
+        } else {
+            if (!limitMap[resolution]) return replyfail("⚠️ Resolusi tidak tersedia!");
+
+            let baseCost = limitMap[resolution];
+            let cost = getLimitCost('ytmp4', baseCost);
+            let totalLimit = checkLimit(m.sender, Ahmad); 
+
+            if (totalLimit !== "∞" && totalLimit < cost) {
+                return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+            }
+
+            try {
+                await react('⏳');
+
+                const data = await ytmp4(link, resolution); 
+                
+                if (!data || !data.downloadUrl) throw new Error("Gagal mengambil link download");
+
+                const resData = await axios.get(data.downloadUrl, { responseType: 'arraybuffer' });
+                const buffer = Buffer.from(resData.data);
+                const fileSizeMB = buffer.length / (1024 * 1024);
+                
+                let sisaLimitText = totalLimit === "∞" ? "∞" : (totalLimit - cost);
+                let captionText = `🎥 *Judul:* \n${data.title || '-'}\n📌 *Resolusi:* ${resolution}p\n> Sisa limit: ${sisaLimitText}`;
+
+                const fileMsg = fileSizeMB > 100 
+                    ? { document: buffer, fileName: `${data.title || 'video'}.mp4`, mimetype: 'video/mp4', caption: captionText }
+                    : { video: buffer, fileName: `${data.title || 'video'}.mp4`, mimetype: 'video/mp4', caption: captionText };
+
+                await hydro.sendMessage(m.chat, fileMsg, { quoted: m });
+
+                if (cost > 0) {
+                    useLimit(m.sender, cost, Ahmad);
+                    fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+                }
+
+                await react('✅');
+            } catch (err) {
+                console.error(err.message);
+                await react('❌');
+                return replyfail(mess.error.fitur);
+            }
+        }
+    }
+        break;
+    case 'ytmp3':
+    case 'ytaudio':
+    case 'mp3': {
+        if (!text) {
+            return replyquery(
+                `🎵 *YouTube Audio Downloader*\n\n` +
+                `📌 *Cara Penggunaan:*\n` +
+                `   • *${prefix + command}* <link>\n\n` +
+                `💡 *Contoh:*\n` +
+                `   ${prefix + command} https://youtu.be/abc123\n`
+            );
+        }
+
+        const link = text.split(' ')[0];
+        const isUrl = (url) => url.match(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)/gi);
+
+        if (!isUrl(link) || !link.includes("youtu")) return replyfail('❌ Link tidak valid! Pastikan itu link YouTube.');
+
+        let cost = getLimitCost('ytmp3', 2);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        try {
+            await react('⏳');
+            const data = await ytmp3(link); 
+            
+            if (!data || !data.downloadUrl) throw new Error("Gagal mengambil link download");
+
+            const resData = await axios.get(data.downloadUrl, { responseType: 'arraybuffer' });
+            const buffer = Buffer.from(resData.data);
+            
+            let audioContext = {
+                externalAdReply: {
+                    showAdAttribution: true,
+                    title: data.title || "YouTube Downloader",
+                    body: "Audio MP3",
+                    thumbnailUrl: data.thumbnail || 'https://telegra.ph/file/320b066dc81928b782c7b.png',
+                    sourceUrl: link,
+                    mediaType: 1,
+                    renderLargerThumbnail: true
+                }
+            };
+            
+            await hydro.sendMessage(m.chat, { 
+                audio: buffer, 
+                mimetype: 'audio/mpeg', 
+                ptt: false,
+                contextInfo: audioContext
+            }, { quoted: m });
+            
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+
+            await react('✅');
+        } catch (err) {
+            console.error(err.message);
+            await react('❌');
+            return replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case "spdl":
+    case "spotifydl": {
+        if (!text) {
+            return replyquery(`📌 *Contoh Penggunaan:*\n${prefix + command} https://open.spotify.com/track/...`);
+        }
+
+        let cost = getLimitCost('spotifydl', 2);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        await react('⏱️');
+
+        try {
+            const res = await spotifyScrape(text);
+
+            let title = res?.song?.title || "Spotify Audio";
+            let artist = res?.song?.artist || "Unknown Artist";
+            let thumb = res?.song?.thumbnail || "https://telegra.ph/file/320b066dc81928b782c7b.png"; 
+            let url = res?.trackUrl || text;
+            let duration = res?.song?.duration || "-";
+
+            await hydro.sendMessage(
+                m.chat,
+                {
+                    audio: res.audioBuffer,
+                    mimetype: "audio/mpeg",
+                    fileName: `${title}.mp3`,
+                    contextInfo: {
+                        externalAdReply: {
+                            showAdAttribution: true,
+                            title: title,
+                            body: artist,
+                            mediaType: 1,
+                            renderLargerThumbnail: true,
+                            thumbnailUrl: thumb,
+                            sourceUrl: url,
+                        },
+                    },
+                    caption: `🎵 *${title}*\n👤 *Artist:* ${artist}\n⏱️ *Duration:* ${duration}`,
+                },
+                { quoted: m }
+            );
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+
+            await react('✅');
+        } catch (err) {
+            console.error(err.message);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'git':
+    case 'github':
+    case 'gitclone': {
+        if (!args[0]) return replyquery(`Mana linknya?\nExample :\n${prefix}${command} https://github.com/AhmadAkbarID/hydromd`);
+        
+        const isUrl = (url) => url.match(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)/gi);
+        if (!isUrl(args[0]) || !args[0].includes('github.com')) return replyfail(`❌ Link invalid! Harus berupa link repositori GitHub.`);
+        
+        await react('⏱️');
+        
+        try {
+            let regex1 = /(?:https|git)(?::\/\/|@)github\.com[\/:]([^\/:]+)\/(.+)/i;
+            let [, user, repo] = args[0].match(regex1) || [];
+            
+            if (!user || !repo) return replyfail('❌ Gagal mem-parsing link GitHub.');
+            
+            repo = repo.replace(/.git$/, '');
+            let tag = args[1] ? args[1] : ''; 
+            
+            let url = `https://api.github.com/repos/${user}/${repo}/zipball`;
+            if (tag && tag !== 'master') {
+                url += `/${tag}`;
+            }
+            
+            let response = await fetch(url, { method: 'HEAD' });
+            
+            if (!response.ok) {
+                await react('❌');
+                return replyfail(`❌ Gagal mengambil repository. Pastikan repo bersifat public atau versi tag tersebut benar-benar ada.\nStatus: ${response.status}`);
+            }
+
+            let versionText = (tag && tag !== 'master') ? tag : 'master';
+            let filename = `${repo}-${versionText}.zip`;
+
+            filename = filename.replace(/[^a-zA-Z0-9-_\.]/g, '');
+
+            await hydro.sendMessage(m.chat, { 
+                document: { url: url }, 
+                fileName: filename, 
+                mimetype: 'application/zip',
+                caption: `✅ Berhasil mengunduh *${user}/${repo}*\nVersi: ${versionText}`
+            }, { quoted: m });
+            
+            await react('✅');
+        } catch (err) {
+            console.error(err);
+            await react('❌');
+            replyfail(global.mess.error.fitur);
+        }
+    }
+        break;
+
+// ====== MAKER FEATURE ======
+
+    case 'brat': {
+        if (!text) return replyquery(`📌 Contoh:\n*${prefix + command} nyong*`);
+        let cost = getLimitCost('brat', 1);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+        await react('⏱️');
+        try {
+            let pngBuffer = await makeBrat(text);
+            let webpBuffer = await toSticker(pngBuffer, global.packname, global.author);
+            await hydro.sendMessage(m.chat, { sticker: webpBuffer }, { quoted: m });
+            
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+            await react('✅');
+        } catch (e) {
+            console.error(e);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'bratvid': {
+        if (!text) return replyquery(`📌 Contoh:\n*${prefix + command} So I wasn't the only one...*`);
+        let cost = getLimitCost('bratvid', 1);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+        await react('⏱️');
+        try {
+            let webpBuffer = await makeBratVid(text, global.packname, global.author);
+            await hydro.sendMessage(m.chat, { sticker: webpBuffer }, { quoted: m });
+            
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+            await react('✅');
+        } catch (e) {
+            console.error(e);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'iqc': {
+        if (!text) return replyquery(`📌 Contoh Penggunaan:\n*${prefix + command} pesan*\n*${prefix + command} pesan|jam* ( opsional )\n*${prefix + command} pesan|baterai|sinyal|jam* ( opsional )\n\nContoh: *${prefix + command} Halo Sayangku*`);
+
+        let cost = getLimitCost('iqc', 1);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        let parts = text.split("|").map(s => s.trim());
+        let pesan = parts[0];
+        let baterai = 100; 
+        let sinyal = 4;    
+        let jam;
+
+        if (!pesan) return replyquery(`❌ Pesan tidak boleh kosong!`);
+
+        if (parts.length === 2) {
+            jam = parts[1];
+        } else if (parts.length === 3) {
+            baterai = !isNaN(parts[1]) ? parseInt(parts[1]) : 100;
+            sinyal = !isNaN(parts[2]) ? parseInt(parts[2]) : 4;
+        } else if (parts.length === 4) {
+            baterai = !isNaN(parts[1]) ? parseInt(parts[1]) : 100;
+            sinyal = !isNaN(parts[2]) ? parseInt(parts[2]) : 4;
+            jam = parts[3];
+        }
+
+        if (baterai < 0) baterai = 0;
+        if (baterai > 100) baterai = 100;
+        if (sinyal < 1) sinyal = 1;
+        if (sinyal > 4) sinyal = 4;
+
+        if (!jam) {
+            const now = new Date();
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const wib = new Date(utc + (7 * 3600000));
+            const h = String(wib.getHours()).padStart(2, "0");
+            const mnt = String(wib.getMinutes()).padStart(2, "0");
+            jam = `${h}:${mnt}`;
+        }
+
+        if (jam && !jam.includes(":")) return replyquery('❌ Format jam salah! Gunakan titik dua (:), contoh: 12:00');
+
+        await react('⏱️');
+
+        let apiUrl = `https://brat.siputzx.my.id/iphone-quoted?messageText=${encodeURIComponent(pesan)}&carrierName=TELKOMSEL&batteryPercentage=${baterai}&signalStrength=${sinyal}&time=${encodeURIComponent(jam)}`;
+
+        try {
+            
+            const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
+            const buffer = Buffer.from(response.data);
+
+            await hydro.sendMessage(m.chat, { image: buffer }, { quoted: m });
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+
+            await react('✅');
+        } catch (err) {
+            console.error(err);
+            await react('❌');
+            replyfail('❌ Gagal membuat IQC dari server.');
+        }
+    }
+        break;
+    case 'qc':
+    case 'quoted': {
+        if (!text) return replyquery(`📌 Contoh Penggunaan:\n*${prefix + command} halo sayang*`);
+
+        let cost = getLimitCost('qc', 1);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        await react('⏱️');
+
+        try {
+            let ppUrl;
+            try {
+                ppUrl = await hydro.profilePictureUrl(m.sender, 'image');
+            } catch (e) {
+                ppUrl = 'https://telegra.ph/file/320b066dc81928b782c7b.png'; 
+            }
+            let nameUser = pushname || m.pushName || 'User';
+            
+            let imageBuffer = await makeQC(text, nameUser, ppUrl);
+            let stickerBuffer = await toSticker(imageBuffer, global.packname, global.author);
+
+            await hydro.sendMessage(m.chat, { sticker: stickerBuffer }, { quoted: m });
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+            await react('✅');
+
+        } catch (err) {
+            console.error(err);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'storyig':
+    case 'igstory': {
+        if (!text) return replyquery(`📌 Contoh Penggunaan:\n*${prefix + command} Lagi sedih banget hari ini...*`);
+        let cost = getLimitCost('storyig', 1);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        if (totalLimit !== "∞" && totalLimit < cost) return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        await react('⏱️');
+        try {
+            let ppUrl;
+            try {
+                ppUrl = await hydro.profilePictureUrl(m.sender, 'image');
+            } catch (e) {
+                ppUrl = 'https://telegra.ph/file/320b066dc81928b782c7b.png'; 
+            }
+            let nameUser = pushname || m.pushName || 'User';
+            let imageBuffer = await makeStoryIG(text, nameUser, ppUrl);
+            await hydro.sendMessage(m.chat, { image: imageBuffer, caption: mess.success }, { quoted: m });
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+            await react('✅');
+        } catch (err) {
+            console.error(err);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'balogo':
+    case 'bluearchivelogo': {
+        if (!text) return replyquery(`*Contoh Penggunaan:*\n${prefix + command} Blue|Archive`);
+        if (!text.includes('|')) return replytolak('Format Salah! Teks kiri dan kanan harus dipisahkan dengan tanda |');
+
+        const [l, r] = text.split('|');
+
+        if (!l || !r) return replytolak('Format Salah! Teks kiri dan kanan tidak boleh kosong.');
+
+        replysuccess(mess.wait);
+
+        try {
+            
+            const balogoMaker = new BALogo({
+                fontSize: 84,
+                transparent: false,
+                haloX: -15,
+                haloY: 0
+            });
+
+            const buffer = await balogoMaker.draw(l.trim(), r.trim());
+
+            await hydro.sendMessage(m.chat, { 
+                image: buffer,
+                caption: mess.success
+            }, { quoted: m });
+
+        } catch (e) {
+            replyfail(mess.fail);
+        }
+    }
+    break;
+
+// ====== SEARCH FEATURE ======
+
+    case 'pin':
+    case 'pinterest': {
+        if (!text) return replyquery(`Contoh: \n${prefix + command} furina kawaii`)
+
+        let cost = getLimitCost('pinterest', 1);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        try {
+            const images = await searchPinterestAPI(text, 20);
+
+            if (!images || images.length === 0) return m.reply('Gambar tidak ditemukan.')
+
+            let cards = await Promise.all(images.map(async (url, i) => {
+                return {
+                    header: proto.Message.InteractiveMessage.Header.create({
+                        ...(await prepareWAMessageMedia({ image: { url: url } }, { upload: hydro.waUploadToServer })),
+                        title: '',
+                        subtitle: `Gambar ${i + 1} dari ${images.length}`,
+                        hasMediaAttachment: true 
+                    }),
+                    body: { text: '' },
+                    nativeFlowMessage: { buttons: [] }
+                }
+            }))
+
+            let msg = generateWAMessageFromContent(
+                m.chat,
+                {
+                    viewOnceMessage: {
+                        message: {
+                            interactiveMessage: {
+                                body: { text: `Ini Hasil Pencarian Dari Pinterest\n*${text}*` },
+                                carouselMessage: {
+                                    cards: cards,
+                                    messageVersion: 1
+                                }
+                            }
+                        }
+                    }
+                },
+                { quoted: m }
+            )
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+        
+            await hydro.relayMessage(m.chat, msg.message, { messageId: msg.key.id })
+        } catch (err) {
+            console.error(err)
+            replyfail('Terjadi kesalahan saat mengambil data dari Pinterest.')
+        }
+    }
+        break;
+    case 'dafont':
+    case 'font': {
+        if (!text) return replyquery(`📌 Contoh Penggunaan:\n*${prefix + command} arial*`);
+        
+        let cost = getLimitCost('dafont', 0);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        await react('⏱️');
+        
+        try {
+            let result = await searchDafont(text);
+
+            if (!result || result.length === 0) {
+                await react('❌');
+                return replyfail('❌ Font tidak ditemukan!');
+            }
+
+            let listDaFont = result.slice(0, 15).map((v, i) => {
+                let fName = v.name.length > 20 ? v.name.substring(0, 20) : v.name;
+                let desc = `By: ${v.author} | DL: ${v.downloads}`;
+                return {
+                    header: "",
+                    title: `${i + 1}. ${fName}`,
+                    description: desc.length > 70 ? desc.substring(0, 67) + '...' : desc,
+                    id: `${prefix}dafontdl ${v.download}|${v.preview}|${v.name}`
+                };
+            });
+
+            let msg = generateWAMessageFromContent(m.chat, {
+                viewOnceMessage: {
+                    message: {
+                        messageContextInfo: {
+                            deviceListMetadata: {},
+                            deviceListMetadataVersion: 2
+                        },
+                        interactiveMessage: {
+                            body: {
+                                text: `🔎 *Hasil Pencarian DaFont:*\n"${text}"\n`
+                            },
+                            footer: {
+                                text: global.botname
+                            },
+                            header: {
+                                title: "DaFont Search",
+                                subtitle: "",
+                                hasMediaAttachment: false
+                            },
+                            nativeFlowMessage: {
+                                buttons: [
+                                    {
+                                        name: "single_select",
+                                        buttonParamsJson: JSON.stringify({
+                                            title: "PILIH FONT",
+                                            sections: [
+                                                {
+                                                    title: "Daftar Font",
+                                                    rows: listDaFont
+                                                }
+                                            ]
+                                        })
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }, { quoted: m }, {});
+
+            await hydro.relayMessage(msg.key.remoteJid, msg.message, { messageId: msg.key.id });
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+            await react('✅');
+
+        } catch (e) {
+            console.error(e);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'spotify':
+    case 'spotifysearch':
+    case 'spotifys': {
+        if (!text) return replyquery(`📌 *Contoh Penggunaan:*\n${prefix + command} anone by arekun`);
+
+        let cost = getLimitCost('spotify', 0);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        await react('⏱️');
+
+        try {
+            const result = await searchSpotify(text);
+
+            if (!result || result.length === 0) {
+                await react('❌');
+                return replyfail(mess.error.fitur);
+            }
+
+            let caption = result.map((v, i) => {
+                let desc = `Artist: ${v.artists} | Popularity: ${v.popularity}`;
+                return {
+                    header: "",
+                    title: v.name.length > 30 ? v.name.substring(0, 27) + '...' : v.name,
+                    description: desc.length > 60 ? desc.substring(0, 57) + '...' : desc,
+                    id: `${prefix}spdl ${v.link}`
+                };
+            });
+
+            let msg = generateWAMessageFromContent(m.chat, {
+                viewOnceMessage: {
+                    message: {
+                        messageContextInfo: {
+                            deviceListMetadata: {},
+                            deviceListMetadataVersion: 2
+                        },
+                        interactiveMessage: {
+                            body: {
+                                text: `🔎 Hasil Pencarian Spotify\n*${text}*`,
+                            },
+                            footer: {
+                                text: global.botname
+                            },
+                            header: {
+                                title: "Spotify - Search",
+                                subtitle: "",
+                                hasMediaAttachment: false,
+                            },
+                            nativeFlowMessage: {
+                                buttons: [
+                                    {
+                                        name: "single_select",
+                                        buttonParamsJson: JSON.stringify({
+                                            title: "PILIH LAGU",
+                                            sections: [
+                                                {
+                                                    title: "Daftar Lagu Spotify",
+                                                    rows: caption
+                                                }
+                                            ]
+                                        })
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }, { quoted: m }, {});
+            
+            await hydro.relayMessage(msg.key.remoteJid, msg.message, {
+                messageId: msg.key.id
+            });
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+
+            await react('✅');
+
+        } catch (e) {
+            console.error(e);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'songs':
+    case 'play': {
+        if (!text) return replyquery(`📌 *Contoh Penggunaan:*\n${prefix + command} 7!! - Orange Official`);
+
+        let cost = getLimitCost('play', 0);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        await react('⏱️');
+
+        try {
+            const search = await yts(text);
+            
+            const video = search.videos[0]; 
+            
+            if (!video) {
+                await react('❌');
+                return replyfail('❌ Video/Lagu tidak ditemukan!');
+            }
+
+            const bodyText = `• *Judul:* ${video.title}\n` +
+                `• *Channel:* ${video.author.name}\n` +
+                `• *Durasi:* ${video.timestamp}\n` +
+                `• *Views:* ${video.views}\n` +
+                `• *Upload:* ${video.ago}\n` +
+                `• *Link:* ${video.url}`;
+
+            const resolusiVideo = ['144', '240', '360', '480', '720', '1080', '1440', '2160'];
+            let listMp4 = resolusiVideo.map(res => {
+                return {
+                    header: "",
+                    title: `${res}p`,
+                    description: `Download video kualitas ${res}p`,
+                    id: `${prefix}ytmp4 ${video.url} ${res}`
+                };
+            });
+
+            const msg = generateWAMessageFromContent(m.chat, {
+                viewOnceMessage: {
+                    message: {
+                        messageContextInfo: {
+                            deviceListMetadata: {},
+                            deviceListMetadataVersion: 2
+                        },
+                        interactiveMessage: {
+                            body: {
+                                text: bodyText,
+                            },
+                            footer: {
+                                text: global.botname
+                            },
+                            header: {
+                                title: "",
+                                subtitle: "",
+                                hasMediaAttachment: true,
+                                ...(await prepareWAMessageMedia({ image: { url: video.thumbnail } }, { upload: hydro.waUploadToServer }))
+                            },
+                            nativeFlowMessage: {
+                                buttons: [
+                                    {
+                                        name: "quick_reply",
+                                        buttonParamsJson: JSON.stringify({
+                                            display_text: "🎵 AUDIO",
+                                            id: `${prefix}ytmp3 ${video.url}`
+                                        })
+                                    },
+                                    {
+                                        name: "single_select",
+                                        buttonParamsJson: JSON.stringify({
+                                            title: "🎥 VIDEO",
+                                            sections: [
+                                                {
+                                                    title: "Pilih Resolusi",
+                                                    rows: listMp4
+                                                }
+                                            ]
+                                        })
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }, { quoted: m });
+
+            await hydro.relayMessage(msg.key.remoteJid, msg.message, {
+                messageId: msg.key.id
+            });
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+
+            await react('✅');
+
+        } catch (err) {
+            console.error(err);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+        
+// ====== CONVERTER FEATURE ======
+
+    case 's':
+    case 'sticker':
+    case 'stiker':
+    case 'tosticker': {
+        let isImageMsg = type === 'imageMessage' || (m.quoted && m.quoted.mtype === 'imageMessage');
+        let isVideoMsg = type === 'videoMessage' || (m.quoted && m.quoted.mtype === 'videoMessage');
+
+        if (!isImageMsg && !isVideoMsg) return replyquery(`📌 Reply gambar atau video dengan caption *${prefix + command}*`);
+
+        let cost = getLimitCost('tosticker', 1);
+        let totalLimit = checkLimit(m.sender, Ahmad);
+        if (totalLimit !== "∞" && totalLimit < cost) return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+
+        await react('⏱️');
+        try {
+            if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
+
+            let mediaBuffer = await (m.quoted ? m.quoted.download() : m.download());
+            let ranId = crypto.randomBytes(4).toString('hex');
+            let ext = isVideoMsg ? '.mp4' : '.png';
+            let tmpIn = `./temp/${ranId}${ext}`;
+            let tmpOut = `./temp/${ranId}.webp`;
+
+            fs.writeFileSync(tmpIn, mediaBuffer);
+            let ffmpegArgs = isVideoMsg 
+                ? `-vcodec libwebp -filter_complex "[0:v]scale=512:512:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000,fps=15" -loop 0 -preset default -an -vsync 0 -t 10` 
+                : `-vcodec libwebp -vf "scale=512:512:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000" -preset default -an -vsync 0`;
+
+            exec(`ffmpeg -i ${tmpIn} ${ffmpegArgs} ${tmpOut}`, async (err) => {
+                if (fs.existsSync(tmpIn)) fs.unlinkSync(tmpIn);
+                if (err) {
+                    await react('❌');
+                    return replyfail(mess.error.fitur);
+                }
+                
+                let webp = fs.readFileSync(tmpOut);
+
+                webp = await addExif(webp, global.packname, global.author);
+
+                await hydro.sendMessage(m.chat, { sticker: webp }, { quoted: m });
+                if (fs.existsSync(tmpOut)) fs.unlinkSync(tmpOut);
+
+                if (cost > 0) {
+                    useLimit(m.sender, cost, Ahmad);
+                    fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+                }
+                await react('✅');
+            });
+        } catch (e) {
+            console.error(e);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'toimg':
+    case 'toimage': {
+        let isStickerMsg = m.quoted && m.quoted.mtype === 'stickerMessage';
+        if (!isStickerMsg) return replyquery(`📌 Reply stiker dengan caption *${prefix + command}*`);
+
+        let cost = getLimitCost('toimg', 1);
+        let totalLimit = checkLimit(m.sender, Ahmad);
+        if (totalLimit !== "∞" && totalLimit < cost) return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+
+        await react('⏱️');
+        try {
+            if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
+
+            let mediaBuffer = await m.quoted.download();
+            let ranId = crypto.randomBytes(4).toString('hex');
+            let tmpIn = `./temp/${ranId}.webp`;
+            let tmpOut = `./temp/${ranId}.png`;
+
+            fs.writeFileSync(tmpIn, mediaBuffer);
+
+            exec(`ffmpeg -i ${tmpIn} ${tmpOut}`, async (err) => {
+                if (fs.existsSync(tmpIn)) fs.unlinkSync(tmpIn);
+                if (err) {
+                    await react('❌');
+                    return replyfail('❌ Media ini tidak bisa dijadikan gambar. Gunakan .tovid jika video');
+                }
+                
+                let img = fs.readFileSync(tmpOut);
+                await hydro.sendMessage(m.chat, { image: img, caption: mess.success }, { quoted: m });
+                if (fs.existsSync(tmpOut)) fs.unlinkSync(tmpOut);
+
+                if (cost > 0) {
+                    useLimit(m.sender, cost, Ahmad);
+                    fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+                }
+                await react('✅');
+            });
+        } catch (e) {
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'tovid':
+    case 'tovideo': {
+        let isStickerMsg = m.quoted && m.quoted.mtype === 'stickerMessage';
+        if (!isStickerMsg) return replyquery(`📌 Reply stiker (bergerak) dengan caption *${prefix + command}*`);
+
+        let cost = getLimitCost('tovid', 2);
+        let totalLimit = checkLimit(m.sender, Ahmad);
+        if (totalLimit !== "∞" && totalLimit < cost) return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+
+        await react('⏱️');
+        try {
+            if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
+
+            let mediaBuffer = await m.quoted.download();
+            let ranId = crypto.randomBytes(4).toString('hex');
+            let tmpIn = `./temp/${ranId}.webp`;
+            let tmpOut = `./temp/${ranId}.mp4`;
+
+            fs.writeFileSync(tmpIn, mediaBuffer);
+
+            exec(`ffmpeg -i ${tmpIn} -c:v libx264 -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" ${tmpOut}`, async (err) => {
+                if (fs.existsSync(tmpIn)) fs.unlinkSync(tmpIn);
+                if (err) {
+                    await react('❌');
+                    return replyfail('❌ Media ini tidak bisa dijadikan video. Gunakan .toimg jika gambar');
+                }
+                
+                let vid = fs.readFileSync(tmpOut);
+                await hydro.sendMessage(m.chat, { video: vid, caption: mess.success }, { quoted: m });
+                if (fs.existsSync(tmpOut)) fs.unlinkSync(tmpOut);
+
+                if (cost > 0) {
+                    useLimit(m.sender, cost, Ahmad);
+                    fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+                }
+                await react('✅');
+            });
+        } catch (e) {
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'tomp3':
+    case 'toaudio': {
+        let isVideoMsg = type === 'videoMessage' || (m.quoted && m.quoted.mtype === 'videoMessage');
+        let isAudioMsg = type === 'audioMessage' || (m.quoted && m.quoted.mtype === 'audioMessage');
+        if (!isVideoMsg && !isAudioMsg) return replyquery(`📌 Reply video atau voice note dengan caption *${prefix + command}*`);
+
+        let cost = getLimitCost('tomp3', 1);
+        let totalLimit = checkLimit(m.sender, Ahmad);
+        if (totalLimit !== "∞" && totalLimit < cost) return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+
+        await react('⏱️');
+        try {
+            if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
+
+            let mediaBuffer = await (m.quoted ? m.quoted.download() : m.download());
+            let ranId = crypto.randomBytes(4).toString('hex');
+            let tmpIn = `./temp/${ranId}.mp4`;
+            let tmpOut = `./temp/${ranId}.mp3`;
+
+            fs.writeFileSync(tmpIn, mediaBuffer);
+
+            exec(`ffmpeg -i ${tmpIn} -vn -b:a 128k ${tmpOut}`, async (err) => {
+                if (fs.existsSync(tmpIn)) fs.unlinkSync(tmpIn);
+                if (err) {
+                    await react('❌');
+                    return replyfail('❌ Gagal mengekstrak audio.');
+                }
+                
+                let aud = fs.readFileSync(tmpOut);
+                await hydro.sendMessage(m.chat, { audio: aud, mimetype: 'audio/mp4' }, { quoted: m });
+                if (fs.existsSync(tmpOut)) fs.unlinkSync(tmpOut);
+
+                if (cost > 0) {
+                    useLimit(m.sender, cost, Ahmad);
+                    fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+                }
+                await react('✅');
+            });
+        } catch (e) {
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'togif': {
+        let isVideoMsg = type === 'videoMessage' || (m.quoted && m.quoted.mtype === 'videoMessage');
+        if (!isVideoMsg) return replyquery(`📌 Reply video dengan caption *${prefix + command}*`);
+
+        let cost = getLimitCost('togif', 1);
+        let totalLimit = checkLimit(m.sender, Ahmad);
+        if (totalLimit !== "∞" && totalLimit < cost) return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+
+        await react('⏱️');
+        try {
+            let mediaBuffer = await (m.quoted ? m.quoted.download() : m.download());
+            
+            await hydro.sendMessage(m.chat, { 
+                video: mediaBuffer, 
+                gifPlayback: true, 
+                caption: mess.success
+            }, { quoted: m });
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+            await react('✅');
+        } catch (e) {
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'tofile':
+    case 'todoc':
+    case 'todocument': {
+        if (!mime) return replyquery(`📌 Reply media apa saja (gambar, stiker, video, audio, dokumen) dengan caption *${prefix + command}*`);
+
+        let cost = getLimitCost('tofile', 1); 
+        let totalLimit = checkLimit(m.sender, Ahmad);
+        if (totalLimit !== "∞" && totalLimit < cost) return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+
+        await react('⏱️');
+        try {
+            if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
+
+            let mediaBuffer = await (m.quoted ? m.quoted.download() : m.download());
+            let ranId = crypto.randomBytes(4).toString('hex');
+            
+            let ext = 'bin'; 
+            if (mime.includes('webp')) ext = 'webp';
+            else if (mime.includes('jpeg') || mime.includes('jpg')) ext = 'jpg';
+            else if (mime.includes('png')) ext = 'png';
+            else if (mime.includes('mp4')) ext = 'mp4';
+            else if (mime.includes('ogg')) ext = 'ogg';
+            else if (mime.includes('mpeg')) ext = 'mp3';
+            else if (mime.includes('pdf')) ext = 'pdf';
+            else if (mime.includes('zip')) ext = 'zip';
+            else if (mime.includes('rar')) ext = 'rar';
+            else if (mime.includes('apk') || mime.includes('android.package-archive')) ext = 'apk';
+            else ext = mime.split('/')[1]?.split(';')[0]?.replace(/[^a-zA-Z0-9]/g, '') || 'bin';
+
+            let tmpIn = `./temp/${ranId}.${ext}`;
+            fs.writeFileSync(tmpIn, mediaBuffer);
+
+            await hydro.sendMessage(m.chat, { 
+                document: fs.readFileSync(tmpIn), 
+                mimetype: mime, 
+                fileName: `${ranId}.${ext}`, 
+                caption: mess.success
+            }, { quoted: m });
+
+            if (fs.existsSync(tmpIn)) fs.unlinkSync(tmpIn);
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+            await react('✅');
+        } catch (e) {
+            console.error(e);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'tovn':
+    case 'toptt': {
+        let isVideoMsg = type === 'videoMessage' || (m.quoted && m.quoted.mtype === 'videoMessage');
+        let isAudioMsg = type === 'audioMessage' || (m.quoted && m.quoted.mtype === 'audioMessage');
+        
+        if (!isVideoMsg && !isAudioMsg) return replyquery(`📌 Reply video atau lagu/audio dengan caption *${prefix + command}*`);
+
+        let cost = getLimitCost('tovn', 1);
+        let totalLimit = checkLimit(m.sender, Ahmad);
+        if (totalLimit !== "∞" && totalLimit < cost) return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+
+        await react('⏱️');
+        try {
+            if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
+
+            let mediaBuffer = await (m.quoted ? m.quoted.download() : m.download());
+            let ranId = crypto.randomBytes(4).toString('hex');
+            
+            let ext = isVideoMsg ? '.mp4' : '.mp3';
+            let tmpIn = `./temp/${ranId}${ext}`;
+            let tmpOut = `./temp/${ranId}.ogg`;
+
+            fs.writeFileSync(tmpIn, mediaBuffer);
+
+            exec(`ffmpeg -i ${tmpIn} -vn -c:a libopus -b:a 128k ${tmpOut}`, async (err) => {
+                if (fs.existsSync(tmpIn)) fs.unlinkSync(tmpIn);
+                if (err) {
+                    await react('❌');
+                    return replyfail('❌ Gagal mengubah media menjadi Voice Note.');
+                }
+                
+                let aud = fs.readFileSync(tmpOut);
+                
+                await hydro.sendMessage(m.chat, { 
+                    audio: aud, 
+                    mimetype: 'audio/ogg; codecs=opus', 
+                    ptt: true 
+                }, { quoted: m });
+                
+                if (fs.existsSync(tmpOut)) fs.unlinkSync(tmpOut);
+
+                if (cost > 0) {
+                    useLimit(m.sender, cost, Ahmad);
+                    fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+                }
+                await react('✅');
+            });
+        } catch (e) {
+            console.error(e);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'swm':
+    case 'steal':
+    case 'stickerwm':
+    case 'take':
+    case 'wm': {
+        let isStickerMsg = m.quoted && m.quoted.mtype === 'stickerMessage';
+        if (!isStickerMsg) return replyquery(`⚠️ Reply stickernya dulu!`);
+
+        let cost = getLimitCost('swm', 1);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        let ahuh = text ? text.split('|') : [];
+        let packname = ahuh[0] ? ahuh[0].trim() : ' '; 
+        let author = ahuh[1] ? ahuh[1].trim() : ' ';   
+
+        await react('⏱️');
+
+        try {
+            let mediaBuffer = await m.quoted.download(); 
+            
+            let newStickerBuffer = await addExif(mediaBuffer, packname, author);
+
+            await hydro.sendMessage(m.chat, { sticker: newStickerBuffer }, { quoted: m });
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+            
+            await react('✅');
+        } catch (e) {
+            console.error(e);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+
+// ====== AI FEATURE ======
+
+    case 'mathgpt':
+    case 'mtkgpt': {
+        let isImageMsg = type === 'imageMessage' || (m.quoted && m.quoted.mtype === 'imageMessage');
+        
+        if (!text && !isImageMsg) return replyquery(`📌 Contoh Penggunaan:\n*${prefix + command} 1+1=?*\n\nAtau kirim/reply gambar soal matematika dengan caption *${prefix + command}*`);
+
+        let cost = getLimitCost('mathgpt', 2);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        await react('⏱️');
+
+        try {
+            let imgBuffer = null;
+            let mimeType = null;
+            let extension = 'jpg';
+
+            if (isImageMsg) {
+                imgBuffer = await (m.quoted ? m.quoted.download() : m.download());
+                mimeType = mime || (m.quoted && m.quoted.msg ? m.quoted.msg.mimetype : 'image/jpeg');
+                extension = mimeType.split('/')[1]?.split(';')[0] || 'jpg';
+            }
+
+            let questionText = text || "Tolong selesaikan dan jelaskan soal pada gambar ini.";
+            
+            const res = await mathgpt({
+                question: questionText,
+                think: false,
+                image: imgBuffer,
+                mime: mimeType,
+                ext: extension
+            });
+
+            let formattedResponse = res.content
+                .replace(/\*\*/g, '*')
+                .replace(/\$\$/g, '')
+                .replace(/\$/g, '')
+                .replace(/\\text{([^}]*)}/g, '$1')
+                .replace(/\\sqrt{([^}]*)}/g, '√($1)')
+                .replace(/\\times/g, '×')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+
+            await reply(`*🤖 MathGPT AI*\n\n${formattedResponse}`);
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+
+            await react('✅');
+        } catch (e) {
+            console.error(e);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'felo':
+    case 'feloai': {
+        if (!text) return replyquery(`📌 Contoh Penggunaan:\n*${prefix + command} Apa itu kecerdasan buatan?*`);
+
+        let cost = getLimitCost('felo', 2);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        await react('⏱️');
+
+        try {
+            const client = new FeloClient();
+
+            const { answer, sources } = await client.search(text);
+
+            if (!answer) throw new Error("Tidak ada jawaban yang diterima dari AI.");
+
+            let responseText = `*🤖 Felo AI*\n\n${answer}`;
+            
+            if (sources && sources.length > 0) {
+                responseText += `\n\n*📚 Sumber:*`;
+                sources.forEach((src, index) => {
+                    responseText += `\n*${index + 1}.* ${src.title}\n🔗 ${src.url}`;
+                });
+            }
+
+            await reply(responseText);
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+
+            await react('✅');
+        } catch (e) {
+            console.error(e);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'chatex':
+    case 'chatexai': {
+        if (!text) return replyquery(`📌 Contoh Penggunaan:\n*${prefix + command} Buatkan saya puisi tentang laut*`);
+
+        let cost = getLimitCost('chatex', 2);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        await react('⏱️');
+
+        try {
+            const res = await chatex(text);
+
+            if (!res || !res.text) throw new Error("Tidak ada respon yang diterima dari AI.");
+
+            let responseText = `*🤖 ChatEx AI*\n\n${res.text}`;
+
+            await reply(responseText);
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+
+            await react('✅');
+        } catch (e) {
+            console.error("ChatEx AI Error:", e);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+
+// ====== UTILITY FEATURE ======
+    
+    case 'rch':
+    case 'frch':
+    case 'fakereactch':
+    case 'fakerch':
+    case 'reactch': {
+        if (args.length < 2) return replyquery(`⚠️ *Format Salah!*\nGunakan format:\n${prefix + command} <link_post> <emoji>\n\n📌 *Contoh:*\n${prefix + command} https://whatsapp.com/channel/xxx/123 😂 😱`)
+
+        let cost = getLimitCost('reactch', 5);
+        let totalLimit = checkLimit(m.sender, Ahmad); 
+        
+        if (totalLimit !== "∞" && totalLimit < cost) {
+            return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+        }
+
+        const link = args[0]
+        const emoji = args.slice(1).join(" ").replace(/,/g, " ").split(/\s+/).filter(e => e.trim()).join(",")
+
+        await react('⏳');
+
+        if (!global.frch || !Array.isArray(global.frch) || global.frch.length === 0) {
+            await react('❌');
+            return replyfail('❌ Error: Array `global.frch` belum diatur di file settings!');
+        }
+
+        let success = false;
+        let lastError = 'Unknown error';
+
+        for (const jwtToken of global.frch) {
+            try {
+                const reactor = new ReactChannel({ userJwt: jwtToken });
+                const response = await reactor.reactToPost(link, emoji);
+
+                if (response) {
+                    let teks = `✅ *React Sent!*\n\n🔗 *Target:* ${link}\n🎭 *Emoji:* ${emoji.replace(/,/g, ' ')}\n\n🚀 *Powered by ${global.botname}*`;
+                    
+                    await react('✅');
+                    await replysuccess(teks);
+                    success = true;
+                    break;
+                }
+            } catch (e) {
+                lastError = e.response?.data?.message || e.response?.data?.error || e.message || 'Terjadi Kesalahan Sistem';
+            }
+        }
+
+        if (!success) {
+            let teks = `❌ *GAGAL MENGIRIM REAKSI*\n\n📝 *Pesan:* ${lastError}`;
+            await react('❌');
+            await replyfail(teks);
+        } else {
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+        }
+    }
+        break;
+
 
 // ====== ADDCASE ======
 
     case 'addcase': {
             if (!Ahmad) return replytolak(mess.only.owner)
-            if (!q) return replyhydro('Mana case nya');
-            const fs = require('fs');
+            if (!q) return replyquery('Mana case nya');
             const namaFile = 'hydro.js';
             const caseBaru = `${text}`;
             fs.readFile(namaFile, 'utf8', (err, data) => {
@@ -1450,13 +3417,13 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
             const kodeBaruLengkap = data.slice(0, posisiAwalGimage) + '\n' + caseBaru + '\n' + data.slice(posisiAwalGimage);
             fs.writeFile(namaFile, kodeBaruLengkap, 'utf8', (err) => {
             if (err) {
-                replyhydro('Terjadi kesalahan saat menulis file:', err);
+                replyfail('Terjadi kesalahan saat menulis file:', err);
             } else {
-                replyhydro('Case baru berhasil ditambahkan di atas case gimage.');
+                replysuccess('Case baru berhasil ditambahkan di atas case gimage.');
             }
             });
             } else {
-            replyhydro('Tidak dapat menemukan case gimage dalam file.');
+            replyfail('Tidak dapat menemukan case gimage dalam file.');
            }
            });
 
@@ -1677,6 +3644,264 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
             }, { quoted: m });
         }
         break;
+    case 'sc':
+    case 'script': {
+        try {
+
+            let localVersion = 'Unknown';
+            try {
+                let localPkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+                localVersion = localPkg.version;
+            } catch (e) {}
+
+            let latestVersion = 'Unknown';
+            try {
+                let { data: pkgData } = await axios.get('https://raw.githubusercontent.com/AhmadAkbarID/hydromd/refs/heads/master/package.json');
+                latestVersion = pkgData.version;
+            } catch (e) {}
+
+            let releases = [];
+            try {
+                let { data: relData } = await axios.get('https://api.github.com/repos/AhmadAkbarID/hydromd/releases');
+                releases = relData; 
+            } catch (e) {}
+
+            let repoUrl = 'https://github.com/AhmadAkbarID/hydromd';
+            let latestTag = releases.length > 0 ? releases[0].tag_name : 'master';
+
+            let bodyText = `✨ Hai Kak! Mau coba script mimin yang keren ama banyak fitur ga? GRATIS JUGA! 🎉\n\n` +
+                           `📦 *Versi Bot:* v${localVersion}\n` +
+                           `🚀 *Versi Terbaru:* v${latestVersion}\n\n` +
+                           `🔗 *Link Script:*\n${repoUrl}\n\n` +
+                           `👥 Gabung juga nih grup kita!:\n${global.wagc || 'https://chat.whatsapp.com/FvSBEz1UezQ4G7Xwfrr9sF'}\n\n` +
+                           `Yuu dukung trus agar bisa berkembang bot ini 🤩`;
+
+            let sortedReleases = releases.slice();
+            let rows = sortedReleases.map((rel) => {
+                return {
+                    header: "",
+                    title: `🏷️ ${rel.name || rel.tag_name}`,
+                    description: `Publish ${rel.published_at.split('T')[0]}`,
+                    id: `${prefix}gitclone ${repoUrl} ${rel.tag_name}`
+                };
+            });
+
+            if (rows.length === 0) {
+                rows.push({
+                    header: "",
+                    title: "📦 Master Branch",
+                    description: "Download versi terbaru dari branch master",
+                    id: `${prefix}gitclone ${repoUrl} master`
+                });
+            }
+
+            let msg = generateWAMessageFromContent(m.chat, {
+                viewOnceMessage: {
+                    message: {
+                        messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
+                        interactiveMessage: {
+                            body: { text: bodyText },
+                            footer: { text: global.botname },
+                            header: {
+                                title: "Script HydroMD",
+                                subtitle: "",
+                                hasMediaAttachment: false
+                            },
+                            nativeFlowMessage: {
+                                buttons: [
+                                    {
+                                        name: "quick_reply",
+                                        buttonParamsJson: JSON.stringify({
+                                            display_text: "🚀 Download Latest",
+                                            id: `${prefix}gitclone ${repoUrl} ${latestTag}`
+                                        })
+                                    },
+                                    {
+                                        name: "single_select",
+                                        buttonParamsJson: JSON.stringify({
+                                            title: "📂 Select Release",
+                                            sections: [
+                                                {
+                                                    title: "Daftar Versi",
+                                                    rows: rows
+                                                }
+                                            ]
+                                        })
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }, { quoted: m }, {});
+
+            await hydro.relayMessage(m.chat, msg.message, { messageId: msg.key.id });
+            await react('✅');
+
+        } catch (err) {
+            console.error(err);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'rating': {
+        let nilai = parseInt(text.trim());
+
+        if (!isNaN(nilai)) {
+            if (nilai < 1 || nilai > 10) return replyfail(`❌ Rating hanya boleh 1-10`);
+
+            await react('⏱️');
+
+            let { data: existing, error: checkError } = await supabase
+                .from('ratings')
+                .select('id')
+                .eq('user_id', m.sender)
+                .single();
+
+            if (checkError && checkError.code !== 'PGRST116') {
+                await react('❌');
+                return replyfail(`⚠️ Terjadi kesalahan: ${checkError.message}`);
+            }
+
+            if (existing) {
+                await react('❌');
+                return replytolak('❌ Kamu sudah memberikan rating sebelumnya.\n`Terima kasih!`');
+            }
+
+            let { error } = await supabase
+                .from('ratings')
+                .insert([{ user_id: m.sender, nilai }]);
+
+            if (error) {
+                await react('❌');
+                return replyfail(`⚠️ Gagal menyimpan rating: ${error.message}`);
+            }
+
+            let quickMsg = {
+                text: `✅ Terima kasih! Kamu memberikan rating *${nilai}* ⭐`,
+                footer: global.botname,
+                buttons: [
+                    {
+                        buttonId: `${prefix}cekrating`,
+                        buttonText: { displayText: '📊 Cek total rating' },
+                        type: 1
+                    }
+                ],
+                headerType: 1
+            };
+            
+            await hydro.sendMessage(m.chat, quickMsg, { quoted: m });
+            return await react('✅');
+        }
+
+        let rows = Array.from({ length: 10 }, (_, i) => ({
+            header: "",
+            title: `${i + 1} ⭐`,
+            description: `Beri rating ${i + 1} bintang`,
+            id: `${prefix}rating ${i + 1}`
+        }));
+
+        let msg = generateWAMessageFromContent(m.chat, {
+            viewOnceMessage: {
+                message: {
+                    messageContextInfo: {
+                        deviceListMetadata: {},
+                        deviceListMetadataVersion: 2
+                    },
+                    interactiveMessage: {
+                        body: {
+                            text: `📌 Silakan pilih rating untuk bot ini:`
+                        },
+                        footer: {
+                            text: global.botname
+                        },
+                        header: {
+                            title: "⭐ Rating Bot",
+                            subtitle: "",
+                            hasMediaAttachment: false
+                        },
+                        nativeFlowMessage: {
+                            buttons: [
+                                {
+                                    name: "single_select",
+                                    buttonParamsJson: JSON.stringify({
+                                        title: "Pilih Rating",
+                                        sections: [
+                                            {
+                                                title: "Rating 1–10",
+                                                rows: rows
+                                            }
+                                        ]
+                                    })
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        }, { quoted: m }, {});
+
+        await hydro.relayMessage(msg.key.remoteJid, msg.message, {
+            messageId: msg.key.id
+        });
+    }
+        break;
+    case 'cekrating': {
+        await react('⏱️');
+        
+        let { data, error } = await supabase
+            .from('ratings')
+            .select('nilai');
+
+        if (error) {
+            await react('❌');
+            return replyfail(`⚠️ Gagal mengambil rating: ${error.message}`);
+        }
+        
+        if (!data || !data.length) {
+            await react('✅');
+            return replyquery(`⚠️ Belum ada pengguna yang memberikan rating.`);
+        }
+
+        let semuaRating = data.map(r => r.nilai);
+        let rata2 = (semuaRating.reduce((a, b) => a + b, 0) / semuaRating.length).toFixed(1);
+        
+        await reply(`📊 Rata-rata rating bot ini adalah *${rata2}* ⭐\nDari total ${semuaRating.length} penilai.`);
+        await react('✅');
+    }
+        break;
+    case 'infobot': {
+        await react('⏱️');
+        
+        let versiSc = 'Unknown';
+        try {
+            let localPkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
+            versiSc = localPkg.version;
+        } catch (e) {}
+
+        let infoText = `*╭─❒ 「 INFORMASI ${global.botname} 」*\n` +
+        `├ OWNER: *${global.ownername}*\n` +
+        `├ VERSI: *v${versiSc}*\n` +
+        `├ RUNTIME: *${runtime(process.uptime())}*\n` +
+        `├ RAM: *${formatp(os.totalmem() - os.freemem())} / ${formatp(os.totalmem())}*\n` +
+        `╰─❒\n\n` +
+        `*✦ INFORMASI SISTEM ✦*\n` +
+        `Bot ini sedang aktif dan siap membantu kamu! \n` +
+        `Nikmati fitur-fitur canggih yang kami tawarkan untuk memudahkan kegiatanmu. \n` +
+        `Jangan lupa update terus ya biar tetap dapet fitur terbaru!\n\n` +
+        `Terima kasih telah menggunakan bot kami! 😊\n\n` +
+        `💖 *Terima kasih spesial untuk:* \n` +
+        `➤ Ibracode – Penyedia Baileys SOCKETON\n` +
+        `➤ Ahmad Akbar – Dev/Owner Script\n` +
+        `➤ Taka, Apocalypse, XAi Archive, Ryuusuke – Membagi kode dan scrape\n` +
+        `➤ Zanspiw – Sharing Script\n\n` +
+        `Berkat mereka, bot ini bisa berkembang dan terus memberikan yang terbaik! 🚀✨`;
+
+        await replysuccess(infoText);
+        await react('✅');
+    }
+        break;
 } // End Switch
 
     if (budy.startsWith('<')) {
@@ -1735,48 +3960,6 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
 process.on('uncaughtException', function (err) {
     console.log('Caught exception: ', err)
 })
-
-function autoClearSession() {
-    const sessionDir = './furina';
-    const tempDir = './temp'; 
-    const clearInterval = 4 * 60 * 60 * 1000; // 4 Jam
-    
-    setInterval(async () => {
-        try {
-            if (fs.existsSync(sessionDir)) {
-                const files = fs.readdirSync(sessionDir);
-                const filteredFiles = files.filter(file => 
-                    file.startsWith('pre-key') ||
-                    file.startsWith('sender-key') ||
-                    file.startsWith('session-') ||
-                    file.startsWith('app-state')
-                );
-
-                if (filteredFiles.length > 0) {
-                    console.log(chalk.yellow.bold(`📂 [AUTO CLEAN] Starting session cleanup...`));
-                    filteredFiles.forEach(file => {
-                        fs.unlinkSync(path.join(sessionDir, file));
-                    });
-                    console.log(chalk.green.bold(`🗃️ [AUTO CLEAN] Successfully removed ${filteredFiles.length} session files!`));
-                }
-            }
-
-            if (fs.existsSync(tempDir)) {
-                const tempFiles = fs.readdirSync(tempDir);
-                if (tempFiles.length > 0) {
-                    tempFiles.forEach(file => {
-                        fs.unlinkSync(path.join(tempDir, file));
-                    });
-                    console.log(chalk.cyan.bold(`🗑️ [TEMP CLEAN] Successfully deleted ${tempFiles.length} files from temp!`));
-                }
-            }
-        } catch (error) {
-            console.error(chalk.red.bold(`📑 [AUTO CLEAN ERROR]`), error);
-        }
-    }, clearInterval);
-}
-
-autoClearSession();
 
 // ======================== Auto Reload File ===================== \\
 let file = require.resolve(__filename)

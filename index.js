@@ -11,8 +11,8 @@ const {
 	initInMemoryKeyStore,
 	DisconnectReason,
 	AnyMessageContent,
-    makeInMemoryStore,
 	useMultiFileAuthState,
+    makeInMemoryStore,
 	delay,
 	fetchLatestBaileysVersion,
 	generateForwardMessageContent,
@@ -35,6 +35,9 @@ const readline = require("readline")
 const colors = require('colors')
 
 let phoneNumber = "6285187063723" 
+
+const { downloadAllAssets } = require('./lib/file.js');
+downloadAllAssets().catch(console.error);
 
 if (fs.existsSync('./database/database.json')) {
     try {
@@ -187,7 +190,7 @@ async function hydroInd() {
                 let reason = new Boom(lastDisconnect?.error)?.output.statusCode
                 if (reason === DisconnectReason.badSession) {
                     console.log(`Sesi rusak.. Mohon hapus folder furina`);
-                    process.exit(1);
+                    hydroInd();
                 } else if (reason === DisconnectReason.connectionClosed) {
                     console.log("Koneksi terputus, menghubungkan ulang..");
                     hydroInd();
@@ -195,11 +198,11 @@ async function hydroInd() {
                     console.log("Koneksi terputus dari server, menghubungkan ulang..");
                     hydroInd();
                 } else if (reason === DisconnectReason.connectionReplaced) {
-                    console.log("Koneksi bertabrakan.. mematikan proses untuk mencegah spam.");
+                    console.log("Koneksi bertabrakan.. matikan proses untuk mencegah spam.");
                     process.exit(1);
                 } else if (reason === DisconnectReason.loggedOut) {
                     console.log(`Sesi terputus.. Mohon hapus folder furina`);
-                    process.exit(1);
+                    hydroInd();
                 } else if (reason === DisconnectReason.restartRequired) {
                     console.log("Membutuhkan restart, Merestart..");
                     hydroInd();
