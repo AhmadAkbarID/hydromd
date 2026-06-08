@@ -1,0 +1,1202 @@
+[
+    {
+        "soal": "Hero assassin wanita dengan skill menghilang dan membungkam musuh.",
+        "jawaban": "Natalia"
+    },
+    {
+        "soal": "Tank dengan kemampuan mengumpulkan musuh dalam satu titik dengan tamengnya.",
+        "jawaban": "Tigreal"
+    },
+    {
+        "soal": "Marksman pemula dengan serangan jarak jauh yang sangat jauh.",
+        "jawaban": "Layla"
+    },
+    {
+        "soal": "Mage dengan skill combo petir mematikan.",
+        "jawaban": "Eudora"
+    },
+    {
+        "soal": "Fighter dengan kemampuan tendangan naga seperti Bruce Lee.",
+        "jawaban": "Chou"
+    },
+    {
+        "soal": "Marksman dengan tombak yang bisa menembus banyak musuh sekaligus.",
+        "jawaban": "Moskov"
+    },
+    {
+        "soal": "Support dengan kemampuan menghidupkan kembali teman yang mati.",
+        "jawaban": "Faramis"
+    },
+    {
+        "soal": "Tank yang bisa berubah menjadi mobil dan menabrak musuh.",
+        "jawaban": "Johnson"
+    },
+    {
+        "soal": "Assassin ninja dengan bayangan dan shuriken.",
+        "jawaban": "Hayabusa"
+    },
+    {
+        "soal": "Mage pengendali es yang bisa membekukan lawan.",
+        "jawaban": "Aurora"
+    },
+    {
+        "soal": "Mage dengan laser biru panjang yang menyapu musuh.",
+        "jawaban": "Gord"
+    },
+    {
+        "soal": "Fighter yang bisa berubah menjadi serigala ganas.",
+        "jawaban": "Roger"
+    },
+    {
+        "soal": "Mage dengan payung yang bisa dilempar dan dikendalikan.",
+        "jawaban": "Kagura"
+    },
+    {
+        "soal": "Mage necromancer yang bisa memanggil boneka raksasa.",
+        "jawaban": "Vexana"
+    },
+    {
+        "soal": "Fighter lifesteal dengan pedang besar yang haus darah.",
+        "jawaban": "Alucard"
+    },
+    {
+        "soal": "Fighter robot yang bisa melempar musuh ataupun teman.",
+        "jawaban": "Jawhead"
+    },
+    {
+        "soal": "Marksman dengan sniper dan serangan critical tinggi.",
+        "jawaban": "Lesley"
+    },
+    {
+        "soal": "Tank petarung dengan kekuatan otot baja dan jurus menghentak tanah.",
+        "jawaban": "Gatotkaca"
+    },
+    {
+        "soal": "Mage kecil dengan bom waktu yang bisa meledak dan kembali ke posisi awal.",
+        "jawaban": "Lylia"
+    },
+    {
+        "soal": "Marksman yang menembak sambil berjalan dengan panah panther.",
+        "jawaban": "Irithel"
+    },
+    {
+        "soal": "Fighter dengan kemampuan berubah menjadi naga hitam.",
+        "jawaban": "Yu Zhong"
+    },
+    {
+        "soal": "Assassin dengan combo lempar pisau dan teleport cepat.",
+        "jawaban": "Gusion"
+    },
+    {
+        "soal": "Mage dengan api panas yang bisa mendorong musuh.",
+        "jawaban": "Valir"
+    },
+    {
+        "soal": "Tank dengan kait rantai untuk menarik musuh.",
+        "jawaban": "Franco"
+    },
+    {
+        "soal": "Fighter dengan kapak besar dan skill putar-putar.",
+        "jawaban": "Balmond"
+    },
+    {
+        "soal": "Assassin yang bisa lompat dari dinding ke dinding.",
+        "jawaban": "Ling"
+    },
+    {
+        "soal": "Marksman dengan serangan area dan monyet bernama Dexter.",
+        "jawaban": "Claude"
+    },
+    {
+        "soal": "Support elf dengan healing area untuk tim.",
+        "jawaban": "Estes"
+    },
+    {
+        "soal": "Tank dengan mode rage untuk menghantam tanah dan stun musuh.",
+        "jawaban": "Minotaur"
+    },
+    {
+        "soal": "Marksman dengan empat jenis senjata berbeda.",
+        "jawaban": "Beatrix"
+    },
+    {
+        "soal": "Support assassin dengan burung terbang dan skill melayang.",
+        "jawaban": "Mathilda"
+    },
+    {
+        "soal": "Fighter dengan pukulan super kuat yang bisa mengejar musuh ke seluruh map.",
+        "jawaban": "Aldous"
+    },
+    {
+        "soal": "Assassin dengan bayangan iblis dan serangan dari jauh.",
+        "jawaban": "Hanzo"
+    },
+    {
+        "soal": "Mage dengan dua mode, cahaya dan kegelapan.",
+        "jawaban": "Lunox"
+    },
+    {
+        "soal": "Fighter dengan combo pukulan seperti petinju profesional.",
+        "jawaban": "Paquito"
+    },
+    {
+        "soal": "Mage dengan kekuatan laut dan tsunami.",
+        "jawaban": "Kadita"
+    },
+    {
+        "soal": "Fighter dengan tiga bar HP dan kekuatan pukulan beruntun.",
+        "jawaban": "Masha"
+    },
+    {
+        "soal": "Assassin dengan tusukan pedang cepat dan lincah.",
+        "jawaban": "Lancelot"
+    },
+    {
+        "soal": "Tank dengan akar yang bisa mengikat musuh.",
+        "jawaban": "Belerick"
+    },
+    {
+        "soal": "Fighter berkuda dengan pedang besar.",
+        "jawaban": "Leomord"
+    },
+    {
+        "soal": "Support dengan skill penyembuhan dan kecepatan lari.",
+        "jawaban": "Rafaela"
+    },
+    {
+        "soal": "Assassin mage dengan kombinasi stun panah dan berubah wujud.",
+        "jawaban": "Selena"
+    },
+    {
+        "soal": "Marksman bersama serigala yang setia membantu.",
+        "jawaban": "Popol dan Kupa"
+    },
+    {
+        "soal": "Mage kecil dengan kekuatan bulan dan meteor jatuh.",
+        "jawaban": "Chang'e"
+    },
+    {
+        "soal": "Tank centaur dengan lingkaran skill lambat dan HP tebal.",
+        "jawaban": "Hylos"
+    },
+    {
+        "soal": "Fighter berkuda dengan pedang besar. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Leomord"
+    },
+    {
+        "soal": "Assassin dengan tusukan pedang cepat dan lincah. Selain itu, dia bisa menghilang.",
+        "jawaban": "Lancelot"
+    },
+    {
+        "soal": "Support dengan kemampuan menghidupkan kembali teman yang mati. Selain itu, dia serangan cepat dan critical.",
+        "jawaban": "Faramis"
+    },
+    {
+        "soal": "Marksman bersama serigala yang setia membantu. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Popol dan Kupa"
+    },
+    {
+        "soal": "Tank dengan kemampuan mengumpulkan musuh dalam satu titik dengan tamengnya. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Tigreal"
+    },
+    {
+        "soal": "Fighter berkuda dengan pedang besar. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Leomord"
+    },
+    {
+        "soal": "Tank dengan kait rantai untuk menarik musuh. Selain itu, dia dengan serangan cepat.",
+        "jawaban": "Franco"
+    },
+    {
+        "soal": "Assassin yang bisa lompat dari dinding ke dinding. Selain itu, dia dengan serangan jarak dekat.",
+        "jawaban": "Ling"
+    },
+    {
+        "soal": "Tank dengan akar yang bisa mengikat musuh. Selain itu, dia dengan pertahanan tinggi.",
+        "jawaban": "Belerick"
+    },
+    {
+        "soal": "Assassin ninja dengan bayangan dan shuriken. Selain itu, dia memiliki damage besar di late game.",
+        "jawaban": "Hayabusa"
+    },
+    {
+        "soal": "Marksman dengan tombak yang bisa menembus banyak musuh sekaligus. Selain itu, dia memiliki skill stun.",
+        "jawaban": "Moskov"
+    },
+    {
+        "soal": "Fighter robot yang bisa melempar musuh ataupun teman. Selain itu, dia dengan serangan area.",
+        "jawaban": "Jawhead"
+    },
+    {
+        "soal": "Assassin ninja dengan bayangan dan shuriken. Selain itu, dia dengan serangan jarak dekat.",
+        "jawaban": "Hayabusa"
+    },
+    {
+        "soal": "Mage pengendali es yang bisa membekukan lawan. Selain itu, dia bisa membantu teman.",
+        "jawaban": "Aurora"
+    },
+    {
+        "soal": "Marksman yang menembak sambil berjalan dengan panah panther. Selain itu, dia dengan pertahanan tinggi.",
+        "jawaban": "Irithel"
+    },
+    {
+        "soal": "Fighter yang bisa berubah menjadi serigala ganas. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Roger"
+    },
+    {
+        "soal": "Tank dengan kemampuan mengumpulkan musuh dalam satu titik dengan tamengnya. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Tigreal"
+    },
+    {
+        "soal": "Mage kecil dengan kekuatan bulan dan meteor jatuh. Selain itu, dia bisa menghilang.",
+        "jawaban": "Chang'e"
+    },
+    {
+        "soal": "Tank dengan kait rantai untuk menarik musuh. Selain itu, dia serangan cepat dan critical.",
+        "jawaban": "Franco"
+    },
+    {
+        "soal": "Marksman bersama serigala yang setia membantu. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Popol dan Kupa"
+    },
+    {
+        "soal": "Assassin yang bisa lompat dari dinding ke dinding. Selain itu, dia dengan serangan cepat.",
+        "jawaban": "Ling"
+    },
+    {
+        "soal": "Fighter dengan combo pukulan seperti petinju profesional. Selain itu, dia bisa menghilang.",
+        "jawaban": "Paquito"
+    },
+    {
+        "soal": "Assassin dengan bayangan iblis dan serangan dari jauh. Selain itu, dia dengan serangan area.",
+        "jawaban": "Hanzo"
+    },
+    {
+        "soal": "Support assassin dengan burung terbang dan skill melayang. Selain itu, dia dengan pertahanan tinggi.",
+        "jawaban": "Mathilda"
+    },
+    {
+        "soal": "Assassin dengan combo lempar pisau dan teleport cepat. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Gusion"
+    },
+    {
+        "soal": "Fighter dengan combo pukulan seperti petinju profesional. Selain itu, dia bisa membantu teman.",
+        "jawaban": "Paquito"
+    },
+    {
+        "soal": "Mage dengan kekuatan laut dan tsunami. Selain itu, dia serangan magic damage.",
+        "jawaban": "Kadita"
+    },
+    {
+        "soal": "Marksman dengan empat jenis senjata berbeda. Selain itu, dia dengan serangan jarak dekat.",
+        "jawaban": "Beatrix"
+    },
+    {
+        "soal": "Tank dengan kemampuan mengumpulkan musuh dalam satu titik dengan tamengnya. Selain itu, dia dengan serangan jarak dekat.",
+        "jawaban": "Tigreal"
+    },
+    {
+        "soal": "Assassin dengan bayangan iblis dan serangan dari jauh. Selain itu, dia dengan serangan area.",
+        "jawaban": "Hanzo"
+    },
+    {
+        "soal": "Fighter dengan kemampuan tendangan naga seperti Bruce Lee. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Chou"
+    },
+    {
+        "soal": "Assassin yang bisa lompat dari dinding ke dinding. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Ling"
+    },
+    {
+        "soal": "Fighter robot yang bisa melempar musuh ataupun teman. Selain itu, dia memiliki damage besar di late game.",
+        "jawaban": "Jawhead"
+    },
+    {
+        "soal": "Mage pengendali es yang bisa membekukan lawan. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Aurora"
+    },
+    {
+        "soal": "Fighter berkuda dengan pedang besar. Selain itu, dia bisa menghilang.",
+        "jawaban": "Leomord"
+    },
+    {
+        "soal": "Marksman pemula dengan serangan jarak jauh yang sangat jauh. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Layla"
+    },
+    {
+        "soal": "Tank dengan mode rage untuk menghantam tanah dan stun musuh. Selain itu, dia dengan serangan area.",
+        "jawaban": "Minotaur"
+    },
+    {
+        "soal": "Mage dengan skill combo petir mematikan. Selain itu, dia dengan pertahanan tinggi.",
+        "jawaban": "Eudora"
+    },
+    {
+        "soal": "Mage dengan kekuatan laut dan tsunami. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Kadita"
+    },
+    {
+        "soal": "Fighter dengan tiga bar HP dan kekuatan pukulan beruntun. Selain itu, dia serangan magic damage.",
+        "jawaban": "Masha"
+    },
+    {
+        "soal": "Fighter yang bisa berubah menjadi serigala ganas. Selain itu, dia dengan pertahanan tinggi.",
+        "jawaban": "Roger"
+    },
+    {
+        "soal": "Mage necromancer yang bisa memanggil boneka raksasa. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Vexana"
+    },
+    {
+        "soal": "Fighter dengan kapak besar dan skill putar-putar. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Balmond"
+    },
+    {
+        "soal": "Tank dengan akar yang bisa mengikat musuh. Selain itu, dia dengan serangan area.",
+        "jawaban": "Belerick"
+    },
+    {
+        "soal": "Tank dengan kemampuan mengumpulkan musuh dalam satu titik dengan tamengnya. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Tigreal"
+    },
+    {
+        "soal": "Mage kecil dengan kekuatan bulan dan meteor jatuh. Selain itu, dia bisa membantu teman.",
+        "jawaban": "Chang'e"
+    },
+    {
+        "soal": "Marksman dengan sniper dan serangan critical tinggi. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Lesley"
+    },
+    {
+        "soal": "Fighter dengan kemampuan tendangan naga seperti Bruce Lee. Selain itu, dia bisa menghilang.",
+        "jawaban": "Chou"
+    },
+    {
+        "soal": "Tank yang bisa berubah menjadi mobil dan menabrak musuh. Selain itu, dia dengan serangan jarak jauh.",
+        "jawaban": "Johnson"
+    },
+    {
+        "soal": "Fighter dengan kemampuan tendangan naga seperti Bruce Lee. Selain itu, dia bisa menghilang.",
+        "jawaban": "Chou"
+    },
+    {
+        "soal": "Assassin mage dengan kombinasi stun panah dan berubah wujud. Selain itu, dia dengan serangan jarak jauh.",
+        "jawaban": "Selena"
+    },
+    {
+        "soal": "Fighter dengan kemampuan berubah menjadi naga hitam. Selain itu, dia memiliki skill bertahan dan menyerang.",
+        "jawaban": "Yu Zhong"
+    },
+    {
+        "soal": "Support dengan kemampuan menghidupkan kembali teman yang mati. Selain itu, dia bisa menghilang.",
+        "jawaban": "Faramis"
+    },
+    {
+        "soal": "Assassin ninja dengan bayangan dan shuriken. Selain itu, dia memiliki skill bertahan dan menyerang.",
+        "jawaban": "Hayabusa"
+    },
+    {
+        "soal": "Support dengan kemampuan menghidupkan kembali teman yang mati. Selain itu, dia memiliki skill stun.",
+        "jawaban": "Faramis"
+    },
+    {
+        "soal": "Marksman dengan sniper dan serangan critical tinggi. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Lesley"
+    },
+    {
+        "soal": "Tank yang bisa berubah menjadi mobil dan menabrak musuh. Selain itu, dia serangan magic damage.",
+        "jawaban": "Johnson"
+    },
+    {
+        "soal": "Fighter dengan combo pukulan seperti petinju profesional. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Paquito"
+    },
+    {
+        "soal": "Mage dengan api panas yang bisa mendorong musuh. Selain itu, dia dengan serangan jarak jauh.",
+        "jawaban": "Valir"
+    },
+    {
+        "soal": "Mage kecil dengan bom waktu yang bisa meledak dan kembali ke posisi awal. Selain itu, dia dengan serangan jarak dekat.",
+        "jawaban": "Lylia"
+    },
+    {
+        "soal": "Mage kecil dengan kekuatan bulan dan meteor jatuh. Selain itu, dia dengan serangan jarak jauh.",
+        "jawaban": "Chang'e"
+    },
+    {
+        "soal": "Mage dengan skill combo petir mematikan. Selain itu, dia bisa membantu teman.",
+        "jawaban": "Eudora"
+    },
+    {
+        "soal": "Fighter robot yang bisa melempar musuh ataupun teman. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Jawhead"
+    },
+    {
+        "soal": "Fighter dengan kemampuan berubah menjadi naga hitam. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Yu Zhong"
+    },
+    {
+        "soal": "Support dengan skill penyembuhan dan kecepatan lari. Selain itu, dia memiliki skill stun.",
+        "jawaban": "Rafaela"
+    },
+    {
+        "soal": "Fighter dengan kemampuan tendangan naga seperti Bruce Lee. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Chou"
+    },
+    {
+        "soal": "Assassin dengan combo lempar pisau dan teleport cepat. Selain itu, dia dengan serangan jarak dekat.",
+        "jawaban": "Gusion"
+    },
+    {
+        "soal": "Support elf dengan healing area untuk tim. Selain itu, dia dengan serangan area.",
+        "jawaban": "Estes"
+    },
+    {
+        "soal": "Mage dengan payung yang bisa dilempar dan dikendalikan. Selain itu, dia serangan cepat dan critical.",
+        "jawaban": "Kagura"
+    },
+    {
+        "soal": "Assassin dengan tusukan pedang cepat dan lincah. Selain itu, dia serangan magic damage.",
+        "jawaban": "Lancelot"
+    },
+    {
+        "soal": "Tank dengan mode rage untuk menghantam tanah dan stun musuh. Selain itu, dia memiliki damage besar di late game.",
+        "jawaban": "Minotaur"
+    },
+    {
+        "soal": "Marksman bersama serigala yang setia membantu. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Popol dan Kupa"
+    },
+    {
+        "soal": "Fighter dengan combo pukulan seperti petinju profesional. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Paquito"
+    },
+    {
+        "soal": "Mage dengan kekuatan laut dan tsunami. Selain itu, dia bisa menghilang.",
+        "jawaban": "Kadita"
+    },
+    {
+        "soal": "Fighter robot yang bisa melempar musuh ataupun teman. Selain itu, dia bisa menghilang.",
+        "jawaban": "Jawhead"
+    },
+    {
+        "soal": "Mage dengan api panas yang bisa mendorong musuh. Selain itu, dia dengan serangan cepat.",
+        "jawaban": "Valir"
+    },
+    {
+        "soal": "Assassin yang bisa lompat dari dinding ke dinding. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Ling"
+    },
+    {
+        "soal": "Assassin ninja dengan bayangan dan shuriken. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Hayabusa"
+    },
+    {
+        "soal": "Support dengan kemampuan menghidupkan kembali teman yang mati. Selain itu, dia dengan serangan area.",
+        "jawaban": "Faramis"
+    },
+    {
+        "soal": "Assassin dengan tusukan pedang cepat dan lincah. Selain itu, dia dengan serangan area.",
+        "jawaban": "Lancelot"
+    },
+    {
+        "soal": "Tank petarung dengan kekuatan otot baja dan jurus menghentak tanah. Selain itu, dia dengan serangan cepat.",
+        "jawaban": "Gatotkaca"
+    },
+    {
+        "soal": "Tank petarung dengan kekuatan otot baja dan jurus menghentak tanah. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Gatotkaca"
+    },
+    {
+        "soal": "Fighter robot yang bisa melempar musuh ataupun teman. Selain itu, dia dengan pertahanan tinggi.",
+        "jawaban": "Jawhead"
+    },
+    {
+        "soal": "Marksman yang menembak sambil berjalan dengan panah panther. Selain itu, dia serangan cepat dan critical.",
+        "jawaban": "Irithel"
+    },
+    {
+        "soal": "Assassin yang bisa lompat dari dinding ke dinding. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Ling"
+    },
+    {
+        "soal": "Assassin dengan bayangan iblis dan serangan dari jauh. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Hanzo"
+    },
+    {
+        "soal": "Marksman dengan tombak yang bisa menembus banyak musuh sekaligus. Selain itu, dia bisa membantu teman.",
+        "jawaban": "Moskov"
+    },
+    {
+        "soal": "Mage dengan kekuatan laut dan tsunami. Selain itu, dia dengan serangan cepat.",
+        "jawaban": "Kadita"
+    },
+    {
+        "soal": "Mage pengendali es yang bisa membekukan lawan. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Aurora"
+    },
+    {
+        "soal": "Fighter dengan kapak besar dan skill putar-putar. Selain itu, dia dengan serangan jarak jauh.",
+        "jawaban": "Balmond"
+    },
+    {
+        "soal": "Fighter dengan pukulan super kuat yang bisa mengejar musuh ke seluruh map. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Aldous"
+    },
+    {
+        "soal": "Tank centaur dengan lingkaran skill lambat dan HP tebal. Selain itu, dia dengan serangan area.",
+        "jawaban": "Hylos"
+    },
+    {
+        "soal": "Fighter lifesteal dengan pedang besar yang haus darah. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Alucard"
+    },
+    {
+        "soal": "Fighter dengan kemampuan berubah menjadi naga hitam. Selain itu, dia dengan serangan area.",
+        "jawaban": "Yu Zhong"
+    },
+    {
+        "soal": "Assassin mage dengan kombinasi stun panah dan berubah wujud. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Selena"
+    },
+    {
+        "soal": "Mage dengan laser biru panjang yang menyapu musuh. Selain itu, dia memiliki skill bertahan dan menyerang.",
+        "jawaban": "Gord"
+    },
+    {
+        "soal": "Fighter yang bisa berubah menjadi serigala ganas. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Roger"
+    },
+    {
+        "soal": "Marksman dengan tombak yang bisa menembus banyak musuh sekaligus. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Moskov"
+    },
+    {
+        "soal": "Mage dengan kekuatan laut dan tsunami. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Kadita"
+    },
+    {
+        "soal": "Marksman dengan empat jenis senjata berbeda. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Beatrix"
+    },
+    {
+        "soal": "Marksman bersama serigala yang setia membantu. Selain itu, dia serangan cepat dan critical.",
+        "jawaban": "Popol dan Kupa"
+    },
+    {
+        "soal": "Tank dengan mode rage untuk menghantam tanah dan stun musuh. Selain itu, dia serangan cepat dan critical.",
+        "jawaban": "Minotaur"
+    },
+    {
+        "soal": "Fighter dengan kemampuan tendangan naga seperti Bruce Lee. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Chou"
+    },
+    {
+        "soal": "Assassin mage dengan kombinasi stun panah dan berubah wujud. Selain itu, dia memiliki damage besar di late game.",
+        "jawaban": "Selena"
+    },
+    {
+        "soal": "Marksman yang menembak sambil berjalan dengan panah panther. Selain itu, dia dengan serangan cepat.",
+        "jawaban": "Irithel"
+    },
+    {
+        "soal": "Marksman dengan serangan area dan monyet bernama Dexter. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Claude"
+    },
+    {
+        "soal": "Assassin dengan bayangan iblis dan serangan dari jauh. Selain itu, dia dengan serangan cepat.",
+        "jawaban": "Hanzo"
+    },
+    {
+        "soal": "Tank dengan mode rage untuk menghantam tanah dan stun musuh. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Minotaur"
+    },
+    {
+        "soal": "Mage dengan api panas yang bisa mendorong musuh. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Valir"
+    },
+    {
+        "soal": "Marksman dengan sniper dan serangan critical tinggi. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Lesley"
+    },
+    {
+        "soal": "Tank yang bisa berubah menjadi mobil dan menabrak musuh. Selain itu, dia memiliki damage besar di late game.",
+        "jawaban": "Johnson"
+    },
+    {
+        "soal": "Assassin ninja dengan bayangan dan shuriken. Selain itu, dia dengan serangan jarak dekat.",
+        "jawaban": "Hayabusa"
+    },
+    {
+        "soal": "Marksman bersama serigala yang setia membantu. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Popol dan Kupa"
+    },
+    {
+        "soal": "Hero assassin wanita dengan skill menghilang dan membungkam musuh. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Natalia"
+    },
+    {
+        "soal": "Marksman pemula dengan serangan jarak jauh yang sangat jauh. Selain itu, dia bisa menghilang.",
+        "jawaban": "Layla"
+    },
+    {
+        "soal": "Marksman yang menembak sambil berjalan dengan panah panther. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Irithel"
+    },
+    {
+        "soal": "Assassin dengan combo lempar pisau dan teleport cepat. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Gusion"
+    },
+    {
+        "soal": "Marksman yang menembak sambil berjalan dengan panah panther. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Irithel"
+    },
+    {
+        "soal": "Tank dengan kemampuan mengumpulkan musuh dalam satu titik dengan tamengnya. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Tigreal"
+    },
+    {
+        "soal": "Marksman pemula dengan serangan jarak jauh yang sangat jauh. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Layla"
+    },
+    {
+        "soal": "Mage dengan laser biru panjang yang menyapu musuh. Selain itu, dia memiliki skill bertahan dan menyerang.",
+        "jawaban": "Gord"
+    },
+    {
+        "soal": "Tank dengan mode rage untuk menghantam tanah dan stun musuh. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Minotaur"
+    },
+    {
+        "soal": "Marksman pemula dengan serangan jarak jauh yang sangat jauh. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Layla"
+    },
+    {
+        "soal": "Tank petarung dengan kekuatan otot baja dan jurus menghentak tanah. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Gatotkaca"
+    },
+    {
+        "soal": "Fighter dengan kapak besar dan skill putar-putar. Selain itu, dia bisa membantu teman.",
+        "jawaban": "Balmond"
+    },
+    {
+        "soal": "Fighter yang bisa berubah menjadi serigala ganas. Selain itu, dia memiliki damage besar di late game.",
+        "jawaban": "Roger"
+    },
+    {
+        "soal": "Mage dengan api panas yang bisa mendorong musuh. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Valir"
+    },
+    {
+        "soal": "Mage dengan kekuatan laut dan tsunami. Selain itu, dia bisa membantu teman.",
+        "jawaban": "Kadita"
+    },
+    {
+        "soal": "Tank dengan akar yang bisa mengikat musuh. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Belerick"
+    },
+    {
+        "soal": "Hero assassin wanita dengan skill menghilang dan membungkam musuh. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Natalia"
+    },
+    {
+        "soal": "Support dengan skill penyembuhan dan kecepatan lari. Selain itu, dia dengan serangan jarak jauh.",
+        "jawaban": "Rafaela"
+    },
+    {
+        "soal": "Mage necromancer yang bisa memanggil boneka raksasa. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Vexana"
+    },
+    {
+        "soal": "Mage pengendali es yang bisa membekukan lawan. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Aurora"
+    },
+    {
+        "soal": "Assassin ninja dengan bayangan dan shuriken. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Hayabusa"
+    },
+    {
+        "soal": "Mage pengendali es yang bisa membekukan lawan. Selain itu, dia bisa membantu teman.",
+        "jawaban": "Aurora"
+    },
+    {
+        "soal": "Tank yang bisa berubah menjadi mobil dan menabrak musuh. Selain itu, dia serangan cepat dan critical.",
+        "jawaban": "Johnson"
+    },
+    {
+        "soal": "Marksman pemula dengan serangan jarak jauh yang sangat jauh. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Layla"
+    },
+    {
+        "soal": "Mage dengan kekuatan laut dan tsunami. Selain itu, dia dengan pertahanan tinggi.",
+        "jawaban": "Kadita"
+    },
+    {
+        "soal": "Support dengan skill penyembuhan dan kecepatan lari. Selain itu, dia dengan serangan area.",
+        "jawaban": "Rafaela"
+    },
+    {
+        "soal": "Marksman yang menembak sambil berjalan dengan panah panther. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Irithel"
+    },
+    {
+        "soal": "Marksman dengan serangan area dan monyet bernama Dexter. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Claude"
+    },
+    {
+        "soal": "Mage dengan dua mode, cahaya dan kegelapan. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Lunox"
+    },
+    {
+        "soal": "Tank dengan kait rantai untuk menarik musuh. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Franco"
+    },
+    {
+        "soal": "Mage dengan skill combo petir mematikan. Selain itu, dia dengan serangan cepat.",
+        "jawaban": "Eudora"
+    },
+    {
+        "soal": "Marksman yang menembak sambil berjalan dengan panah panther. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Irithel"
+    },
+    {
+        "soal": "Tank petarung dengan kekuatan otot baja dan jurus menghentak tanah. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Gatotkaca"
+    },
+    {
+        "soal": "Fighter yang bisa berubah menjadi serigala ganas. Selain itu, dia bisa menghilang.",
+        "jawaban": "Roger"
+    },
+    {
+        "soal": "Support dengan kemampuan menghidupkan kembali teman yang mati. Selain itu, dia dengan serangan jarak dekat.",
+        "jawaban": "Faramis"
+    },
+    {
+        "soal": "Mage dengan laser biru panjang yang menyapu musuh. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Gord"
+    },
+    {
+        "soal": "Marksman dengan tombak yang bisa menembus banyak musuh sekaligus. Selain itu, dia memiliki skill stun.",
+        "jawaban": "Moskov"
+    },
+    {
+        "soal": "Assassin mage dengan kombinasi stun panah dan berubah wujud. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Selena"
+    },
+    {
+        "soal": "Support dengan kemampuan menghidupkan kembali teman yang mati. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Faramis"
+    },
+    {
+        "soal": "Mage kecil dengan bom waktu yang bisa meledak dan kembali ke posisi awal. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Lylia"
+    },
+    {
+        "soal": "Tank dengan mode rage untuk menghantam tanah dan stun musuh. Selain itu, dia dengan serangan area.",
+        "jawaban": "Minotaur"
+    },
+    {
+        "soal": "Tank yang bisa berubah menjadi mobil dan menabrak musuh. Selain itu, dia bisa menghilang.",
+        "jawaban": "Johnson"
+    },
+    {
+        "soal": "Support dengan skill penyembuhan dan kecepatan lari. Selain itu, dia dengan serangan area.",
+        "jawaban": "Rafaela"
+    },
+    {
+        "soal": "Support dengan kemampuan menghidupkan kembali teman yang mati. Selain itu, dia bisa membantu teman.",
+        "jawaban": "Faramis"
+    },
+    {
+        "soal": "Marksman dengan sniper dan serangan critical tinggi. Selain itu, dia dengan serangan area.",
+        "jawaban": "Lesley"
+    },
+    {
+        "soal": "Mage dengan payung yang bisa dilempar dan dikendalikan. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Kagura"
+    },
+    {
+        "soal": "Assassin yang bisa lompat dari dinding ke dinding. Selain itu, dia serangan cepat dan critical.",
+        "jawaban": "Ling"
+    },
+    {
+        "soal": "Assassin dengan tusukan pedang cepat dan lincah. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Lancelot"
+    },
+    {
+        "soal": "Fighter dengan pukulan super kuat yang bisa mengejar musuh ke seluruh map. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Aldous"
+    },
+    {
+        "soal": "Fighter yang bisa berubah menjadi serigala ganas. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Roger"
+    },
+    {
+        "soal": "Fighter dengan tiga bar HP dan kekuatan pukulan beruntun. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Masha"
+    },
+    {
+        "soal": "Assassin dengan combo lempar pisau dan teleport cepat. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Gusion"
+    },
+    {
+        "soal": "Tank dengan kait rantai untuk menarik musuh. Selain itu, dia memiliki damage besar di late game.",
+        "jawaban": "Franco"
+    },
+    {
+        "soal": "Assassin mage dengan kombinasi stun panah dan berubah wujud. Selain itu, dia dengan serangan jarak jauh.",
+        "jawaban": "Selena"
+    },
+    {
+        "soal": "Assassin mage dengan kombinasi stun panah dan berubah wujud. Selain itu, dia bisa menghilang.",
+        "jawaban": "Selena"
+    },
+    {
+        "soal": "Mage necromancer yang bisa memanggil boneka raksasa. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Vexana"
+    },
+    {
+        "soal": "Tank dengan mode rage untuk menghantam tanah dan stun musuh. Selain itu, dia bisa menghilang.",
+        "jawaban": "Minotaur"
+    },
+    {
+        "soal": "Marksman dengan serangan area dan monyet bernama Dexter. Selain itu, dia memiliki damage besar di late game.",
+        "jawaban": "Claude"
+    },
+    {
+        "soal": "Assassin dengan tusukan pedang cepat dan lincah. Selain itu, dia bisa menghilang.",
+        "jawaban": "Lancelot"
+    },
+    {
+        "soal": "Fighter dengan tiga bar HP dan kekuatan pukulan beruntun. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Masha"
+    },
+    {
+        "soal": "Marksman pemula dengan serangan jarak jauh yang sangat jauh. Selain itu, dia dengan serangan jarak jauh.",
+        "jawaban": "Layla"
+    },
+    {
+        "soal": "Tank dengan mode rage untuk menghantam tanah dan stun musuh. Selain itu, dia dengan serangan jarak dekat.",
+        "jawaban": "Minotaur"
+    },
+    {
+        "soal": "Tank yang bisa berubah menjadi mobil dan menabrak musuh. Selain itu, dia dengan serangan jarak jauh.",
+        "jawaban": "Johnson"
+    },
+    {
+        "soal": "Hero assassin wanita dengan skill menghilang dan membungkam musuh. Selain itu, dia dengan serangan area.",
+        "jawaban": "Natalia"
+    },
+    {
+        "soal": "Marksman bersama serigala yang setia membantu. Selain itu, dia memiliki skill bertahan dan menyerang.",
+        "jawaban": "Popol dan Kupa"
+    },
+    {
+        "soal": "Assassin dengan bayangan iblis dan serangan dari jauh. Selain itu, dia bisa menghilang.",
+        "jawaban": "Hanzo"
+    },
+    {
+        "soal": "Tank yang bisa berubah menjadi mobil dan menabrak musuh. Selain itu, dia dengan serangan area.",
+        "jawaban": "Johnson"
+    },
+    {
+        "soal": "Support dengan kemampuan menghidupkan kembali teman yang mati. Selain itu, dia memiliki skill bertahan dan menyerang.",
+        "jawaban": "Faramis"
+    },
+    {
+        "soal": "Marksman bersama serigala yang setia membantu. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Popol dan Kupa"
+    },
+    {
+        "soal": "Marksman dengan tombak yang bisa menembus banyak musuh sekaligus. Selain itu, dia bisa membantu teman.",
+        "jawaban": "Moskov"
+    },
+    {
+        "soal": "Assassin dengan combo lempar pisau dan teleport cepat. Selain itu, dia bisa membantu teman.",
+        "jawaban": "Gusion"
+    },
+    {
+        "soal": "Fighter dengan kemampuan tendangan naga seperti Bruce Lee. Selain itu, dia memiliki skill bertahan dan menyerang.",
+        "jawaban": "Chou"
+    },
+    {
+        "soal": "Mage dengan skill combo petir mematikan. Selain itu, dia memiliki skill bertahan dan menyerang.",
+        "jawaban": "Eudora"
+    },
+    {
+        "soal": "Tank dengan akar yang bisa mengikat musuh. Selain itu, dia dengan serangan jarak dekat.",
+        "jawaban": "Belerick"
+    },
+    {
+        "soal": "Marksman yang menembak sambil berjalan dengan panah panther. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Irithel"
+    },
+    {
+        "soal": "Tank yang bisa berubah menjadi mobil dan menabrak musuh. Selain itu, dia dengan serangan area.",
+        "jawaban": "Johnson"
+    },
+    {
+        "soal": "Mage dengan api panas yang bisa mendorong musuh. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Valir"
+    },
+    {
+        "soal": "Support assassin dengan burung terbang dan skill melayang. Selain itu, dia bisa membantu teman.",
+        "jawaban": "Mathilda"
+    },
+    {
+        "soal": "Assassin dengan bayangan iblis dan serangan dari jauh. Selain itu, dia dengan serangan area.",
+        "jawaban": "Hanzo"
+    },
+    {
+        "soal": "Mage dengan payung yang bisa dilempar dan dikendalikan. Selain itu, dia memiliki skill stun.",
+        "jawaban": "Kagura"
+    },
+    {
+        "soal": "Mage dengan kekuatan laut dan tsunami. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Kadita"
+    },
+    {
+        "soal": "Marksman dengan serangan area dan monyet bernama Dexter. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Claude"
+    },
+    {
+        "soal": "Mage dengan dua mode, cahaya dan kegelapan. Selain itu, dia memiliki damage besar di late game.",
+        "jawaban": "Lunox"
+    },
+    {
+        "soal": "Marksman bersama serigala yang setia membantu. Selain itu, dia memiliki skill bertahan dan menyerang.",
+        "jawaban": "Popol dan Kupa"
+    },
+    {
+        "soal": "Marksman dengan empat jenis senjata berbeda. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Beatrix"
+    },
+    {
+        "soal": "Marksman dengan serangan area dan monyet bernama Dexter. Selain itu, dia memiliki skill stun.",
+        "jawaban": "Claude"
+    },
+    {
+        "soal": "Fighter lifesteal dengan pedang besar yang haus darah. Selain itu, dia dengan serangan cepat.",
+        "jawaban": "Alucard"
+    },
+    {
+        "soal": "Mage kecil dengan kekuatan bulan dan meteor jatuh. Selain itu, dia memiliki skill bertahan dan menyerang.",
+        "jawaban": "Chang'e"
+    },
+    {
+        "soal": "Mage dengan api panas yang bisa mendorong musuh. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Valir"
+    },
+    {
+        "soal": "Mage pengendali es yang bisa membekukan lawan. Selain itu, dia dengan pertahanan tinggi.",
+        "jawaban": "Aurora"
+    },
+    {
+        "soal": "Marksman dengan serangan area dan monyet bernama Dexter. Selain itu, dia dengan serangan jarak jauh.",
+        "jawaban": "Claude"
+    },
+    {
+        "soal": "Fighter dengan tiga bar HP dan kekuatan pukulan beruntun. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Masha"
+    },
+    {
+        "soal": "Tank dengan kemampuan mengumpulkan musuh dalam satu titik dengan tamengnya. Selain itu, dia memiliki damage besar di late game.",
+        "jawaban": "Tigreal"
+    },
+    {
+        "soal": "Assassin dengan bayangan iblis dan serangan dari jauh. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Hanzo"
+    },
+    {
+        "soal": "Assassin yang bisa lompat dari dinding ke dinding. Selain itu, dia dengan serangan cepat.",
+        "jawaban": "Ling"
+    },
+    {
+        "soal": "Mage dengan skill combo petir mematikan. Selain itu, dia serangan cepat dan critical.",
+        "jawaban": "Eudora"
+    },
+    {
+        "soal": "Marksman bersama serigala yang setia membantu. Selain itu, dia dengan serangan cepat.",
+        "jawaban": "Popol dan Kupa"
+    },
+    {
+        "soal": "Mage dengan skill combo petir mematikan. Selain itu, dia dengan serangan jarak dekat.",
+        "jawaban": "Eudora"
+    },
+    {
+        "soal": "Mage dengan dua mode, cahaya dan kegelapan. Selain itu, dia memiliki skill bertahan dan menyerang.",
+        "jawaban": "Lunox"
+    },
+    {
+        "soal": "Support assassin dengan burung terbang dan skill melayang. Selain itu, dia memiliki damage besar di late game.",
+        "jawaban": "Mathilda"
+    },
+    {
+        "soal": "Mage dengan dua mode, cahaya dan kegelapan. Selain itu, dia memiliki skill stun.",
+        "jawaban": "Lunox"
+    },
+    {
+        "soal": "Support assassin dengan burung terbang dan skill melayang. Selain itu, dia serangan magic damage.",
+        "jawaban": "Mathilda"
+    },
+    {
+        "soal": "Fighter dengan pukulan super kuat yang bisa mengejar musuh ke seluruh map. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Aldous"
+    },
+    {
+        "soal": "Support dengan kemampuan menghidupkan kembali teman yang mati. Selain itu, dia memiliki skill stun.",
+        "jawaban": "Faramis"
+    },
+    {
+        "soal": "Marksman dengan empat jenis senjata berbeda. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Beatrix"
+    },
+    {
+        "soal": "Support dengan skill penyembuhan dan kecepatan lari. Selain itu, dia memiliki skill bertahan dan menyerang.",
+        "jawaban": "Rafaela"
+    },
+    {
+        "soal": "Tank petarung dengan kekuatan otot baja dan jurus menghentak tanah. Selain itu, dia bisa menghilang.",
+        "jawaban": "Gatotkaca"
+    },
+    {
+        "soal": "Support assassin dengan burung terbang dan skill melayang. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Mathilda"
+    },
+    {
+        "soal": "Support assassin dengan burung terbang dan skill melayang. Selain itu, dia memiliki skill stun.",
+        "jawaban": "Mathilda"
+    },
+    {
+        "soal": "Fighter dengan combo pukulan seperti petinju profesional. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Paquito"
+    },
+    {
+        "soal": "Assassin dengan tusukan pedang cepat dan lincah. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Lancelot"
+    },
+    {
+        "soal": "Assassin dengan combo lempar pisau dan teleport cepat. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Gusion"
+    },
+    {
+        "soal": "Tank dengan kait rantai untuk menarik musuh. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Franco"
+    },
+    {
+        "soal": "Mage pengendali es yang bisa membekukan lawan. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Aurora"
+    },
+    {
+        "soal": "Mage dengan payung yang bisa dilempar dan dikendalikan. Selain itu, dia dengan serangan jarak jauh.",
+        "jawaban": "Kagura"
+    },
+    {
+        "soal": "Fighter lifesteal dengan pedang besar yang haus darah. Selain itu, dia serangan magic damage.",
+        "jawaban": "Alucard"
+    },
+    {
+        "soal": "Support elf dengan healing area untuk tim. Selain itu, dia bisa menarik musuh.",
+        "jawaban": "Estes"
+    },
+    {
+        "soal": "Hero assassin wanita dengan skill menghilang dan membungkam musuh. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Natalia"
+    },
+    {
+        "soal": "Mage pengendali es yang bisa membekukan lawan. Selain itu, dia memiliki skill stun.",
+        "jawaban": "Aurora"
+    },
+    {
+        "soal": "Tank centaur dengan lingkaran skill lambat dan HP tebal. Selain itu, dia dengan pertahanan tinggi.",
+        "jawaban": "Hylos"
+    },
+    {
+        "soal": "Tank dengan mode rage untuk menghantam tanah dan stun musuh. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Minotaur"
+    },
+    {
+        "soal": "Mage necromancer yang bisa memanggil boneka raksasa. Selain itu, dia dengan serangan cepat.",
+        "jawaban": "Vexana"
+    },
+    {
+        "soal": "Marksman dengan empat jenis senjata berbeda. Selain itu, dia serangan cepat dan critical.",
+        "jawaban": "Beatrix"
+    },
+    {
+        "soal": "Mage dengan kekuatan laut dan tsunami. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Kadita"
+    },
+    {
+        "soal": "Assassin ninja dengan bayangan dan shuriken. Selain itu, dia dengan serangan jarak jauh.",
+        "jawaban": "Hayabusa"
+    },
+    {
+        "soal": "Tank petarung dengan kekuatan otot baja dan jurus menghentak tanah. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Gatotkaca"
+    },
+    {
+        "soal": "Tank centaur dengan lingkaran skill lambat dan HP tebal. Selain itu, dia bisa menghilang.",
+        "jawaban": "Hylos"
+    },
+    {
+        "soal": "Assassin ninja dengan bayangan dan shuriken. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Hayabusa"
+    },
+    {
+        "soal": "Fighter dengan kemampuan berubah menjadi naga hitam. Selain itu, dia dengan pertahanan tinggi.",
+        "jawaban": "Yu Zhong"
+    },
+    {
+        "soal": "Mage dengan kekuatan laut dan tsunami. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Kadita"
+    },
+    {
+        "soal": "Marksman dengan tombak yang bisa menembus banyak musuh sekaligus. Selain itu, dia dengan serangan jarak jauh.",
+        "jawaban": "Moskov"
+    },
+    {
+        "soal": "Marksman dengan empat jenis senjata berbeda. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Beatrix"
+    },
+    {
+        "soal": "Support elf dengan healing area untuk tim. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Estes"
+    },
+    {
+        "soal": "Fighter robot yang bisa melempar musuh ataupun teman. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Jawhead"
+    },
+    {
+        "soal": "Assassin dengan tusukan pedang cepat dan lincah. Selain itu, dia memiliki skill crowd control.",
+        "jawaban": "Lancelot"
+    },
+    {
+        "soal": "Fighter robot yang bisa melempar musuh ataupun teman. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Jawhead"
+    },
+    {
+        "soal": "Assassin dengan bayangan iblis dan serangan dari jauh. Selain itu, dia memiliki skill buff tim.",
+        "jawaban": "Hanzo"
+    },
+    {
+        "soal": "Fighter dengan kapak besar dan skill putar-putar. Selain itu, dia memiliki skill burst damage.",
+        "jawaban": "Balmond"
+    },
+    {
+        "soal": "Tank dengan kemampuan mengumpulkan musuh dalam satu titik dengan tamengnya. Selain itu, dia serangan magic damage.",
+        "jawaban": "Tigreal"
+    },
+    {
+        "soal": "Mage dengan dua mode, cahaya dan kegelapan. Selain itu, dia bisa menghilang.",
+        "jawaban": "Lunox"
+    },
+    {
+        "soal": "Fighter yang bisa berubah menjadi serigala ganas. Selain itu, dia fighter yang lincah.",
+        "jawaban": "Roger"
+    },
+    {
+        "soal": "Mage dengan kekuatan laut dan tsunami. Selain itu, dia dengan kemampuan heal.",
+        "jawaban": "Kadita"
+    }
+]
