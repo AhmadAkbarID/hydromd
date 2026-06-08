@@ -23,6 +23,7 @@ const {
     listbut2,
     supabase,
     HydroFitur,
+    groupStatus,
     getRandom,
     getBuffer
 } = require('./lib/function');
@@ -30,7 +31,11 @@ const {
     initDatabase,
     getLimitCost,
     checkLimit,
-    useLimit
+    useLimit,
+    cmdRegister,
+    cmdUnregister,
+    cmdProfile,
+    cmdSetDaftarMode
 } = require('./lib/database');
 const {
     makeBrat,
@@ -47,6 +52,36 @@ const {
 const { 
     antilinkDetector 
 } = require('./lib/protect');
+const { 
+    gameCasinoSolo 
+} = require('./lib/games')
+const { 
+    gameDaily 
+} = require('./lib/rpg')
+const { 
+    antibot, 
+    antibotSettings, 
+    saveAntibot, 
+    saveAntibotSettings, 
+    handleAntibot, 
+    commandAntibot 
+} = require('./lib/antibot');
+const { 
+    loadReseller, 
+    saveReseller, 
+    loadCadmin, 
+    saveCadmin,
+    PLANS, 
+    PLAN_KEYS, 
+    getApi,
+    sendServerPicker, 
+    checkOwnerPending,
+    execCserver, 
+    execSpec, 
+    execCuser, 
+    execCadmin,
+    checkCooldown, 
+    setCooldown } = require('./lib/cpanel')
 
 // ====== LIB END & CONST START ======
 
@@ -82,6 +117,8 @@ const {
 
 // ====== MODULE END & SCRAPE START ======
 
+const RemoveBG = require('./lib/scrape/removebg.js'); 
+
 const { 
     tiktokDl 
 } = require('./lib/scrape/tiktok.js')
@@ -115,6 +152,13 @@ const {
 const { 
     spotifyScrape 
 } = require("./lib/scrape/spotify.js");
+const { 
+    hdvideo,
+    hdr 
+} = require('./lib/scrape/hd.js');
+const { 
+    capcutDownload 
+} = require('./lib/scrape/capcut.js');
 
 // ====== SCRAPE END & REQUIRE AREA ======
 
@@ -304,7 +348,6 @@ try {
     const quoted = m.quoted ? m.quoted : m
     const mime = (quoted.msg || quoted).mimetype || ''
     
-    // Media Checks
     const isMedia = /image|video|sticker|audio/.test(mime)
     const isImage = (type == 'imageMessage')
     const isVideo = (type == 'videoMessage')
@@ -312,32 +355,32 @@ try {
     const isSticker = (type == 'stickerMessage')
 
     store.groupMetadata = store.groupMetadata || {};
-        const invalidMembers = [];
+    const invalidMembers = [];
 
-        if (m.isGroup) {
-            for (const [gid, meta] of Object.entries(store.groupMetadata || {})) {
-                if (!meta.participants) continue;
-                const missing = meta.participants.filter(p => !p.jid && !p.lid && p.id);
-                if (missing.length) {
-                    invalidMembers.push({
-                        groupId: gid,
-                        groupName: meta.subject || "Tanpa Nama",
-                        members: missing
-                    });
-                }
-            }
-
-            if (Object.keys(store.groupMetadata).length === 0 || invalidMembers.length >= 1) {
-                store.groupMetadata = await hydro.groupFetchAllParticipating();
+    if (m.isGroup) {
+        for (const [gid, meta] of Object.entries(store.groupMetadata || {})) {
+            if (!meta.participants) continue;
+            const missing = meta.participants.filter(p => !p.jid && !p.lid && p.id);
+            if (missing.length) {
+                invalidMembers.push({
+                    groupId: gid,
+                    groupName: meta.subject || "Tanpa Nama",
+                    members: missing
+                });
             }
         }
 
-        const groupMetadata = m.isGroup
-            ? store.groupMetadata[m.chat]
-            || (store.groupMetadata[m.chat] = await hydro.groupMetadata(m.chat).catch(e => {}))
-            : '';
+        if (Object.keys(store.groupMetadata).length === 0 || invalidMembers.length >= 1) {
+            store.groupMetadata = await hydro.groupFetchAllParticipating();
+        }
+    }
 
-        const groupName = m.isGroup ? groupMetadata.subject : ''
+    const groupMetadata = m.isGroup
+        ? store.groupMetadata[m.chat]
+        || (store.groupMetadata[m.chat] = await hydro.groupMetadata(m.chat).catch(e => {}))
+        : '';
+
+    const groupName = m.isGroup ? groupMetadata.subject : ''
     const participants = m.isGroup ? await groupMetadata.participants : ''
 
     if (m.isGroup && m.sender.endsWith("@lid")) {
@@ -345,9 +388,9 @@ try {
     }
 
     const groupAdmins = m.isGroup ? participants.filter((v) => v.admin !== null).map((i) => i.jid || i.id) : [];
-    const isBotAdmins = m.isGroup ? groupAdmins.includes(botNumber) : false
-    const isGroupAdmins = m.isGroup ? groupAdmins.includes(m.sender) : false
-    const isAdmins = m.isGroup ? groupAdmins.includes(m.sender) : false
+    const isBotAdmins = m.isGroup ? groupAdmins.includes(botNumber) : false;
+    const isGroupAdmins = m.isGroup ? groupAdmins.includes(m.sender) : false;
+    const isAdmins = m.isGroup ? groupAdmins.includes(m.sender) : false;
 
     if (m.isGroup && isCmd) {
         if (!global.db.groups[m.chat]) global.db.groups[m.chat] = {}
@@ -409,6 +452,9 @@ try {
 
 initDatabase(m, isChannel);
 await antilinkDetector(hydro, m, { budy, type, isAdmins, Ahmad, isBotAdmins, sender, senderNumber });
+await handleAntibot(hydro, m, { isAdmins, isBotAdmins, Ahmad, sleep, replyfail, react });
+const handledPending = await checkOwnerPending(hydro, m, { Ahmad, prefix, reply, replyfail, react });
+if (handledPending) return;
 
 
 
@@ -1106,7 +1152,6 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
         if (!availableFeatures.includes(cmdName)) {
             return replyquery(`❌ Gagal! Fitur *${cmdName}* tidak ditemukan di dalam sistem bot.`);
         }
-        // ==========================================
         
         if (!global.db.settings.cmdLimit) global.db.settings.cmdLimit = {};
         
@@ -1120,7 +1165,179 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
         }
     }
         break
+    case 'swgc': 
+    case 'upswgc': 
+    case 'swgrup': 
+    case 'swgroup': 
+    case 'statusgrup': 
+    case 'statusgroup': {
+        if (!Ahmad) return replytolak(global.mess.only.owner);
+        
+        let contentObj = {};
+        let buffer, ext, tempFile;
 
+        await react('⏳');
+
+        if (m.quoted) {
+            try {
+                buffer = await m.quoted.download();
+                if (!buffer) {
+                    await react('❌');
+                    return replyfail("❌ Gagal mengambil media yang di-reply.");
+                }
+                
+                const fileTypeRes = await fromBuffer(buffer);
+                ext = fileTypeRes ? fileTypeRes.ext : 'bin';
+                
+                if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
+                tempFile = path.join('./temp', `tmp_${Date.now()}.${ext}`);
+                fs.writeFileSync(tempFile, buffer);
+
+                const quotedType = m.quoted.mtype || Object.keys(m.quoted.message || {})[0] || '';
+                
+                if (/image|video|audio/.test(quotedType)) {
+                    if (/image/.test(quotedType)) {
+                        contentObj.image = { url: tempFile };
+                        if (text) contentObj.caption = text;
+                    } else if (/video/.test(quotedType)) {
+                        contentObj.video = { url: tempFile };
+                        if (text) contentObj.caption = text;
+                    } else if (/audio/.test(quotedType)) {
+                        if (text) {
+                            fs.unlinkSync(tempFile);
+                            await react('❌');
+                            return replyfail("❌ Voice Note/Audio tidak boleh disertai caption.");
+                        }
+                        contentObj.audio = { url: tempFile };
+                        contentObj.ptt = true;
+                    }
+                } else {
+                    fs.unlinkSync(tempFile);
+                    await react('❌');
+                    return replyfail("❌ Pesan yang di-reply harus berupa Foto, Video, atau Audio.");
+                }
+            } catch (e) {
+                await react('❌');
+                return replyfail("❌ Media tidak valid atau gagal diproses.");
+            }
+        } else if (text) {
+            contentObj.text = text;
+        } else {
+            await react('❌');
+            return replyquery(`📌 *Contoh Penggunaan:*\nKirim teks atau reply Foto/Video/Audio dengan perintah *${prefix + command}*`);
+        }
+
+        if (contentObj.text && !contentObj.text.trim()) {
+            await react('❌');
+            return replyfail("❌ Teks tidak boleh kosong.");
+        }
+
+        let getGroups = await hydro.groupFetchAllParticipating();
+        let groups = Object.values(getGroups);
+
+        let validGroups = [];
+        
+        validGroups.push({
+            header: "",
+            title: "🌐 Kirim ke Semua Grup",
+            description: `Kirim status ke total ${groups.length} grup`,
+            id: `${prefix}sendstatus all ${encodeURIComponent(JSON.stringify(contentObj))}`
+        });
+
+        for (let group of groups) {
+            validGroups.push({
+                header: "",
+                title: group.subject || "Tanpa Nama",
+                description: `ID: ${group.id}`,
+                id: `${prefix}sendstatus ${group.id} ${encodeURIComponent(JSON.stringify(contentObj))}`
+            });
+        }
+
+        if (validGroups.length <= 1) {
+            if (tempFile && fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
+            await react('❌');
+            return replyfail("❌ Tidak ada grup valid yang bot ikuti saat ini.");
+        }
+
+        let msg = generateWAMessageFromContent(m.chat, {
+            viewOnceMessage: {
+                message: {
+                    messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
+                    interactiveMessage: {
+                        body: { text: "```Pilih Grup Tujuan ♨️```" },
+                        footer: { text: global.botname },
+                        header: { hasMediaAttachment: false },
+                        nativeFlowMessage: {
+                            buttons: [{
+                                name: "single_select",
+                                buttonParamsJson: JSON.stringify({
+                                    title: "PILIH GRUP",
+                                    sections: [{ title: "Daftar Grup", rows: validGroups }]
+                                })
+                            }]
+                        }
+                    }
+                }
+            }
+        }, { quoted: m }, {});
+
+        await hydro.relayMessage(msg.key.remoteJid, msg.message, { messageId: msg.key.id });
+        await react('✅');
+    }
+        break;
+    case 'sendstatus': {
+        if (!Ahmad) return replytolak(global.mess.only.owner);
+        
+        const [groupId, ...contentARR] = args;
+        if (!groupId || contentARR.length === 0) return replyfail("❌ Parameter tidak lengkap!");
+
+        const contentDecoded = JSON.parse(decodeURIComponent(contentARR.join(' ')));
+
+        await react('⏳');
+        replywait(mess.wait);
+
+        let getGroups = await hydro.groupFetchAllParticipating();
+        let groups = Object.values(getGroups).map(v => v.id);
+
+        let successCount = 0;
+        let failedCount = 0;
+
+        if (groupId === 'all') {
+            for (let gid of groups) {
+                try {
+                    await groupStatus(hydro, gid, contentDecoded);
+                    successCount++;
+                    await sleep(2000);
+                } catch (e) {
+                    failedCount++;
+                }
+            }
+            replysuccess(`📢 *Status Group Selesai!*\n\n✅ Berhasil: ${successCount} grup\n❌ Gagal: ${failedCount} grup`);
+        } else {
+            try {
+                await groupStatus(hydro, groupId, contentDecoded);
+                replysuccess(`✅ Status berhasil dikirim ke grup:\n🆔 *${groupId}*`);
+            } catch (e) {
+                replyfail(`❌ Gagal mengirim status ke grup:\n🆔 *${groupId}*`);
+            }
+        }
+
+        try {
+            if (contentDecoded?.image?.url && fs.existsSync(contentDecoded.image.url)) fs.unlinkSync(contentDecoded.image.url);
+            if (contentDecoded?.video?.url && fs.existsSync(contentDecoded.video.url)) fs.unlinkSync(contentDecoded.video.url);
+            if (contentDecoded?.audio?.url && fs.existsSync(contentDecoded.audio.url)) fs.unlinkSync(contentDecoded.audio.url);
+        } catch (e) {}
+
+        await react('✅');
+    }
+        break;
+    case 'setdaftar':
+    case 'regmode': {
+        await react('⚙️')
+        await cmdSetDaftarMode(m, global.db, args, Ahmad)
+        await react('✅')
+    }
+        break
 
 // ====== GROUP FEATURE ======
 
@@ -1485,7 +1702,354 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
             replyquery(`📌 *Pengaturan Antilink*\n\n- Silent: Hapus pesan\n- Delete: Hapus dengan notif\n- Warn: Hapus & beri peringatan\n- Kick: Hapus & kick\n\n*Contoh Penggunaan:*\n${prefix + command} silent\n${prefix + command} warn 3`);
         }
     }
-    break;
+        break;
+    case 'addrole': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin);
+        if (!text) return replyquery(`📌 *Contoh Penggunaan:*\n${prefix + command} Sepuh`);
+        
+        let roleName = text.trim();
+        if (global.dbRole[m.chat].list.includes(roleName)) return replyquery(`⚠️ Role *${roleName}* sudah ada di grup ini!`);
+        
+        global.dbRole[m.chat].list.push(roleName);
+        fs.writeFileSync('./database/roles.json', JSON.stringify(global.dbRole, null, 2));
+        replysuccess(`✅ Berhasil menambahkan role baru: *${roleName}*`);
+    }
+        break;
+    case 'delrole': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin);
+        if (!text) return replyquery(`📌 *Contoh Penggunaan:*\n${prefix + command} Sepuh`);
+        
+        let roleName = text.trim();
+        if (!global.dbRole[m.chat].list.includes(roleName)) return replyquery(`⚠️ Role *${roleName}* tidak ditemukan di grup ini!`);
+        
+        global.dbRole[m.chat].list = global.dbRole[m.chat].list.filter(r => r !== roleName);
+        
+        for (let user in global.dbRole[m.chat].members) {
+            global.dbRole[m.chat].members[user] = global.dbRole[m.chat].members[user].filter(r => r !== roleName);
+        }
+        
+        fs.writeFileSync('./database/roles.json', JSON.stringify(global.dbRole, null, 2));
+        replysuccess(`🗑️ Berhasil menghapus role: *${roleName}*`);
+    }
+        break;
+    case 'changerole': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin);
+        if (!text || !text.includes('|')) return replyquery(`📌 *Contoh Penggunaan:*\n${prefix + command} role_lama | role_baru\n\nContoh: *${prefix + command} Sepuh | Suhu*`);
+        
+        let [oldRole, newRole] = text.split('|').map(v => v.trim());
+        if (!global.dbRole[m.chat].list.includes(oldRole)) return replyquery(`⚠️ Role *${oldRole}* tidak ditemukan!`);
+        if (global.dbRole[m.chat].list.includes(newRole)) return replyquery(`⚠️ Role *${newRole}* sudah ada, gunakan nama lain!`);
+        
+        let roleIndex = global.dbRole[m.chat].list.indexOf(oldRole);
+        global.dbRole[m.chat].list[roleIndex] = newRole;
+        
+        for (let user in global.dbRole[m.chat].members) {
+            let userRoles = global.dbRole[m.chat].members[user];
+            if (userRoles.includes(oldRole)) {
+                let uIdx = userRoles.indexOf(oldRole);
+                userRoles[uIdx] = newRole;
+            }
+        }
+        
+        fs.writeFileSync('./database/roles.json', JSON.stringify(global.dbRole, null, 2));
+        replysuccess(`🔄 Berhasil mengubah nama role *${oldRole}* menjadi *${newRole}*`);
+    }
+        break;
+    case 'setrole': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin);
+        if (!text && !m.quoted) return replyquery(`📌 *Cara Penggunaan:*\n1. Reply pesan target dengan: *${prefix + command} Sepuh*\n2. Atau tag/nomor: *${prefix + command} 628xxx | Sepuh*`);
+        
+        let targetJid, roleName;
+        
+        if (m.quoted) {
+            targetJid = m.quoted.sender;
+            roleName = text.trim();
+            if (!roleName) return replyquery(`📌 Reply pesan target dengan: *${prefix + command} Sepuh*`);
+        } else {
+            if (!text.includes('|')) return replyquery(`📌 Format salah!\nContoh: *${prefix + command} 628xxx | Sepuh*`);
+            let splitText = text.split('|').map(v => v.trim());
+            targetJid = splitText[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+            roleName = splitText[1];
+        }
+        
+        let targetNum = targetJid.split('@')[0];
+        
+        if (!global.dbRole[m.chat].list.includes(roleName)) return replyquery(`⚠️ Role *${roleName}* tidak ada! Silakan buat dulu dengan *${prefix}addrole ${roleName}*`);
+        
+        if (!global.dbRole[m.chat].members[targetJid]) global.dbRole[m.chat].members[targetJid] = [];
+        
+        if (global.dbRole[m.chat].members[targetJid].includes(roleName)) return replyquery('⚠️ Target sudah memiliki role tersebut!');
+        
+        global.dbRole[m.chat].members[targetJid].push(roleName);
+        fs.writeFileSync('./database/roles.json', JSON.stringify(global.dbRole, null, 2));
+        
+        hydro.sendMessage(m.chat, { 
+            text: `🎖️ Berhasil memberikan role *${roleName}* kepada @${targetNum}`, 
+            mentions: [targetJid] 
+        }, { quoted: m });
+    }
+        break;
+    case 'unrole': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin);
+        if (!text && !m.quoted) return replyquery(`📌 *Cara Penggunaan:*\n1. Reply pesan target dengan: *${prefix + command} Sepuh*\n2. Atau tag/nomor: *${prefix + command} 628xxx | Sepuh*`);
+        
+        let targetJid, roleName;
+        
+        if (m.quoted) {
+            targetJid = m.quoted.sender;
+            roleName = text.trim();
+            if (!roleName) return replyquery(`📌 Reply pesan target dengan: *${prefix + command} Sepuh*`);
+        } else {
+            if (!text.includes('|')) return replyquery(`📌 Format salah!\nContoh: *${prefix + command} 628xxx | Sepuh*`);
+            let splitText = text.split('|').map(v => v.trim());
+            targetJid = splitText[0].replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+            roleName = splitText[1];
+        }
+        
+        let targetNum = targetJid.split('@')[0];
+        
+        if (!global.dbRole[m.chat].members[targetJid] || !global.dbRole[m.chat].members[targetJid].includes(roleName)) {
+            return replyquery('⚠️ Target tidak memiliki role tersebut di grup ini!');
+        }
+        
+        global.dbRole[m.chat].members[targetJid] = global.dbRole[m.chat].members[targetJid].filter(r => r !== roleName);
+        fs.writeFileSync('./database/roles.json', JSON.stringify(global.dbRole, null, 2));
+        
+        hydro.sendMessage(m.chat, { 
+            text: `❌ Berhasil mencabut role *${roleName}* dari @${targetNum}`, 
+            mentions: [targetJid] 
+        }, { quoted: m });
+    }
+        break;
+    case 'tagrole': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin);
+        if (!text) return replyquery(`📌 *Contoh Penggunaan:*\n${prefix + command} Sepuh`);
+        
+        let roleName = text.trim();
+        if (!global.dbRole[m.chat].list.includes(roleName)) return replyquery(`⚠️ Role *${roleName}* tidak ditemukan di grup ini!`);
+        
+        let taggedUsers = [];
+        
+        for (let user in global.dbRole[m.chat].members) {
+            if (global.dbRole[m.chat].members[user].includes(roleName)) {
+                taggedUsers.push(user);
+            }
+        }
+        
+        if (taggedUsers.length === 0) return replyquery(`⚠️ Tidak ada anggota grup yang memiliki role *${roleName}*`);
+        
+        let teksMsg = `📢 *PANGGILAN ROLE: ${roleName.toUpperCase()}*\n\n`;
+        for (let mem of taggedUsers) {
+            teksMsg += `👤 @${mem.split('@')[0]}\n`;
+        }
+        
+        hydro.sendMessage(m.chat, { text: teksMsg, mentions: taggedUsers }, { quoted: m });
+    }
+        break;
+    case 'listrole': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        
+        if (!global.dbRole[m.chat] || global.dbRole[m.chat].list.length === 0) {
+            return replyquery('⚠️ Belum ada role yang terdaftar di grup ini!');
+        }
+        
+        let roleCounts = {};
+        
+        for (let role of global.dbRole[m.chat].list) {
+            roleCounts[role] = 0;
+        }
+        
+        for (let user in global.dbRole[m.chat].members) {
+            for (let role of global.dbRole[m.chat].members[user]) {
+                if (roleCounts[role] !== undefined) {
+                    roleCounts[role]++;
+                }
+            }
+        }
+        
+        let teksMsg = `📋 *DAFTAR ROLE GRUP*\n\n`;
+        for (let role of global.dbRole[m.chat].list) {
+            teksMsg += `🏷️ *${role}* : ${roleCounts[role]} Anggota\n`;
+        }
+        
+        reply(teksMsg);
+    }
+        break;
+    case 'fpoll':
+    case 'fakepoll': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin);
+
+        if (!text || !text.includes('|')) {
+            return replyquery(`📌 *Cara Penggunaan:*\n${prefix + command} judul|opsi1|jumlah1|opsi2|jumlah2\n\n*Catatan:*\n- Minimal 2 opsi, Maksimal 10 opsi.\n- Jumlah vote harus berupa angka.\n\nContoh:\n*${prefix + command} Top 3 Bahasa Pemrograman|JavaScript|5.000|Python|3,500|Java|1500*`);
+        }
+
+        let parts = text.split('|');
+        let title = parts[0].trim(); 
+        let optionsArr = parts.slice(1); 
+
+        if (optionsArr.length % 2 !== 0) {
+            return replyfail(`❌ Pasangan opsi dan jumlah vote tidak lengkap! Pastikan setiap opsi memiliki nilai jumlah vote.`);
+        }
+
+        let numPairs = optionsArr.length / 2;
+        if (numPairs < 2) {
+            return replyfail(`❌ Minimal harus ada 2 opsi.`);
+        }
+        if (numPairs > 10) {
+            return replyfail(`❌ Maksimal hanya 10 opsi yang diizinkan!`);
+        }
+
+        let pollVotes = [];
+
+        for (let i = 0; i < optionsArr.length; i += 2) {
+            let optionName = optionsArr[i].trim();
+            let optionVoteCountRaw = optionsArr[i + 1].trim();
+
+            let optionVoteCountClean = optionVoteCountRaw.replace(/[.,]/g, '');
+
+            if (isNaN(optionVoteCountClean) || optionVoteCountClean === '') {
+                return replyfail(`❌ Jumlah vote untuk opsi *${optionName}* harus berupa angka! (Terbaca: ${optionVoteCountRaw})`);
+            }
+
+            pollVotes.push({
+                optionName: optionName,
+                optionVoteCount: optionVoteCountClean
+            });
+        }
+
+        await react('⏱️');
+
+        try {
+            await hydro.relayMessage(m.chat, {
+                pollResultSnapshotMessage: {
+                    name: title,
+                    pollVotes: pollVotes,
+                    pollType: "POLL"
+                }
+            }, { quoted: m });
+
+            await react('✅');
+            
+        } catch (error) {
+            console.error("[FPOOL ERROR]:", error);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
+    case 'freply': case 'fakereply': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin);
+
+        await react('⏳');
+        await replywait(global.mess.wait);
+        const rawInput = body.slice(prefix.length + command.length).trim();
+        const parts = rawInput.split('|');
+
+        let targetJid = null;
+        let quotedText = '';
+        let botText = '';
+
+        if (parts.length >= 3) {
+            let rawTarget = parts[0].trim();
+            quotedText   = parts[1].trim();
+            botText      = parts.slice(2).join('|').trim();
+
+            if (mentionByTag && mentionByTag.length > 0) {
+                targetJid = mentionByTag[0];
+            } else {
+                const cleanNumber = rawTarget.replace(/[^0-9]/g, '');
+                if (cleanNumber.length > 5) {
+                    targetJid = cleanNumber + '@s.whatsapp.net';
+                }
+            }
+        } else if (parts.length === 2) {
+            quotedText = parts[0].trim();
+            botText    = parts[1].trim();
+
+            if (m.quoted && m.quoted.sender) {
+                targetJid = m.quoted.sender;
+            }
+        } else {
+            await react('❌');
+            return replyquery(
+                `*Cara pakai freply:*\n\n` +
+                `• Tag/nomor:\n  \`freply @tag/6285187063723|pesan-target|pesan-bot\`\n\n` +
+                `• Reply pesan target:\n  \`freply pesan-target|pesan-bot\`\n`
+            );
+        }
+
+        if (!targetJid) {
+            await react('❌');
+            return replytolak('❌ Target tidak ditemukan. Pastikan kamu mention, tulis nomor, atau reply pesan target.');
+        }
+
+        if (!quotedText) {
+            await react('❌');
+            return replyquery(global.mess.query.text);
+        }
+
+        if (!botText) {
+            await react('❌');
+            return replyquery(global.mess.query.text);
+        }
+
+        try {
+            const fakeStanzaId = require('crypto').randomBytes(16).toString('hex').toUpperCase();
+
+            const fakeMsg = generateWAMessageFromContent(
+                m.chat,
+                {
+                    extendedTextMessage: {
+                        text: botText,
+                        previewType: 0,
+                        contextInfo: {
+                            mentionedJid: [targetJid],
+                            groupMentions: [],
+                            statusAttributions: [],
+                            stanzaId: fakeStanzaId,
+                            participant: targetJid,
+                            quotedMessage: {
+                                conversation: quotedText
+                            },
+                            quotedType: 0
+                        }
+                    }
+                },
+                {
+                    quoted: m,     
+                    userJid: botNumber
+                }
+            );
+
+            await hydro.relayMessage(m.chat, fakeMsg.message, {
+                messageId: fakeMsg.key.id
+            });
+
+            await react('✅');
+        } catch (err) {
+            console.log('[freply error]', err);
+            await react('❌');
+            return replyfail(global.mess.error.fitur);
+        }
+    }
+        break;
+    case 'antibot': {
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        if (!isGroupAdmins && !Ahmad) return replytolak(global.mess.only.admin);
+        await commandAntibot(hydro, m, {
+        isAdmins, Ahmad, args, text, prefix,
+        reply, replytolak, replysuccess, replyfail, react
+        });
+    }
+        break
     
 // ====== DOWNLOADER FEATURE ======
 
@@ -2259,6 +2823,124 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
             console.error(err);
             await react('❌');
             replyfail(global.mess.error.fitur);
+        }
+    }
+        break;
+    case 'capcut':
+    case 'capcutdl':
+    case 'cc': {
+        if (!text) return replyquery(`📌 *Cara Penggunaan:*\n${prefix + command} https://www.capcut.com/xxx`);
+
+        const isUrl = text.match(/https?:\/\/[^\s]+/i);
+        if (!isUrl || !isUrl[0].includes('capcut')) return replyfail('❌ Link tidak valid! Pastikan itu link CapCut.');
+
+        let cost = getLimitCost('capcutdl', 2);
+        let totalLimit = checkLimit(m.sender, Ahmad);
+        if (totalLimit !== "∞" && totalLimit < cost) return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+
+        await react('⏱️');
+
+        try {
+            let res = await capcutDownload(isUrl[0]);
+
+            if (!res || !res.data || !res.data.best_video) {
+                await react('❌');
+                return replyfail("❌ Gagal mendapatkan video dari server. Pastikan link video publik dan tidak di-private.");
+            }
+
+            let sisaLimitText = totalLimit === "∞" ? "∞" : (totalLimit - cost);
+            let captionText = `🎬 *CapCut Downloader*\n\n📝 *Judul:* ${res.data.title || 'Video CapCut'}\n> Sisa limit: ${sisaLimitText}`;
+
+            await hydro.sendMessage(m.chat, {
+                video: { url: res.data.best_video },
+                caption: captionText,
+                mimetype: 'video/mp4'
+            }, { quoted: m });
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+            await react('✅');
+
+        } catch (error) {
+            console.error(error);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+    break;
+
+    case 'capcutaudio':
+    case 'ccaudio':
+    case 'ccmp3': {
+        if (!text) return replyquery(`📌 *Cara Penggunaan:*\n${prefix + command} https://www.capcut.com/xxx`);
+
+        const isUrl = text.match(/https?:\/\/[^\s]+/i);
+        if (!isUrl || !isUrl[0].includes('capcut')) return replyfail('❌ Link tidak valid! Pastikan itu link CapCut.');
+
+        let cost = getLimitCost('capcutaudio', 1);
+        let totalLimit = checkLimit(m.sender, Ahmad);
+        if (totalLimit !== "∞" && totalLimit < cost) return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+
+        await react('⏱️');
+
+        try {
+            let res = await capcutDownload(isUrl[0]);
+
+            if (!res || !res.data) {
+                await react('❌');
+                return replyfail("❌ Gagal mendapatkan data dari server.");
+            }
+
+            if (res.data.audios && res.data.audios.length > 0) {
+                let audioUrl = res.data.audios[0].url;
+                
+                await hydro.sendMessage(m.chat, {
+                    audio: { url: audioUrl },
+                    mimetype: 'audio/mpeg'
+                }, { quoted: m });
+
+            } else if (res.data.best_video) {
+                let videoUrl = res.data.best_video;
+                let ranId = crypto.randomBytes(4).toString('hex');
+                
+                if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
+                let tmpVid = path.join('./temp', `vid_${ranId}.mp4`);
+                let tmpAud = path.join('./temp', `aud_${ranId}.mp3`);
+
+                let vidRes = await axios.get(videoUrl, { responseType: 'arraybuffer' });
+                fs.writeFileSync(tmpVid, vidRes.data);
+
+                await new Promise((resolve, reject) => {
+                    exec(`ffmpeg -i ${tmpVid} -vn -b:a 128k ${tmpAud}`, (err) => {
+                        if (err) reject(err); 
+                        else resolve();
+                    });
+                });
+
+                await hydro.sendMessage(m.chat, {
+                    audio: fs.readFileSync(tmpAud),
+                    mimetype: 'audio/mpeg'
+                }, { quoted: m });
+
+                if (fs.existsSync(tmpVid)) fs.unlinkSync(tmpVid);
+                if (fs.existsSync(tmpAud)) fs.unlinkSync(tmpAud);
+                
+            } else {
+                throw new Error("Tidak ada video atau audio yang bisa diunduh.");
+            }
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+            await react('✅');
+
+        } catch (error) {
+            console.error(error);
+            await react('❌');
+            replyfail(mess.error.fitur);
         }
     }
         break;
@@ -3193,6 +3875,149 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
         }
     }
         break;
+    case 'hd':
+    case 'remini':
+    case 'hdr': {
+        let isImageMsg = type === 'imageMessage' || (m.quoted && m.quoted.mtype === 'imageMessage');
+        if (!isImageMsg) return replyquery(`📌 Reply gambar dengan caption *${prefix + command}*`);
+
+        let cost = getLimitCost('hd', 2);
+        let totalLimit = checkLimit(m.sender, Ahmad);
+        if (totalLimit !== "∞" && totalLimit < cost) return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+
+        await react('⏱️');
+        try {
+            let mediaBuffer = await (m.quoted ? m.quoted.download() : m.download());
+            
+            let resultBuffer = await hdr(mediaBuffer, 4);
+            let sisaLimitText = totalLimit === "∞" ? "∞" : (totalLimit - cost);
+            
+            await hydro.sendMessage(m.chat, { image: resultBuffer, caption: global.mess.success + `\n> Sisa limit: ${sisaLimitText}` }, { quoted: m });
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                const fs = require('fs');
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+            await react('✅');
+        } catch (e) {
+            console.error(e);
+            await react('❌');
+            replyfail(global.mess.error.fitur);
+        }
+    }
+        break;
+
+    case 'hdvid':
+    case 'vidhd':
+    case 'hdvideo': {
+        let isVideoMsg = type === 'videoMessage' || (m.quoted && m.quoted.mtype === 'videoMessage');
+        if (!isVideoMsg) return replyquery(`📌 Reply video dengan caption *${prefix + command}*`);
+
+        let cost = getLimitCost('hdvideo', 4);
+        let totalLimit = checkLimit(m.sender, Ahmad);
+        if (totalLimit !== "∞" && totalLimit < cost) return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+
+        await react('⏱️');
+        try {
+            replywait(`⏳ *Proses HD Video sedang berjalan!*\nIni memakan waktu sekitar 1-5 menit tergantung durasi video, mohon tunggu...`);
+            
+            let mediaBuffer = await (m.quoted ? m.quoted.download() : m.download());
+            
+            let resultUrl = await hdvideo(mediaBuffer);
+            if (!resultUrl) throw new Error("Gagal mendapatkan link video HD");
+
+            let sisaLimitText = totalLimit === "∞" ? "∞" : (totalLimit - cost);
+            
+            await hydro.sendMessage(m.chat, { video: { url: resultUrl }, caption: global.mess.success + `\n> Sisa limit: ${sisaLimitText}` }, { quoted: m });
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                const fs = require('fs');
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+            await react('✅');
+        } catch (e) {
+            console.error(e);
+            await react('❌');
+            replyfail(global.mess.error.fitur);
+        }
+    }
+        break;
+    case 'removebg':
+    case 'rbg':
+    case 'nobg':
+    case 'hapusbackground': {
+        let isImageMsg = type === 'imageMessage' || (m.quoted && m.quoted.mtype === 'imageMessage');
+        
+        if (!isImageMsg) {
+            return replyquery(`📌 *Cara Penggunaan:*\nKirim atau reply gambar dengan caption *${prefix + command}*`);
+        }
+
+        let cost = getLimitCost('removebg', 2);
+        let totalLimit = checkLimit(m.sender, Ahmad);
+        if (totalLimit !== "∞" && totalLimit < cost) return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
+
+        await react('⏱️');
+        
+        try {
+            if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
+            let ranId = crypto.randomBytes(4).toString('hex');
+            let tempPath = path.join('./temp', `rbg_${ranId}.jpg`);
+
+            let mediaBuffer = await (m.quoted ? m.quoted.download() : m.download());
+            fs.writeFileSync(tempPath, mediaBuffer);
+
+            let resultBuffer = await RemoveBG(tempPath);
+
+            if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+
+            if (!global.rbgTemp) global.rbgTemp = {};
+            let rbgId = 'RBG_' + Date.now();
+            global.rbgTemp[rbgId] = resultBuffer;
+
+            let sisaLimitText = totalLimit === "∞" ? "∞" : (totalLimit - cost);
+            let captionText = `✅ *Background Berhasil Dihapus*\n\n> Sisa limit: ${sisaLimitText}`;
+
+            let msg = generateWAMessageFromContent(m.chat, {
+                viewOnceMessage: {
+                    message: {
+                        interactiveMessage: {
+                            body: { text: captionText },
+                            footer: { text: '' },
+                            header: {
+                                hasMediaAttachment: true,
+                                ...(await prepareWAMessageMedia({ image: resultBuffer }, { upload: hydro.waUploadToServer }))
+                            },
+                            nativeFlowMessage: {
+                                buttons: [{
+                                    name: "quick_reply",
+                                    buttonParamsJson: JSON.stringify({
+                                        display_text: "📄 Ambil File",
+                                        id: `${prefix}getrbgdoc ${rbgId}`
+                                    })
+                                }]
+                            }
+                        }
+                    }
+                }
+            }, { quoted: m });
+
+            await hydro.relayMessage(m.chat, msg.message, { messageId: msg.key.id });
+
+            if (cost > 0) {
+                useLimit(m.sender, cost, Ahmad);
+                fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
+            }
+            await react('✅');
+
+        } catch (error) {
+            console.error(error);
+            await react('❌');
+            replyfail(mess.error.fitur);
+        }
+    }
+        break;
 
 // ====== AI FEATURE ======
 
@@ -3337,6 +4162,32 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
     }
         break;
 
+// ====== GAMES FEATURE ======
+
+    case 'casino': {
+    await react('🎰')
+    await gameCasinoSolo(hydro, m, prefix, global.db, args)
+    await react('✅')
+}
+        break
+
+// ====== RPG FEATURE ======
+
+    case 'profile':
+    case 'profil': {
+        await react('👤')
+        await cmdProfile(m, global.db, args)
+        await react('✅')
+    }
+        break
+    case 'daily':
+    case 'hadir': {
+    await react('🎁')
+    await gameDaily(hydro, m, prefix, global.db)
+    await react('✅')
+}
+        break
+
 // ====== UTILITY FEATURE ======
     
     case 'rch':
@@ -3395,6 +4246,322 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
             }
         }
     }
+        break;
+
+// ====== CPANEL / PTERODACTYL FEATURE ======
+
+    case 'setresellerweb': {
+        if (!Ahmad) return replytolak(global.mess.only.owner);
+        if (!text) return replyquery(`Masukkan domain panel reseller!\nContoh: ${prefix}setresellerweb https://panel.hydrohost.id`);
+
+        let newDomain = text.trim().replace(/\/+$/, ''); 
+        if (!/^https?:\/\/.+/.test(newDomain)) return replyfail('❌ Format domain tidak valid! Harus diawali https://');
+
+        global.domain = newDomain;
+
+        let settingsContent = fs.readFileSync('./settings.js', 'utf-8');
+        settingsContent = settingsContent.replace(
+            /global\.domain\s*=\s*['"][^'"]*['"]\s*;?\s*(\/\/.*)?/,
+            `global.domain = '${newDomain}'; // Domain Panel `
+        );
+        fs.writeFileSync('./settings.js', settingsContent);
+
+        await react('✅');
+        replysuccess(`✅ Domain *Reseller API* berhasil diubah!\n\n*Domain baru:* ${newDomain}`);
+    }
+        break;
+    case 'setresellerplta': {
+        if (!Ahmad) return replytolak(global.mess.only.owner);
+        if (!text) return replyquery(`Masukkan PTLA key reseller!\nContoh: ${prefix}setresellerplta ptla_xxxxx`);
+
+        let newKey = text.trim();
+        if (!newKey.startsWith('ptla_')) return replyfail('❌ Format PTLA tidak valid! Harus diawali *ptla_*');
+
+        global.apikey = newKey;
+
+        let settingsContent = fs.readFileSync('./settings.js', 'utf-8');
+        settingsContent = settingsContent.replace(
+            /global\.apikey\s*=\s*['"][^'"]*['"]\s*;?\s*(\/\/.*)?/,
+            `global.apikey = '${newKey}'; // PLTA Panel`
+        );
+        fs.writeFileSync('./settings.js', settingsContent);
+
+        await react('✅');
+        replysuccess(`✅ PTLA Key *Reseller API* berhasil diubah!\n\n*Key baru:* ${newKey.slice(0, 12)}...`);
+    }
+        break;
+    case 'setadminweb': {
+    if (!Ahmad) return replytolak(global.mess.only.owner);
+    if (!text) return replyquery(`Masukkan domain panel admin!\nContoh: ${prefix}setadminweb https://hydrohost.id`);
+
+    let newDomain = text.trim().replace(/\/+$/, '');
+    if (!/^https?:\/\/.+/.test(newDomain)) return replyfail('❌ Format domain tidak valid! Harus diawali https://');
+
+    global.domain2 = newDomain;
+
+    let settingsContent = fs.readFileSync('./settings.js', 'utf-8');
+    if (/global\.domain2\s*=/.test(settingsContent)) {
+        settingsContent = settingsContent.replace(
+            /global\.domain2\s*=\s*['"][^'"]*['"]\s*;?\s*(\/\/.*)?/,
+            `global.domain2 = '${newDomain}'; // Domain Panel `
+        );
+    } else {
+        settingsContent = settingsContent.replace(
+            /(global\.domain\s*=\s*['"][^'"]*['"]\s*;?[^\n]*\n)/,
+            `$1global.domain2 = '${newDomain}'; // Domain Panel \n`
+        );
+    }
+    fs.writeFileSync('./settings.js', settingsContent);
+
+    await react('✅');
+    replysuccess(`✅ Domain *Admin API* berhasil diubah!\n\n*Domain baru:* ${newDomain}`);
+}
+        break;
+    case 'setadminplta': {
+    if (!Ahmad) return replytolak(global.mess.only.owner);
+    if (!text) return replyquery(`Masukkan PTLA key admin!\nContoh: ${prefix}setadminplta ptla_xxxxx`);
+
+    let newKey = text.trim();
+    if (!newKey.startsWith('ptla_')) return replyfail('❌ Format PTLA tidak valid! Harus diawali *ptla_*');
+
+    global.apikey2 = newKey;
+
+    let settingsContent = fs.readFileSync('./settings.js', 'utf-8');
+    if (/global\.apikey2\s*=/.test(settingsContent)) {
+        settingsContent = settingsContent.replace(
+            /global\.apikey2\s*=\s*['"][^'"]*['"]\s*;?\s*(\/\/.*)?/,
+            `global.apikey2 = '${newKey}'; // PLTA Panel`
+        );
+    } else {
+        settingsContent = settingsContent.replace(
+            /(global\.apikey\s*=\s*['"][^'"]*['"]\s*;?[^\n]*\n)/,
+            `$1global.apikey2 = '${newKey}'; // PLTA Panel\n`
+        );
+    }
+    fs.writeFileSync('./settings.js', settingsContent);
+
+    await react('✅');
+    replysuccess(`✅ PTLA Key *Admin API* berhasil diubah!\n\n*Key baru:* ${newKey.slice(0, 12)}...`);
+}
+        break;
+    case 'addreseller': {
+    if (!Ahmad) return replytolak(global.mess.only.owner);
+    if (!text) return replyquery(`Contoh: ${prefix}addreseller 628123456789`);
+    const nomer = text.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+    const db    = loadReseller();
+    if (db.reseller.includes(nomer)) return replyfail('Nomor tersebut sudah menjadi Reseller!');
+    db.reseller.push(nomer);
+    saveReseller(db);
+    await react('✅');
+    replysuccess(`Berhasil menambahkan *${nomer.split('@')[0]}* sebagai *Reseller* 🎉\n\nAkses: cserver, cuser, 1gb - unli`);
+}
+        break;
+    case 'addresellergb': {
+    if (!Ahmad) return replytolak(global.mess.only.owner);
+    if (!m.isGroup) return replytolak(global.mess.only.group);
+    const db = loadReseller(), dc = loadCadmin();
+    if (db.resellergb.includes(m.chat)) return replyfail('Grup ini sudah menjadi Reseller Group!');
+    if (dc.groups.includes(m.chat)) { dc.groups = dc.groups.filter(v => v !== m.chat); saveCadmin(dc); }
+    db.resellergb.push(m.chat);
+    saveReseller(db);
+    await react('✅');
+    replysuccess(`✅ Grup ini sekarang *Reseller Group*.\nMember bisa: cserver, cuser, 1gb - unli`);
+}
+        break;
+    case 'delreseller': {
+    if (!Ahmad) return replytolak(global.mess.only.owner);
+    if (!text) return replyquery(`Contoh: ${prefix}delreseller 628123456789`);
+    const nomer = text.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+    const db    = loadReseller();
+    if (!db.reseller.includes(nomer)) return replyfail('Nomor tersebut bukan Reseller.');
+    db.reseller = db.reseller.filter(v => v !== nomer);
+    saveReseller(db);
+    await react('✅');
+    replysuccess(`Berhasil menghapus status Reseller dari *${nomer.split('@')[0]}*`);
+}
+        break;
+    case 'delresellergb': {
+    if (!Ahmad) return replytolak(global.mess.only.owner);
+    if (!m.isGroup) return replytolak(global.mess.only.group);
+    const db = loadReseller();
+    if (!db.resellergb.includes(m.chat)) return replyfail('Grup ini belum terdaftar sebagai Reseller Group.');
+    db.resellergb = db.resellergb.filter(v => v !== m.chat);
+    saveReseller(db);
+    await react('✅');
+    replysuccess('Berhasil mencabut status Reseller Group dari grup ini!');
+}
+        break;
+    case 'addcadmingb': {
+    if (!Ahmad) return replytolak(global.mess.only.owner);
+    if (!m.isGroup) return replytolak(global.mess.only.group);
+    const dc = loadCadmin(), db = loadReseller();
+    if (dc.groups.includes(m.chat)) return replyfail('Grup ini sudah menjadi Admin Panel Group!');
+    if (db.resellergb.includes(m.chat)) { db.resellergb = db.resellergb.filter(v => v !== m.chat); saveReseller(db); }
+    dc.groups.push(m.chat);
+    if (!dc.users[m.chat]) dc.users[m.chat] = [];
+    saveCadmin(dc);
+    await react('✅');
+    replysuccess(`✅ Grup ini sekarang *Admin Panel Group*.\nMember bisa: cadmin, cserver, cuser, 1gb - unli`);
+}
+        break;
+    case 'delcadmingb': {
+    if (!Ahmad) return replytolak(global.mess.only.owner);
+    if (!m.isGroup) return replytolak(global.mess.only.group);
+    const dc = loadCadmin();
+    if (!dc.groups.includes(m.chat)) return replyfail('Grup ini belum terdaftar sebagai Admin Panel Group.');
+    dc.groups = dc.groups.filter(v => v !== m.chat);
+    saveCadmin(dc);
+    await react('✅');
+    replysuccess('Berhasil mencabut status Admin Panel Group dari grup ini!');
+}
+        break;
+    case 'cadmin': {
+    const ownerData = JSON.parse(fs.readFileSync('./database/owner.json'));
+    const dc        = loadCadmin();
+    const isOwner2  = Ahmad || ownerData.includes(m.sender);
+    const isCgb     = m.isGroup && dc.groups.includes(m.chat);
+
+    if (args[0] === 'resetall') {
+        if (!isOwner2) return replytolak(global.mess.only.owner);
+        if (!m.isGroup) return replytolak(global.mess.only.group);
+        dc.users[m.chat] = [];
+        saveCadmin(dc);
+        return replysuccess('✅ Berhasil reset limit cadmin semua member di grup ini!');
+    }
+    if (args[0] === 'reset') {
+        if (!isOwner2) return replytolak(global.mess.only.owner);
+        const targetUser = m.quoted?.sender || (args[1] ? args[1].replace(/[^0-9]/g, '') + '@s.whatsapp.net' : null);
+        if (!targetUser) return replyquery(`Reply pesan target atau masukkan nomornya!\nContoh: ${prefix}cadmin reset 628xxx`);
+        if (dc.users[m.chat]?.includes(targetUser)) {
+            dc.users[m.chat] = dc.users[m.chat].filter(v => v !== targetUser);
+            saveCadmin(dc);
+            return replysuccess(`✅ Berhasil reset limit cadmin @${targetUser.split('@')[0]}!`);
+        }
+        return replyfail('Nomor tersebut belum pernah buat admin di grup ini.');
+    }
+
+    if (!isOwner2 && !isCgb) return replytolak(global.mess.only.owner);
+
+    let nama = '', target = '';
+    if (!isOwner2 && isCgb) {
+        if (!text) return replyquery(`Format: ${prefix}cadmin <nama>\nContoh: ${prefix}cadmin Foca`);
+        if (text.includes(',')) return replyfail('Tidak perlu pakai koma.\nContoh: .cadmin Foca');
+        if (!dc.users[m.chat]) dc.users[m.chat] = [];
+        if (dc.users[m.chat].includes(m.sender))
+            return replyfail('❌ Limit Habis! Kamu sudah pernah buat akun Admin di grup ini (Max 1x).\nMinta Owner untuk reset.');
+        nama   = text.trim();
+        target = m.sender;
+    } else {
+        if (!text) return replyquery(`Format: ${prefix}cadmin <nama>,<nomor>\nContoh: ${prefix}cadmin Foca,628xxx`);
+        if (!text.includes(',')) {
+            if (m.isGroup) return replyquery(`Di grup harus pakai nomor target.\nContoh: ${prefix}cadmin Foca,628xxx`);
+            nama = text.trim(); target = m.chat;
+        } else {
+            const [n, nom] = text.split(',');
+            nama   = n.trim();
+            target = nom.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+        }
+    }
+
+    if (isOwner2) {
+        await sendServerPicker(hydro, m, prefix, 'cadmin', { nama, target });
+        return;
+    }
+
+    await react('⏱️');
+    await execCadmin(hydro, m, { nama, target }, true, { reply, replyfail });
+    if (!isOwner2 && isCgb) { dc.users[m.chat].push(m.sender); saveCadmin(dc); }
+}
+        break;
+    case 'cuser': {
+    const dc           = loadCadmin();
+    const isCgb        = m.isGroup && dc.groups.includes(m.chat);
+    const isReseller   = loadReseller().reseller.includes(m.sender);
+    const isResellerGb = m.isGroup && loadReseller().resellergb.includes(m.chat);
+    const hasAccess    = Ahmad || isReseller || isResellerGb || isCgb;
+    const skipCd       = Ahmad || isCgb;
+
+    if (!hasAccess) return replytolak(global.mess.only.premium);
+    const cdSisa = checkCooldown(m, isResellerGb, skipCd);
+    if (cdSisa !== null) return replyfail(`⏳ Sabar Bang! Tunggu *${cdSisa} menit* lagi.`);
+    if (!text) return replyquery(`Contoh: ${prefix}cuser nama,email\natau ${prefix}cuser nama`);
+
+    let nama, email, pw;
+    if (text.includes(',')) [nama, email, pw] = text.split(',');
+    else nama = text.trim();
+
+    if (Ahmad) { await sendServerPicker(hydro, m, prefix, 'cuser', { nama, email, pw }); return; }
+
+    if (!skipCd) setCooldown(m, isResellerGb);
+    await react('⏱️');
+    await execCuser(hydro, m, { nama, email, pw }, isCgb, { reply, replyfail });
+}
+        break;  
+    case 'cserver': {
+    const dc           = loadCadmin();
+    const isCgb        = m.isGroup && dc.groups.includes(m.chat);
+    const isReseller   = loadReseller().reseller.includes(m.sender);
+    const isResellerGb = m.isGroup && loadReseller().resellergb.includes(m.chat);
+    const hasAccess    = Ahmad || isReseller || isResellerGb || isCgb;
+    const skipCd       = Ahmad || isCgb;
+
+    if (!hasAccess) return replytolak(global.mess.only.premium);
+    const cdSisa = checkCooldown(m, isResellerGb, skipCd);
+    if (cdSisa !== null) return replyfail(`⏳ Sabar Bang! Tunggu *${cdSisa} menit* lagi.`);
+
+    if (!text || !text.includes(','))
+        return replyquery(`Format: ${prefix}cserver <plan>,<email>,<nama_server>\nContoh: ${prefix}cserver 3gb,email@target.com,ServerKu`);
+
+    const [planInput, email, namaServer] = text.split(',');
+    if (!planInput || !email || !namaServer)
+        return replyquery(`Format: ${prefix}cserver 3gb,email@target.com,ServerKu`);
+    if (!PLANS[planInput.toLowerCase().trim()])
+        return replyfail(`Plan tidak valid!\nPilih: 1gb, 2gb, 3gb, 4gb, 5gb, 6gb, 7gb, 8gb, 9gb, 10gb, unli`);
+
+    if (Ahmad) { await sendServerPicker(hydro, m, prefix, 'cserver', { planInput, email, namaServer }); return; }
+
+    if (!skipCd) setCooldown(m, isResellerGb);
+    await react('⏱️');
+    await execCserver(hydro, m, { planInput, email, namaServer }, isCgb, { reply, replyfail });
+}
+        break;
+    case '1gb': case '2gb': case '3gb': case '4gb': case '5gb':
+case '6gb': case '7gb': case '8gb': case '9gb': case '10gb':
+case 'unlimited': case 'unli': {
+    const dc           = loadCadmin();
+    const isCgb        = m.isGroup && dc.groups.includes(m.chat);
+    const isReseller   = loadReseller().reseller.includes(m.sender);
+    const isResellerGb = m.isGroup && loadReseller().resellergb.includes(m.chat);
+    const hasAccess    = Ahmad || isReseller || isResellerGb || isCgb;
+    const skipCd       = Ahmad || isCgb;
+
+    if (!hasAccess) return replytolak(global.mess.only.premium);
+    const cdSisa = checkCooldown(m, isResellerGb, skipCd);
+    if (cdSisa !== null) return replyfail(`⏳ Sabar Bang! Tunggu *${cdSisa} menit* lagi.`);
+    if (!text) return replyquery(`Contoh: ${prefix}${command} username,628xxx\natau ${prefix}${command} username`);
+
+    let usernem, nomor;
+    if (text.includes(',')) {
+        const [u, n] = text.split(',');
+        if (!u || !n) return replyquery(`Contoh: ${prefix}${command} username,628xxx`);
+        usernem = u.toLowerCase().replace(/[^a-z0-9]/g, '');
+        nomor   = n.replace(/[^0-9]/g, '') + '@s.whatsapp.net';
+    } else {
+        usernem = text.toLowerCase().replace(/[^a-z0-9]/g, '');
+        nomor   = m.isGroup ? m.sender : m.chat;
+    }
+
+    const onWa = await hydro.onWhatsApp(nomor.split('@')[0]);
+    if (!onWa || onWa.length < 1) return replyfail('Nomor target tidak terdaftar di WhatsApp!');
+
+    const plan = PLANS[command];
+
+    if (Ahmad) { await sendServerPicker(hydro, m, prefix, 'spec', { command, usernem, nomor, plan }); return; }
+
+    if (!skipCd) setCooldown(m, isResellerGb);
+    await react('⏱️');
+    await execSpec(hydro, m, { command, usernem, nomor, plan }, isCgb, { reply, replyfail });
+}
         break;
 
 
@@ -3902,6 +5069,47 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
         await react('✅');
     }
         break;
+    case 'getrbgdoc': {
+        if (!args[0]) return;
+        
+        let rbgId = args[0];
+        const resultBuffer = global.rbgTemp ? global.rbgTemp[rbgId] : null;
+
+        if (!resultBuffer) {
+            return replyfail("❌ Maaf, data gambar sudah kadaluarsa. Silakan gunakan fitur removebg kembali.");
+        }
+
+        await react('⏳');
+        
+        try {
+            await hydro.sendMessage(m.chat, { 
+                document: resultBuffer, 
+                mimetype: 'image/png',
+                fileName: `RemoveBG_${Date.now()}.png`,
+                caption: ''
+            }, { quoted: m });
+
+            delete global.rbgTemp[rbgId];
+            await react('✅');
+        } catch (e) {
+            replyfail("❌ Gagal mengirim file.");
+        }
+    }
+        break;
+    case 'daftar':
+    case 'register': {
+        await react('📋')
+        await cmdRegister(m, global.db, args)
+        await react('✅')
+    }
+        break
+    case 'undaftar':
+    case 'unregister': {
+        await react('❌')
+        await cmdUnregister(m, global.db)
+        await react('✅')
+    }
+        break
 } // End Switch
 
     if (budy.startsWith('<')) {

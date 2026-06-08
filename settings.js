@@ -54,14 +54,23 @@ global.hituet = 0
 
 // ======================== API Keys ===================== \\
 
-// Cpanel
-global.domain = 'https://panel.kamu.com'; // Domain Panel 
-global.apikey = 'ptla_27Bkxxx'; // PLTA Panel
+// Reseller API
+global.domain = 'https://lily.jkt48-private.com'; // Domain Panel 
+global.apikey = 'ptla_VfNJZPVmXCUw8dVEw56500IIjkpb1VMS4FrvMiI1BXe'; // PLTA Panel
 global.email = '@hydroarchon.xyz' // Domain email user
 global.egg = '15'; // ID Egg
 global.nestid = '5'; // ID Nest
 global.loc = '1'; // ID Location
-global.nodeid1 = [1]; // ID Node
+global.nodeid = [1]; // ID Node
+
+// Admin API
+global.domain2 = 'https://panel.admin.com'; // Domain Panel 
+global.apikey2 = 'ptla_xxxxx'; // PLTA Panel
+global.email2 = '@hydroarchon.xyz' // Domain email user
+global.egg2 = '15'; // ID Egg
+global.nestid2 = '5'; // ID Nest
+global.loc2 = '1'; // ID Location
+global.nodeid2 = [1]; // ID Node
 
 // TikWm API
 global.tikwmkey = [

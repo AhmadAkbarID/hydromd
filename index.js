@@ -257,6 +257,10 @@ hydro.ev.on('call', async (callUpdate) => {
     } catch (err) { console.log(err) }
 })
 
+if (typeof global.db.settings.registrationRequired === 'undefined') {
+        global.db.settings.registrationRequired = false
+    }
+
 // Message Upsert Handler
 hydro.ev.on('messages.upsert', async chatUpdate => {
         try {
