@@ -6,15 +6,11 @@ const { Boom } = boom
 const {
 	default: makeWASocket,
 	BufferJSON,
-	processedMessages,
-	PHONENUMBER_MCC,
-	initInMemoryKeyStore,
 	DisconnectReason,
 	AnyMessageContent,
 	useMultiFileAuthState,
-    makeInMemoryStore,
 	delay,
-	fetchLatestBaileysVersion,
+	fetchLatestVersion,
 	generateForwardMessageContent,
     prepareWAMessageMedia,
     generateWAMessageFromContent,
@@ -24,7 +20,7 @@ const {
     makeCacheableSignalKeyStore,
     getAggregateVotesInPollMessage,
     proto
-} = require("socketon")
+} = require('@mataram/wa')
 const crypto = require('crypto')
 const cfonts = require('cfonts');
 const { exec } = require('child_process');
@@ -62,7 +58,12 @@ if (fs.existsSync('./database/owner.json')) {
     }
 }
 
-const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) })
+const store = {
+  groupMetadata: {},
+  contacts: {},
+  bind() {},
+  loadMessages() { return [] },
+}
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
 const question = (text) => new Promise((resolve) => rl.question(text, resolve))
 
@@ -122,9 +123,9 @@ const normalizeMessageIds = async (sock, kay) => {
 
 async function hydroInd() {
     await delay(5000)
-    const { version } = await fetchLatestBaileysVersion()
-    const { saveCreds, state } = await useMultiFileAuthState(global.sessionName) 
-     
+    const { version } = await fetchLatestVersion()
+    const { saveCreds, state } = await useMultiFileAuthState(global.sessionName)
+    
     const hydro = makeWASocket({
         version,
         logger: pino({ level: 'silent' }),
@@ -175,8 +176,7 @@ async function hydroInd() {
 
     if (!hydro.authState.creds.registered) {
         const inputNumber = await question('Masukin nomor yang mau dijadikan bot.. contoh: 6285187063723\n');
-        const pairinghydro = "FOCABARS";
-        let code = await hydro.requestPairingCode(inputNumber || phoneNumber, pairinghydro);
+        let code = await hydro.requestPairingCode(inputNumber || phoneNumber);
         code = code?.match(/.{1,4}/g)?.join("-") || code;
         console.log(`Ini kodenya:`, code);
     }
