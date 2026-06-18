@@ -25,7 +25,7 @@
   "dependencies": {
     "@google/genai": "^2.8.0",
     "@hapi/boom": "^10.0.1",
-    "@mataram/wa": "file:../mataram-wa.tgz",
+    "@mataram/wa": "^0.10.4",
     "@supabase/supabase-js": "2.101.1",
     "awesome-phonenumber": "^5.9.0",
     "axios": "^0.24.0",
