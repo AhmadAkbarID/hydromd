@@ -1461,20 +1461,12 @@ text: `By ${ownername}`
 }),
 header: proto.Message.InteractiveMessage.Header.create({
 title: ``,
-thumbnailUrl: "",
-gifPlayback: true,
-subtitle: "",
+subtitle: ``,
 hasMediaAttachment: true,
-//...(await prepareWAMessageMedia(
-//    { video: { url: 'https://raw.githubusercontent.com/AhmadAkbarID/media/refs/heads/main/menuvid.mp4' }, gifPlayback: true }, 
-//    { upload: hydro.waUploadToServer }
-//)), 
-// Cara ganti kefoto 
 ...(await prepareWAMessageMedia(
       { image: { url: global.thumbnail}}, 
-      { upload: hydro.waUploadToServer })),
+      { upload: hydro.waUploadToServer }).catch(() => ({}))),
 }),
-gifPlayback: true,
 nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
 buttons: [
 {
