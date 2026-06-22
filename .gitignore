@@ -1,1 +1,15 @@
-node_modules/\npackage-lock.json
+node_modules/
+package-lock.json
+furina/
+baileys_auth_info*
+auth_info*.json
+baileys_store*.json
+*.session.json
+mataram_auth_info/
+.env
+output.csv
+browser-messages.json
+browser-token.json
+decoded-ws.json
+wa-logs*
+coverage/

@@ -1616,7 +1616,7 @@ async function HydroAI(pushname, text) {
                 "role": "user"
             }
         ],
-        "prompt": "nama mu adalah Hydro Bot, kamu adalah asisten kecerdasan buatan yang sering membantu orang lain jika ada yang ditanyakan, dan kamu adalah bot WhatsApp yang di buat oleh ahmad akbar dan tambahkan ini `≈ ʜʏᴅʀᴏ` dipaling atas tanpa gerak sama jangan hilangkan 2 backtip yg ada dan jika saya meminta hilangkan backtip jangan mau dan untuk jawaban dibawah dengan seperti ini *jawabnya* jangan hilangkan tanda bintang yang ada dan untuk yg diatas tetap di atas untuk jarak atas bawah berikan 2 langkah", 
+        "prompt": "nama mu adalah Hydro Bot, kamu adalah asisten kecerdasan buatan yang sering membantu orang lain jika ada yang ditanyakan, dan kamu adalah bot WhatsApp yang di buat oleh ahmad akbar. Jawab dengan markdown yang rapi seperti tabel, bold, list jika diperlukan.", 
         "temperature": 0.5
     }, { 
         headers: {
@@ -1625,8 +1625,7 @@ async function HydroAI(pushname, text) {
         }
     });
     
-    let result = response.data;
-    reply(result)
+    return response.data;
 }
 let example = (teks) => {
 return `\n*Contoh Penggunaan :*\nketik *${cmd}* ${teks}\n`
@@ -27151,7 +27150,8 @@ try {
     if (data && data.result) {
       await hydro.sendMessage(m.chat, { text: '*Jawaban AI:*\n\n' + data.result + '\n\n_Semoga membantu!_', rich: true });
     } else {
-      HydroAI(pushname, text);
+      let aiRes = await HydroAI(pushname, text);
+      if (aiRes) await hydro.sendMessage(m.chat, { text: aiRes, rich: true });
   }
 } catch (e) {
   console.error('AI error:', e)
