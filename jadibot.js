@@ -17,13 +17,13 @@ if (global.conns instanceof Array) console.log()
 else global.conns = []
 
 const jadibot = async (hydro, text, m) => {
+const { default: makeWASocket, useMultiFileAuthState, fetchLatestVersion, makeCacheableSignalKeyStore } = require('@mataram/wa')
 const { sendImage, sendMessage } = hydro;
-//sendMessage(from, 'tesss');
 const { reply, sender } = m;
 const { state, saveCreds } = await useMultiFileAuthState(path.join(__dirname, `./database/rentbot/${sender}`), log({ level: "silent" }));
 try {
 async function start() {
-let { version, isLatest } = await fetchLatestBaileysVersion();
+let { version, isLatest } = await fetchLatestVersion();
  const config = {
     logger: Pino({ level: "fatal" }).child({ level: "fatal" }),
     printQRInTerminal: false,
