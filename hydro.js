@@ -27149,12 +27149,12 @@ await hydro.sendMessage(m.chat, { react: { text: "⏱️",key: m.key,}})
 try {
     const data = await fetchJson(`https://btch.us.kg/openai?text=${encodeURIComponent(text)}`);
     if (data && data.result) {
-      reply(`≈ʜʏᴅʀᴏ : ${data.result}`);
+      await hydro.sendMessage(m.chat, { text: data.result, rich: true });
     } else {
       HydroAI(pushname, text);
   }
 } catch (e) {
-  reply('Terjadi error, coba lagi nanti.');
+  await hydro.sendMessage(m.chat, { text: 'Terjadi error, coba lagi nanti.', rich: true });
 }
 
 }
