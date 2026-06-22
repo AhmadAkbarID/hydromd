@@ -27154,7 +27154,8 @@ try {
       HydroAI(pushname, text);
   }
 } catch (e) {
-  await hydro.sendMessage(m.chat, { text: 'Terjadi error, coba lagi nanti.', rich: true });
+  console.error('AI error:', e)
+  await hydro.sendMessage(m.chat, { text: 'Error: ' + (e.message || e) });
 }
 
 }
