@@ -12,7 +12,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node --experimental-require-module index.js"
   },
   "keywords": [
     "whatsapp",
@@ -105,7 +105,7 @@
     "scrape-primbon": "^1.1.0",
     "sharp": "^0.32.6",
     "similarity": "^1.2.1",
-    "socketon": "github:AhmadAkbarID/focashi",
+    "@mataram/wa": "^0.10.8",
     "spinnies": "^0.5.1",
     "ssh2": "^1.15.0",
     "syntax-error": "*",

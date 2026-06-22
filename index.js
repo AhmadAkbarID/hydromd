@@ -6,15 +6,10 @@ const { Boom } = boom
 const {
 	default: makeWASocket,
 	BufferJSON,
-	processedMessages,
-	PHONENUMBER_MCC,
-	initInMemoryKeyStore,
 	DisconnectReason,
-	AnyMessageContent,
-        makeInMemoryStore,
 	useMultiFileAuthState,
 	delay,
-	fetchLatestBaileysVersion,
+	fetchLatestVersion,
 	generateForwardMessageContent,
     prepareWAMessageMedia,
     generateWAMessageFromContent,
@@ -24,7 +19,7 @@ const {
     makeCacheableSignalKeyStore,
     getAggregateVotesInPollMessage,
     proto
-} = require("socketon")
+} = require("@mataram/wa")
 const { MongoClient } = require('mongodb');
 const crypto = require('crypto')
 const cfonts = require('cfonts');
@@ -147,7 +142,7 @@ const normalizeMessageIds = async (sock, kay) => {
 async function hydroInd() {
     await delay(5000)
     await checkVersionUpdate();
-    const { version } = await fetchLatestBaileysVersion()
+    const { version } = await fetchLatestVersion()
 	const {  saveCreds, state } = await useMultiFileAuthState(`./${sessionName}`)
 	const msgRetryCounterCache = new NodeCache()
     	const hydro = makeWASocket({

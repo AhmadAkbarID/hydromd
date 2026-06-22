@@ -2,7 +2,7 @@ module.exports = {
 modul: {
 	axios: require('axios'),
 	boom: require('@hapi/boom'),
-	baileys: require("socketon"),
+	baileys: require("@mataram/wa"),
 	chalk: require('chalk'),
 	crypto: require('crypto'),
 	cheerio: require('cheerio'),
@@ -33,7 +33,7 @@ modul: {
 	nodeid3: require('node-id3'),
 	nodeytm: require('node-youtube-music'),
 	os: require('os'),
-	socketon: require('socketon'),
+	mataram: require('@mataram/wa'),
 	objectquery: require('object-query-string'),
 	path: require('path'),
 	perf_hooks: require('perf_hooks'),

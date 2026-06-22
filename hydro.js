@@ -31,7 +31,7 @@ const {
 const { 
     downloadContentFromMessage, 
     extractImageThumb 
-} = require('socketon');
+} = require("@mataram/wa")
 const { 
     modul 
 } = require('./module');
@@ -24642,7 +24642,7 @@ Dan health anda berkurang -80
 //==================================================================
 case 'repair': {
 if (!m.isGroup) return replytolak(mess.only.group)
-const {default: MessageType } = require ('socketon')
+const {default: MessageType } = require("@mataram/wa")
 
   let type = (args[0] || '').toLowerCase()
   let _type = (args[0] || '').toLowerCase()

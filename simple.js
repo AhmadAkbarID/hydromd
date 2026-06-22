@@ -13,7 +13,7 @@ const {
     generateWAMessageFromContent,
     WAMessageStubType,
     WA_DEFAULT_EPHEMERAL,
-} = require('socketon')
+} = require("@mataram/wa")
 const { toAudio, toPTT, toVideo } = require('./converter')
 const chalk = require('chalk')
 const fetch = require("node-fetch")
