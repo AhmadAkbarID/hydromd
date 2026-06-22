@@ -1,0 +1,313 @@
+
+> @inversifyjs/core@1.3.4 prebuild /home/runner/work/monorepo/monorepo/packages/container/libraries/core
+> pnpm run build:clean
+
+
+> @inversifyjs/core@1.3.4 build:clean /home/runner/work/monorepo/monorepo/packages/container/libraries/core
+> rimraf lib
+
+
+> @inversifyjs/core@1.3.4 build /home/runner/work/monorepo/monorepo/packages/container/libraries/core
+> pnpm run build:cjs && pnpm run build:esm
+
+
+> @inversifyjs/core@1.3.4 build:cjs /home/runner/work/monorepo/monorepo/packages/container/libraries/core
+> tsc --build tsconfig.cjs.json && pnpm exec foundation-ts-package-cjs ./lib/cjs
+
+
+> @inversifyjs/core@1.3.4 build:esm /home/runner/work/monorepo/monorepo/packages/container/libraries/core
+> webpack && pnpm exec foundation-ts-package-esm ./lib/esm
+
+PublicPath: auto
+assets by path metadata/ 26.8 KiB
+  assets by path metadata/calculations/ 12.5 KiB
+    assets by path metadata/calculations/*.map 7.36 KiB
+      asset metadata/calculations/getClassMetadataPropertiesFromMetadataReader.d.ts.map 462 bytes [emitted]
+      asset metadata/calculations/getConstructorArgumentMetadataFromLegacyMetadata.d.ts.map 456 bytes [emitted]
+      asset metadata/calculations/getClassMetadataConstructorArgumentsFromMetadataReader.d.ts.map 452 bytes [emitted]
+      asset metadata/calculations/getPropertyMetadataFromLegacyMetadata.d.ts.map 445 bytes [emitted]
+      asset metadata/calculations/assertConstructorMetadataArrayFilled.d.ts.map 416 bytes [emitted]
+      asset metadata/calculations/getClassMetadataFromMetadataReader.d.ts.map 402 bytes [emitted]
+      asset metadata/calculations/getClassElementMetadataFromLegacyMetadata.d.ts.map 359 bytes [emitted]
+      asset metadata/calculations/getClassMetadataProperties.d.ts.map 358 bytes [emitted]
+      asset metadata/calculations/getClassMetadataConstructorArguments.d.ts.map 348 bytes [emitted]
+      asset metadata/calculations/getClassElementMetadataFromNewable.d.ts.map 338 bytes [emitted]
+      asset metadata/calculations/getLegacyMetadata.d.ts.map 312 bytes [emitted]
+      asset metadata/calculations/getClassMetadata.d.ts.map 298 bytes [emitted]
+      asset metadata/calculations/getDefaultClassMetadata.d.ts.map 248 bytes [emitted]
+      asset metadata/calculations/getClassMetadataConstructorArgumentsFromMetadataReader.spec.d.ts.map 243 bytes [emitted]
+      asset metadata/calculations/getConstructorArgumentMetadataFromLegacyMetadata.spec.d.ts.map 231 bytes [emitted]
+      asset metadata/calculations/getClassMetadataPropertiesFromMetadataReader.spec.d.ts.map 223 bytes [emitted]
+      asset metadata/calculations/getClassElementMetadataFromLegacyMetadata.spec.d.ts.map 217 bytes [emitted]
+      asset metadata/calculations/getPropertyMetadataFromLegacyMetadata.spec.d.ts.map 209 bytes [emitted]
+      asset metadata/calculations/assertConstructorMetadataArrayFilled.spec.d.ts.map 207 bytes [emitted]
+      asset metadata/calculations/getClassMetadataConstructorArguments.spec.d.ts.map 207 bytes [emitted]
+      asset metadata/calculations/getClassElementMetadataFromNewable.spec.d.ts.map 203 bytes [emitted]
+      asset metadata/calculations/getClassMetadataFromMetadataReader.spec.d.ts.map 203 bytes [emitted]
+      asset metadata/calculations/getClassMetadataProperties.spec.d.ts.map 187 bytes [emitted]
+      asset metadata/calculations/getDefaultClassMetadata.spec.d.ts.map 181 bytes [emitted]
+      asset metadata/calculations/getLegacyMetadata.spec.d.ts.map 169 bytes [emitted]
+      asset metadata/calculations/getClassMetadata.spec.d.ts.map 167 bytes [emitted]
+    assets by path metadata/calculations/*.ts 5.16 KiB
+      asset metadata/calculations/getClassMetadataConstructorArgumentsFromMetadataReader.d.ts 430 bytes [emitted]
+      asset metadata/calculations/getClassMetadataPropertiesFromMetadataReader.d.ts 430 bytes [emitted]
+      asset metadata/calculations/getConstructorArgumentMetadataFromLegacyMetadata.d.ts 413 bytes [emitted]
+      asset metadata/calculations/getPropertyMetadataFromLegacyMetadata.d.ts 398 bytes [emitted]
+      asset metadata/calculations/getClassMetadataFromMetadataReader.d.ts 367 bytes [emitted]
+      asset metadata/calculations/assertConstructorMetadataArrayFilled.d.ts 347 bytes [emitted]
+      asset metadata/calculations/getClassElementMetadataFromLegacyMetadata.d.ts 322 bytes [emitted]
+      asset metadata/calculations/getClassMetadataConstructorArguments.d.ts 285 bytes [emitted]
+      asset metadata/calculations/getClassMetadataProperties.d.ts 285 bytes [emitted]
+      asset metadata/calculations/getLegacyMetadata.d.ts 282 bytes [emitted]
+      asset metadata/calculations/getClassElementMetadataFromNewable.d.ts 279 bytes [emitted]
+      asset metadata/calculations/getClassMetadata.d.ts 222 bytes [emitted]
+      asset metadata/calculations/getDefaultClassMetadata.d.ts 176 bytes [emitted]
+      asset metadata/calculations/getClassMetadataConstructorArgumentsFromMetadataReader.spec.d.ts 100 bytes [emitted]
+      asset metadata/calculations/getConstructorArgumentMetadataFromLegacyMetadata.spec.d.ts 94 bytes [emitted]
+      asset metadata/calculations/getClassMetadataPropertiesFromMetadataReader.spec.d.ts 90 bytes [emitted]
+      asset metadata/calculations/getClassElementMetadataFromLegacyMetadata.spec.d.ts 87 bytes [emitted]
+      asset metadata/calculations/getPropertyMetadataFromLegacyMetadata.spec.d.ts 83 bytes [emitted]
+      asset metadata/calculations/assertConstructorMetadataArrayFilled.spec.d.ts 82 bytes [emitted]
+      asset metadata/calculations/getClassMetadataConstructorArguments.spec.d.ts 82 bytes [emitted]
+      asset metadata/calculations/getClassElementMetadataFromNewable.spec.d.ts 80 bytes [emitted]
+      asset metadata/calculations/getClassMetadataFromMetadataReader.spec.d.ts 80 bytes [emitted]
+      asset metadata/calculations/getClassMetadataProperties.spec.d.ts 72 bytes [emitted]
+      asset metadata/calculations/getDefaultClassMetadata.spec.d.ts 69 bytes [emitted]
+      asset metadata/calculations/getLegacyMetadata.spec.d.ts 63 bytes [emitted]
+      asset metadata/calculations/getClassMetadata.spec.d.ts 62 bytes [emitted]
+  assets by path metadata/models/ 11 KiB
+    assets by path metadata/models/*.ts 5.17 KiB
+      asset metadata/models/ManagedClassElementMetadata.d.ts 797 bytes [emitted]
+      asset metadata/models/MaybeManagedClassElementMetadata.d.ts 793 bytes [emitted]
+      asset metadata/models/MaybeClassElementMetadata.d.ts 436 bytes [emitted]
+      asset metadata/models/LegacyMetadataReader.d.ts 391 bytes [emitted]
+      asset metadata/models/MaybeClassMetadata.d.ts 387 bytes [emitted]
+      asset metadata/models/ClassMetadata.d.ts 357 bytes [emitted]
+      asset metadata/models/UnmanagedClassElementMetadata.d.ts 307 bytes [emitted]
+      asset metadata/models/ClassElementMetadata.d.ts 304 bytes [emitted]
+      asset metadata/models/LegacyConstructorMetadata.d.ts 267 bytes [emitted]
+      asset metadata/models/LegacyMetadataMap.d.ts 207 bytes [emitted]
+      asset metadata/models/ClassMetadataLifecycle.d.ts 191 bytes [emitted]
+      asset metadata/models/ClassElementMetadataKind.d.ts 173 bytes [emitted]
+      asset metadata/models/LegacyMetadata.d.ts 152 bytes [emitted]
+      asset metadata/models/MaybeClassElementMetadataKind.d.ts 129 bytes [emitted]
+      asset metadata/models/BaseClassElementMetadata.d.ts 124 bytes [emitted]
+      asset metadata/models/MetadataName.d.ts 95 bytes [emitted]
+      asset metadata/models/MetadataTag.d.ts 93 bytes [emitted]
+      asset metadata/models/MetadataTargetName.d.ts 89 bytes [emitted]
+    assets by path metadata/models/*.map 5.88 KiB
+      asset metadata/models/MaybeManagedClassElementMetadata.d.ts.map 735 bytes [emitted]
+      asset metadata/models/ManagedClassElementMetadata.d.ts.map 731 bytes [emitted]
+      asset metadata/models/MaybeClassMetadata.d.ts.map 398 bytes [emitted]
+      asset metadata/models/ClassMetadata.d.ts.map 386 bytes [emitted]
+      asset metadata/models/LegacyMetadataReader.d.ts.map 378 bytes [emitted]
+      asset metadata/models/MaybeClassElementMetadata.d.ts.map 369 bytes [emitted]
+      asset metadata/models/UnmanagedClassElementMetadata.d.ts.map 333 bytes [emitted]
+      asset metadata/models/LegacyConstructorMetadata.d.ts.map 314 bytes [emitted]
+      asset metadata/models/ClassElementMetadata.d.ts.map 301 bytes [emitted]
+      asset metadata/models/LegacyMetadataMap.d.ts.map 281 bytes [emitted]
+      asset metadata/models/ClassMetadataLifecycle.d.ts.map 266 bytes [emitted]
+      asset metadata/models/LegacyMetadata.d.ts.map 263 bytes [emitted]
+      asset metadata/models/ClassElementMetadataKind.d.ts.map 238 bytes [emitted]
+      asset metadata/models/BaseClassElementMetadata.d.ts.map 229 bytes [emitted]
+      asset metadata/models/MaybeClassElementMetadataKind.d.ts.map 215 bytes [emitted]
+      asset metadata/models/MetadataName.d.ts.map 197 bytes [emitted]
+      asset metadata/models/MetadataTag.d.ts.map 195 bytes [emitted]
+      asset metadata/models/MetadataTargetName.d.ts.map 191 bytes [emitted]
+  assets by path metadata/actions/ 2.32 KiB
+    assets by path metadata/actions/*.ts 1.07 KiB
+      asset metadata/actions/updateMaybeClassMetadataConstructorArgument.d.ts 465 bytes [emitted]
+      asset metadata/actions/updateMaybeClassMetadataProperty.d.ts 465 bytes [emitted]
+      asset metadata/actions/updateMaybeClassMetadataConstructorArgument.spec.d.ts 89 bytes [emitted]
+      asset metadata/actions/updateMaybeClassMetadataProperty.spec.d.ts 78 bytes [emitted]
+    assets by path metadata/actions/*.map 1.25 KiB
+      asset metadata/actions/updateMaybeClassMetadataConstructorArgument.d.ts.map 441 bytes [emitted]
+      asset metadata/actions/updateMaybeClassMetadataProperty.d.ts.map 432 bytes [emitted]
+      asset metadata/actions/updateMaybeClassMetadataConstructorArgument.spec.d.ts.map 216 bytes [emitted]
+      asset metadata/actions/updateMaybeClassMetadataProperty.spec.d.ts.map 194 bytes [emitted]
+  assets by path metadata/decorators/ 972 bytes
+    assets by path metadata/decorators/*.ts 457 bytes
+      asset metadata/decorators/injectBase.d.ts 385 bytes [emitted]
+      asset metadata/decorators/injectBase.spec.d.ts 72 bytes [emitted]
+    assets by path metadata/decorators/*.map 515 bytes
+      asset metadata/decorators/injectBase.d.ts.map 341 bytes [emitted]
+      asset metadata/decorators/injectBase.spec.d.ts.map 174 bytes [emitted]
+assets by path legacyTarget/ 7.99 KiB
+  assets by path legacyTarget/calculations/ 2.75 KiB
+    assets by path legacyTarget/calculations/*.map 1.61 KiB
+      asset legacyTarget/calculations/getTargetsFromMetadataProviders.d.ts.map 565 bytes [emitted]
+      asset legacyTarget/calculations/getTargets.d.ts.map 380 bytes [emitted]
+      asset legacyTarget/calculations/getTargetsFromMetadataProviders.spec.d.ts.map 201 bytes [emitted]
+      asset legacyTarget/calculations/getTargetId.d.ts.map 184 bytes [emitted]
+      asset legacyTarget/calculations/getTargetId.spec.d.ts.map 161 bytes [emitted]
+      asset legacyTarget/calculations/getTargets.spec.d.ts.map 159 bytes [emitted]
+    assets by path legacyTarget/calculations/*.ts 1.14 KiB
+      asset legacyTarget/calculations/getTargetsFromMetadataProviders.d.ts 550 bytes [emitted]
+      asset legacyTarget/calculations/getTargets.d.ts 336 bytes [emitted]
+      asset legacyTarget/calculations/getTargetId.d.ts 88 bytes [emitted]
+      asset legacyTarget/calculations/getTargetsFromMetadataProviders.spec.d.ts 77 bytes [emitted]
+      asset legacyTarget/calculations/getTargetId.spec.d.ts 57 bytes [emitted]
+      asset legacyTarget/calculations/getTargets.spec.d.ts 56 bytes [emitted]
+  assets by path legacyTarget/models/ 5.24 KiB
+    assets by path legacyTarget/models/*.ts 2.7 KiB
+      asset legacyTarget/models/LegacyTargetImpl.d.ts 1.47 KiB [emitted]
+      asset legacyTarget/models/LegacyTarget.d.ts 1.04 KiB [emitted]
+      asset legacyTarget/models/LegacyTargetType.d.ts 131 bytes [emitted]
+      asset legacyTarget/models/LegacyTargetImpl.spec.d.ts 62 bytes [emitted]
+    assets by path legacyTarget/models/*.map 2.54 KiB
+      asset legacyTarget/models/LegacyTargetImpl.d.ts.map 1.17 KiB [emitted]
+      asset legacyTarget/models/LegacyTarget.d.ts.map 1020 bytes [emitted]
+      asset legacyTarget/models/LegacyTargetType.d.ts.map 215 bytes [emitted]
+      asset legacyTarget/models/LegacyTargetImpl.spec.d.ts.map 165 bytes [emitted]
+assets by path string/models/ 1.8 KiB
+  assets by path string/models/*.map 1 KiB
+    asset string/models/LegacyQueryableStringImpl.d.ts.map 455 bytes [emitted]
+    asset string/models/LegacyQueryableString.d.ts.map 396 bytes [emitted]
+    asset string/models/LegacyQueryableStringImpl.spec.d.ts.map 177 bytes [emitted]
+  assets by path string/models/*.ts 817 bytes
+    asset string/models/LegacyQueryableStringImpl.d.ts 450 bytes [emitted]
+    asset string/models/LegacyQueryableString.d.ts 296 bytes [emitted]
+    asset string/models/LegacyQueryableStringImpl.spec.d.ts 71 bytes [emitted]
+assets by path prototype/ 1.09 KiB
+  assets by path prototype/calculations/ 745 bytes
+    assets by path prototype/calculations/*.map 473 bytes
+      asset prototype/calculations/getBaseType.d.ts.map 315 bytes [emitted]
+      asset prototype/calculations/getBaseType.spec.d.ts.map 158 bytes [emitted]
+    assets by path prototype/calculations/*.ts 272 bytes
+      asset prototype/calculations/getBaseType.d.ts 215 bytes [emitted]
+      asset prototype/calculations/getBaseType.spec.d.ts 57 bytes [emitted]
+  assets by path prototype/models/ 375 bytes
+    asset prototype/models/Prototype.d.ts.map 232 bytes [emitted]
+    asset prototype/models/Prototype.d.ts 143 bytes [emitted]
+assets by path reflectMetadata/data/ 1.5 KiB
+  assets by path reflectMetadata/data/*.map 827 bytes
+    asset reflectMetadata/data/keys.d.ts.map 621 bytes [emitted]
+    asset reflectMetadata/data/classMetadataReflectKey.d.ts.map 206 bytes [emitted]
+  assets by path reflectMetadata/data/*.ts 704 bytes
+    asset reflectMetadata/data/keys.d.ts 597 bytes [emitted]
+    asset reflectMetadata/data/classMetadataReflectKey.d.ts 107 bytes [emitted]
+assets by path error/models/ 1.42 KiB
+  assets by path error/models/*.map 760 bytes
+    asset error/models/InversifyCoreError.d.ts.map 544 bytes [emitted]
+    asset error/models/InversifyCoreErrorKind.d.ts.map 216 bytes [emitted]
+  assets by path error/models/*.ts 691 bytes
+    asset error/models/InversifyCoreError.d.ts 541 bytes [emitted]
+    asset error/models/InversifyCoreErrorKind.d.ts 150 bytes [emitted]
+assets by path symbol/calculations/ 522 bytes
+  assets by path symbol/calculations/*.map 354 bytes
+    asset symbol/calculations/getDescription.d.ts.map 193 bytes [emitted]
+    asset symbol/calculations/getDescription.spec.d.ts.map 161 bytes [emitted]
+  assets by path symbol/calculations/*.ts 168 bytes
+    asset symbol/calculations/getDescription.d.ts 108 bytes [emitted]
+    asset symbol/calculations/getDescription.spec.d.ts 60 bytes [emitted]
+asset index.js 67.8 KiB {792} [emitted] [javascript module] [minimized] (name: main)
+asset index.d.ts 2.05 KiB [emitted]
+asset index.d.ts.map 1.25 KiB [emitted]
+Entrypoint main 67.8 KiB = index.js
+chunk {792} (runtime: main) index.js (main) 23.7 KiB (javascript) 396 bytes (runtime) [entry] [rendered]
+  > ./src/index.ts main
+  ./src/index.ts + 25 modules [784] 23.7 KiB {792} [depth 0] [not cacheable] [built] [code generated]
+    [exports: ClassElementMetadataKind, LegacyTargetImpl, getClassElementMetadataFromLegacyMetadata, getClassMetadata, getClassMetadataFromMetadataReader, getTargets]
+    [all exports used]
+    entry ./src/index.ts main
+    used as library export
+  webpack/runtime/define property getters 308 bytes {792} [code generated]
+    [no exports]
+    [used exports unknown]
+  webpack/runtime/hasOwnProperty shorthand 88 bytes {792} [code generated]
+    [no exports]
+    [used exports unknown]
+  
+
+LOG from webpack.Compiler
+<t> make hook: 1599.891957 ms
+<t> finish make hook: 0.073106 ms
+<t> finish compilation: 6.01818 ms
+<t> seal compilation: 737.876524 ms
+<t> afterCompile hook: 0.079749 ms
+<t> emitAssets: 18.631502 ms
+<t> emitRecords: 0.062136 ms
+<t> done hook: 0.062386 ms
+<t> beginIdle: 0.019657 ms
+
+LOG from webpack.Compilation
+<t> compute affected modules: 0.207898 ms
+<t> finish modules: 4.556255 ms
+<t> report dependency errors and warnings: 0.888657 ms
+<t> optimize dependencies: 3.316162 ms
+<t> create chunks: 3.227617 ms
+<t> compute affected modules with chunk graph: 0.144108 ms
+<t> optimize: 9.829234 ms
+    1 modules hashed, 0 from cache (0.04 variants per module in average)
+<t> module hashing: 3.3416 ms
+    100% code generated (1 generated, 0 from cache)
+<t> code generation: 31.593317 ms
+<t> runtime requirements.modules: 0.207366 ms
+<t> runtime requirements.chunks: 0.393534 ms
+<t> runtime requirements.entries: 0.877606 ms
+<t> runtime requirements: 1.721259 ms
+<t> hashing: initialize hash: 0.005099 ms
+<t> hashing: sort chunks: 0.071874 ms
+<t> hashing: hash runtime modules: 0.364679 ms
+<t> hashing: hash chunks: 1.368361 ms
+<t> hashing: hash digest: 0.051977 ms
+<t> hashing: process full hash modules: 0.001753 ms
+<t> hashing: 2.341396 ms
+    100% code generated (2 generated, 0 from cache)
+<t> record hash: 0.031559 ms
+<t> module assets: 0.086221 ms
+<t> create chunk assets: 3.035909 ms
+<t> process assets: 677.735468 ms
+
+LOG from webpack.FlagDependencyExportsPlugin
+<t> restore cached provided exports: 0.589649 ms
+<t> figure out provided exports: 2.522783 ms
+    100% of exports of modules have been determined (0 no declared exports, 24 not cached, 2 flagged uncacheable, 0 from cache, 0 from mem cache, 1 additional calculations due to dependencies)
+<t> store provided exports into cache: 0.388535 ms
+
+LOG from webpack.InnerGraphPlugin
+<t> infer dependency usage: 0.767509 ms
+
+LOG from webpack.SideEffectsFlagPlugin
+<t> update dependencies: 0.41831 ms
+
+LOG from webpack.FlagDependencyUsagePlugin
+<t> initialize exports usage: 0.081702 ms
+<t> trace exports usage in graph: 2.255465 ms
+
+LOG from webpack.buildChunkGraph
+<t> visitModules: prepare: 0.696989 ms
+<t> visitModules: visiting: 1.580807 ms
+    59 queue items processed (26 blocks)
+    0 chunk groups connected
+    0 chunk groups processed for merging (0 module sets, 0 forked, 0 + 0 modules forked, 0 + 0 modules merged into fork, 0 resulting modules)
+    0 chunk group info updated (0 already connected chunk groups reconnected)
+<t> visitModules: 2.230739 ms
+<t> connectChunkGroups: 0.077966 ms
+<t> cleanup: 0.029094 ms
+
+LOG from webpack.SplitChunksPlugin
+<t> prepare: 0.023774 ms
+<t> modules: 1.120038 ms
+<t> queue: 0.002405 ms
+<t> maxSize: 0.044012 ms
+
+LOG from webpack.ModuleConcatenationPlugin
+<t> select relevant modules: 0.631207 ms
+<t> sort relevant modules: 0.032932 ms
+<t> find modules to concatenate: 1.792792 ms
+<t> sort concat configurations: 0.001152 ms
+<t> create concatenated modules: 1.588121 ms
++ 3 hidden lines
+
+LOG from webpack.FileSystemInfo
+    24 new snapshots created
+    0% root snapshot uncached (0 / 0)
+    0% children snapshot uncached (0 / 0)
+    0 entries tested
+    File info in cache: 230 timestamps 230 hashes 230 timestamp hash combinations
+    File timestamp hash combination snapshot optimization: 98% (4620/4699) entries shared via 9 shared snapshots (30 times referenced)
+    Directory info in cache: 0 timestamps 0 hashes 0 timestamp hash combinations
+    Managed items info in cache: 0 items
+
+2024-11-13 14:59:09: webpack 5.96.1 compiled successfully in 2383 ms (4a054ef6b580190b9f2a)

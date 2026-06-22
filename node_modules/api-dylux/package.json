@@ -1,0 +1,26 @@
+{
+  "name": "api-dylux",
+  "version": "1.8.6",
+  "description": "Powerful scrapers for social media and downloaders",
+  "main": "index.js",
+  "type": "commonjs",
+  "keywords": [
+    "scraper",
+    "tiktok",
+    "youtube",
+    "instagram",
+    "facebook",
+    "downloader"
+  ],
+  "author": "FG98",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "cheerio": "^1.0.0",
+    "node-fetch": "^3.3.2",
+    "qs": "^6.15.0"
+  }
+}

@@ -1,0 +1,1 @@
+{"version":3,"file":"injectBase.d.ts","sourceRoot":"","sources":["../../../../src/metadata/decorators/injectBase.ts"],"names":[],"mappings":"AAMA,OAAO,EAAE,2BAA2B,EAAE,MAAM,uCAAuC,CAAC;AACpF,OAAO,EAAE,yBAAyB,EAAE,MAAM,qCAAqC,CAAC;AAEhF,wBAAgB,UAAU,CACxB,cAAc,EAAE,CACd,aAAa,EAAE,yBAAyB,GAAG,SAAS,KACjD,2BAA2B,GAC/B,kBAAkB,GAAG,iBAAiB,CAcxC"}

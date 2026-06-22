@@ -1,0 +1,143 @@
+
+> @inversifyjs/common@1.3.3 prebuild /home/runner/work/monorepo/monorepo/packages/container/libraries/common
+> pnpm run build:clean
+
+
+> @inversifyjs/common@1.3.3 build:clean /home/runner/work/monorepo/monorepo/packages/container/libraries/common
+> rimraf lib
+
+
+> @inversifyjs/common@1.3.3 build /home/runner/work/monorepo/monorepo/packages/container/libraries/common
+> pnpm run build:cjs && pnpm run build:esm
+
+
+> @inversifyjs/common@1.3.3 build:cjs /home/runner/work/monorepo/monorepo/packages/container/libraries/common
+> tsc --build tsconfig.cjs.json && pnpm exec foundation-ts-package-cjs ./lib/cjs
+
+
+> @inversifyjs/common@1.3.3 build:esm /home/runner/work/monorepo/monorepo/packages/container/libraries/common
+> webpack && pnpm exec foundation-ts-package-esm ./lib/esm
+
+PublicPath: auto
+assets by path services/models/ 2.09 KiB
+  assets by path services/models/*.ts 909 bytes
+    asset services/models/LazyServiceIdentifier.d.ts 508 bytes [emitted]
+    asset services/models/ServiceIdentifier.d.ts 186 bytes [emitted]
+    asset services/models/Newable.d.ts 148 bytes [emitted]
+    asset services/models/LazyServiceIdentifier.spec.d.ts 67 bytes [emitted]
+  assets by path services/models/*.map 1.2 KiB
+    asset services/models/LazyServiceIdentifier.d.ts.map 502 bytes [emitted]
+    asset services/models/ServiceIdentifier.d.ts.map 297 bytes [emitted]
+    asset services/models/Newable.d.ts.map 260 bytes [emitted]
+    asset services/models/LazyServiceIdentifier.spec.d.ts.map 171 bytes [emitted]
+asset index.js 3.79 KiB {792} [emitted] [javascript module] [minimized] (name: main)
+asset index.d.ts 320 bytes [emitted]
+asset index.d.ts.map 314 bytes [emitted]
+Entrypoint main 3.79 KiB = index.js
+chunk {792} (runtime: main) index.js (main) 679 bytes (javascript) 396 bytes (runtime) [entry] [rendered]
+  > ./src/index.ts main
+  ./src/index.ts + 1 modules [467] 679 bytes {792} [depth 0] [built] [code generated]
+    [exports: LazyServiceIdentifier]
+    [all exports used]
+    entry ./src/index.ts main
+    used as library export
+  webpack/runtime/define property getters 308 bytes {792} [code generated]
+    [no exports]
+    [used exports unknown]
+  webpack/runtime/hasOwnProperty shorthand 88 bytes {792} [code generated]
+    [no exports]
+    [used exports unknown]
+  
+
+LOG from webpack.Compiler
+<t> make hook: 1763.4998970000001 ms
+<t> finish make hook: 0.095178 ms
+<t> finish compilation: 4.692047 ms
+<t> seal compilation: 240.254951 ms
+<t> afterCompile hook: 0.050594 ms
+<t> emitAssets: 4.790481 ms
+<t> emitRecords: 0.067265 ms
+<t> done hook: 0.076112 ms
+<t> beginIdle: 0.02169 ms
+
+LOG from webpack.Compilation
+<t> compute affected modules: 0.206936 ms
+<t> finish modules: 3.754339 ms
+<t> report dependency errors and warnings: 0.380459 ms
+<t> optimize dependencies: 1.680823 ms
+<t> create chunks: 2.461068 ms
+<t> compute affected modules with chunk graph: 0.108412 ms
+<t> optimize: 7.363106 ms
+    1 modules hashed, 0 from cache (0.5 variants per module in average)
+<t> module hashing: 1.654755 ms
+    100% code generated (1 generated, 0 from cache)
+<t> code generation: 7.526832 ms
+<t> runtime requirements.modules: 0.200163 ms
+<t> runtime requirements.chunks: 0.392231 ms
+<t> runtime requirements.entries: 0.857618 ms
+<t> runtime requirements: 1.691934 ms
+<t> hashing: initialize hash: 0.005701 ms
+<t> hashing: sort chunks: 0.067906 ms
+<t> hashing: hash runtime modules: 0.426024 ms
+<t> hashing: hash chunks: 1.489036 ms
+<t> hashing: hash digest: 0.051085 ms
+<t> hashing: process full hash modules: 0.002164 ms
+<t> hashing: 2.492617 ms
+    100% code generated (2 generated, 0 from cache)
+<t> record hash: 0.031268 ms
+<t> module assets: 0.087273 ms
+<t> create chunk assets: 2.928258 ms
+<t> process assets: 210.985284 ms
+
+LOG from webpack.FlagDependencyExportsPlugin
+<t> restore cached provided exports: 0.57911 ms
+<t> figure out provided exports: 1.593411 ms
+    100% of exports of modules have been determined (0 no declared exports, 2 not cached, 0 flagged uncacheable, 0 from cache, 0 from mem cache, 1 additional calculations due to dependencies)
+<t> store provided exports into cache: 0.302924 ms
+
+LOG from webpack.InnerGraphPlugin
+<t> infer dependency usage: 0.185084 ms
+
+LOG from webpack.SideEffectsFlagPlugin
+<t> update dependencies: 0.268831 ms
+
+LOG from webpack.FlagDependencyUsagePlugin
+<t> initialize exports usage: 0.046767 ms
+<t> trace exports usage in graph: 0.779884 ms
+
+LOG from webpack.buildChunkGraph
+<t> visitModules: prepare: 0.304389 ms
+<t> visitModules: visiting: 0.753214 ms
+    4 queue items processed (2 blocks)
+    0 chunk groups connected
+    0 chunk groups processed for merging (0 module sets, 0 forked, 0 + 0 modules forked, 0 + 0 modules merged into fork, 0 resulting modules)
+    0 chunk group info updated (0 already connected chunk groups reconnected)
+<t> visitModules: 1.478055 ms
+<t> connectChunkGroups: 0.093765 ms
+<t> cleanup: 0.052147 ms
+
+LOG from webpack.SplitChunksPlugin
+<t> prepare: 0.030878 ms
+<t> modules: 0.704333 ms
+<t> queue: 0.002374 ms
+<t> maxSize: 0.04295 ms
+
+LOG from webpack.ModuleConcatenationPlugin
+<t> select relevant modules: 0.175778 ms
+<t> sort relevant modules: 0.018946 ms
+<t> find modules to concatenate: 0.754606 ms
+<t> sort concat configurations: 0.001192 ms
+<t> create concatenated modules: 1.266721 ms
++ 3 hidden lines
+
+LOG from webpack.FileSystemInfo
+    2 new snapshots created
+    0% root snapshot uncached (0 / 0)
+    0% children snapshot uncached (0 / 0)
+    0 entries tested
+    File info in cache: 187 timestamps 187 hashes 187 timestamp hash combinations
+    File timestamp hash combination snapshot optimization: 99% (370/372) entries shared via 1 shared snapshots (1 times referenced)
+    Directory info in cache: 0 timestamps 0 hashes 0 timestamp hash combinations
+    Managed items info in cache: 0 items
+
+2024-11-13 14:59:02: webpack 5.96.1 compiled successfully in 2034 ms (111000030632f61b4c68)

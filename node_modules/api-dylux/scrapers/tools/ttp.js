@@ -1,0 +1,51 @@
+const axios = require("axios")
+const cheerio = require("cheerio")
+
+async function ttp(text, tcolor = "30F4EF") {
+    try {
+
+        const params = new URLSearchParams({
+            TextToRender: text,
+            FontSize: "100",
+            Margin: "30",
+            LayoutStyle: "0",
+            TextRotation: "0",
+            TextColor: tcolor,
+            TextTransparency: "0",
+            OutlineThickness: "3",
+            OutlineColor: "000000",
+            FontName: "Lekton",
+            ResultType: "view"
+        })
+
+        const { data } = await axios.post(
+            "https://www.picturetopeople.org/p2p/text_effects_generator.p2p/transparent_text_effect",
+            params,
+            {
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "User-Agent": "Mozilla/5.0"
+                }
+            }
+        )
+
+        const $ = cheerio.load(data)
+
+        const result =
+            "https://www.picturetopeople.org" +
+            $("#idResultFile").attr("value")
+
+        return {
+            status: 200,
+            result
+        }
+
+    } catch (err) {
+        return {
+            status: 500,
+            error: err.message
+        }
+    }
+}
+
+module.exports = { ttp }

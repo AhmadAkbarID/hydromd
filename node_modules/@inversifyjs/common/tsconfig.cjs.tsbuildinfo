@@ -1,0 +1,1 @@
+{"root":["./src/index.ts","./src/services/models/LazyServiceIdentifier.spec.ts","./src/services/models/LazyServiceIdentifier.ts","./src/services/models/Newable.ts","./src/services/models/ServiceIdentifier.ts"],"version":"5.6.3"}

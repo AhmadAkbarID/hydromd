@@ -1,0 +1,62 @@
+const axios = require("axios")
+const cheerio = require("cheerio")
+const { formatFileSize, parseFileSize } = require("../../utils/filesize")
+const { author } = require("../../config")
+const { formatViews } = require("../../utils/views")
+
+async function lyrics(query) {
+  try {
+    const response = await axios.get(`https://genius.com/api/search/multi?per_page=5&q=${encodeURIComponent(query)}`, {
+      headers: {
+        accept: 'application/json, text/plain, */*',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36'
+      }
+    });
+
+    const data = response.data;
+    const result = data.response.sections.find((section) => {
+      return ['song', 'lyric'].includes(section.type) &&
+        section.hits?.find((hit) => ['song', 'lyric'].includes(hit.type));
+    })?.hits?.find((hit) => ['song', 'lyric'].includes(hit.type))?.result;
+
+    if (!result) {
+      throw new Error(`Can't get json!\n${JSON.stringify(data)}`);
+    }
+
+    const { artist_names, title, url, header_image_url } = result;
+
+    if (!url) {
+      throw new Error(`Can't get lyrics!\n${JSON.stringify(data, null, 2)}`);
+    }
+
+    const html = await axios.get(url).then((res) => res.data);
+    const $ = cheerio.load(html);
+    let results = '';
+
+    $('#lyrics-root > div[data-lyrics-container="true"]').each((_, el) => {
+
+      // 🔧 FIX del error Unmatched selector
+      const element = cheerio
+        .load((($(el).html() || '').replace(/<br\s*\/?>/gi, '\n')))
+        .text()
+        .trim();
+
+      if (element) {
+        results += element;
+      }
+    });
+
+    return {
+      title,
+      artist: artist_names,
+      lyrics: results.trim(),
+      link: url,
+      image: header_image_url
+    };
+
+  } catch (error) {
+    throw new Error(`Error fetching lyrics: ${error.message}`);
+  }
+}
+
+module.exports = { lyrics }

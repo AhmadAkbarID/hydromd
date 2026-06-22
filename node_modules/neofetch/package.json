@@ -1,0 +1,24 @@
+{
+	"name": "neofetch",
+	"version": "7.1.0",
+	"description": "A command-line system information tool written in bash 3.2+",
+	"main": "index.js",
+	"bin": {
+		"neofetch": "./neofetch",
+		"neofetch-js": "./neofetch"
+	},
+	"scripts": {
+		"test": "./neofetch"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/dylanaraps/neofetch.git"
+	},
+	"keywords": ["neofetch"],
+	"author": "dylanaraps",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/dylanaraps/neofetch/issues"
+	},
+	"homepage": "https://github.com/dylanaraps/neofetch#readme"
+}

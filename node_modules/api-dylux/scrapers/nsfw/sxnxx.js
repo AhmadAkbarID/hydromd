@@ -1,0 +1,32 @@
+const axios = require("axios")
+const cheerio = require("cheerio")
+const { formatFileSize, parseFileSize, getFileSize } = require("../../utils/filesize")
+const { author } = require("../../config")
+const { formatViews } = require("../../utils/views")
+
+async function sxnxx(query) {
+  const baseurl = 'https://www.xnxx.com';
+  const res = await fetch(`${baseurl}/search/${query}/${Math.floor(Math.random() * 3) + 1}`, { method: 'get' });
+  const html = await res.text();
+  const $ = cheerio.load(html, { xmlMode: false });
+
+  let results = [];
+  $('div.mozaique').each(function (a, b) {
+    const urls = $(b).find('div.thumb a').map((c, d) => baseurl + $(d).attr('href').replace('/THUMBNUM/', '/')).get();
+    const titles = $(b).find('div.thumb-under a').map((c, d) => $(d).attr('title')).get();
+    for (let i = 0; i < urls.length; i++) {
+      results.push({
+        title: titles[i],
+        link: urls[i]
+      });
+    }
+  });
+
+  return {
+    code: 200,
+    status: true,
+    result: results
+  };
+}
+
+module.exports = { sxnxx }

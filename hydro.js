@@ -4396,7 +4396,12 @@ const bet = {
     }
   ]
 }
-await listbut2(m.chat, teks, bet, m)
+try {
+  await listbut2(m.chat, teks, bet, m)
+} catch (e) {
+  console.error('listbut2 error:', e.message)
+  await hydro.sendMessage(m.chat, { text: teks })
+}
 await hydro.sendMessage(from, { audio: { url: global.music} , mimetype: 'audio/mp4', ptt: true }, { quoted: m })
 }
 break

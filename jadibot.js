@@ -2,7 +2,6 @@ const { modul } = require('./module');
 const { baileys, boom, chalk, fs, figlet, FileType, process, PhoneNumber } = modul;
 const { Boom } = boom
 const path = require('path');
-const { default: makeWaSocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, generateForwardMessageContent, generateWAMessage, prepareWAMessageMedia, generateWAMessageFromContent, generateMessageID, downloadContentFromMessage, makeInMemoryStore, jidDecode, proto, makeCacheableSignalKeyStore } = baileys
 const { color, bgcolor } = require('./lib/color')
 const log = (pino = require("pino"));
 const qrcode = require('qrcode');
@@ -12,7 +11,6 @@ let Pino = require("pino")
 const { imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('./lib/exif')
 const { smsg, isUrl, generateMessageTag, getBuffer, getSizeMedia, fetchJson, await, sleep, reSize } = require('./lib/myfunc')
 const owner = JSON.parse(fs.readFileSync('./database/owner.json').toString())
-const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) })
    let NodeCache = require("node-cache")
    let msgRetryCounterCache = new NodeCache() 
 if (global.conns instanceof Array) console.log()

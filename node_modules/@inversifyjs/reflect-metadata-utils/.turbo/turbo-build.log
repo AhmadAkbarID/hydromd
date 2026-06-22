@@ -1,0 +1,143 @@
+
+> @inversifyjs/reflect-metadata-utils@0.2.3 prebuild /home/runner/work/monorepo/monorepo/packages/foundation/libraries/reflect-metadata-utils
+> pnpm run build:clean
+
+
+> @inversifyjs/reflect-metadata-utils@0.2.3 build:clean /home/runner/work/monorepo/monorepo/packages/foundation/libraries/reflect-metadata-utils
+> rimraf lib
+
+
+> @inversifyjs/reflect-metadata-utils@0.2.3 build /home/runner/work/monorepo/monorepo/packages/foundation/libraries/reflect-metadata-utils
+> pnpm run build:cjs && pnpm run build:esm
+
+
+> @inversifyjs/reflect-metadata-utils@0.2.3 build:cjs /home/runner/work/monorepo/monorepo/packages/foundation/libraries/reflect-metadata-utils
+> tsc --build tsconfig.cjs.json && pnpm exec foundation-ts-package-cjs ./lib/cjs
+
+
+> @inversifyjs/reflect-metadata-utils@0.2.3 build:esm /home/runner/work/monorepo/monorepo/packages/foundation/libraries/reflect-metadata-utils
+> webpack && pnpm exec foundation-ts-package-esm ./lib/esm
+
+PublicPath: auto
+assets by path reflectMetadata/utils/ 1.48 KiB
+  assets by path reflectMetadata/utils/*.map 966 bytes
+    asset reflectMetadata/utils/updateReflectMetadata.d.ts.map 319 bytes [emitted]
+    asset reflectMetadata/utils/getReflectMetadata.d.ts.map 257 bytes [emitted]
+    asset reflectMetadata/utils/updateReflectMetadata.spec.d.ts.map 198 bytes [emitted]
+    asset reflectMetadata/utils/getReflectMetadata.spec.d.ts.map 192 bytes [emitted]
+  assets by path reflectMetadata/utils/*.ts 551 bytes
+    asset reflectMetadata/utils/updateReflectMetadata.d.ts 224 bytes [emitted]
+    asset reflectMetadata/utils/getReflectMetadata.d.ts 164 bytes [emitted]
+    asset reflectMetadata/utils/updateReflectMetadata.spec.d.ts 83 bytes [emitted]
+    asset reflectMetadata/utils/getReflectMetadata.spec.d.ts 80 bytes [emitted]
+asset index.js 3.69 KiB {792} [emitted] [javascript module] [minimized] (name: main)
+asset index.d.ts 257 bytes [emitted]
+asset index.d.ts.map 240 bytes [emitted]
+Entrypoint main 3.69 KiB = index.js
+chunk {792} (runtime: main) index.js (main) 751 bytes (javascript) 396 bytes (runtime) [entry] [rendered]
+  > ./src/index.ts main
+  ./src/index.ts + 2 modules [815] 751 bytes {792} [depth 0] [built] [code generated]
+    [exports: getReflectMetadata, updateReflectMetadata]
+    [all exports used]
+    entry ./src/index.ts main
+    used as library export
+  webpack/runtime/define property getters 308 bytes {792} [code generated]
+    [no exports]
+    [used exports unknown]
+  webpack/runtime/hasOwnProperty shorthand 88 bytes {792} [code generated]
+    [no exports]
+    [used exports unknown]
+  
+
+LOG from webpack.Compiler
+<t> make hook: 1740.097362 ms
+<t> finish make hook: 0.098333 ms
+<t> finish compilation: 5.133841 ms
+<t> seal compilation: 236.085532 ms
+<t> afterCompile hook: 0.054501 ms
+<t> emitAssets: 5.011782 ms
+<t> emitRecords: 0.100267 ms
+<t> done hook: 0.075832 ms
+<t> beginIdle: 0.032521 ms
+
+LOG from webpack.Compilation
+<t> compute affected modules: 0.218617 ms
+<t> finish modules: 3.903156 ms
+<t> report dependency errors and warnings: 0.599027 ms
+<t> optimize dependencies: 2.445329 ms
+<t> create chunks: 2.932407 ms
+<t> compute affected modules with chunk graph: 0.10731 ms
+<t> optimize: 7.275143 ms
+    1 modules hashed, 0 from cache (0.33 variants per module in average)
+<t> module hashing: 1.837646 ms
+    100% code generated (1 generated, 0 from cache)
+<t> code generation: 7.453976 ms
+<t> runtime requirements.modules: 0.211204 ms
+<t> runtime requirements.chunks: 0.39703 ms
+<t> runtime requirements.entries: 0.854543 ms
+<t> runtime requirements: 1.701232 ms
+<t> hashing: initialize hash: 0.005169 ms
+<t> hashing: sort chunks: 0.070271 ms
+<t> hashing: hash runtime modules: 0.453755 ms
+<t> hashing: hash chunks: 1.547925 ms
+<t> hashing: hash digest: 0.050885 ms
+<t> hashing: process full hash modules: 0.001864 ms
+<t> hashing: 2.5692 ms
+    100% code generated (2 generated, 0 from cache)
+<t> record hash: 0.032921 ms
+<t> module assets: 0.081231 ms
+<t> create chunk assets: 2.927327 ms
+<t> process assets: 205.285924 ms
+
+LOG from webpack.FlagDependencyExportsPlugin
+<t> restore cached provided exports: 0.481377 ms
+<t> figure out provided exports: 1.943904 ms
+    100% of exports of modules have been determined (0 no declared exports, 3 not cached, 0 flagged uncacheable, 0 from cache, 0 from mem cache, 1 additional calculations due to dependencies)
+<t> store provided exports into cache: 0.223677 ms
+
+LOG from webpack.InnerGraphPlugin
+<t> infer dependency usage: 0.323944 ms
+
+LOG from webpack.SideEffectsFlagPlugin
+<t> update dependencies: 0.397241 ms
+
+LOG from webpack.FlagDependencyUsagePlugin
+<t> initialize exports usage: 0.068608 ms
+<t> trace exports usage in graph: 1.315141 ms
+
+LOG from webpack.buildChunkGraph
+<t> visitModules: prepare: 0.325416 ms
+<t> visitModules: visiting: 0.899697 ms
+    6 queue items processed (3 blocks)
+    0 chunk groups connected
+    0 chunk groups processed for merging (0 module sets, 0 forked, 0 + 0 modules forked, 0 + 0 modules merged into fork, 0 resulting modules)
+    0 chunk group info updated (0 already connected chunk groups reconnected)
+<t> visitModules: 1.770811 ms
+<t> connectChunkGroups: 0.078696 ms
+<t> cleanup: 0.052949 ms
+
+LOG from webpack.SplitChunksPlugin
+<t> prepare: 0.030717 ms
+<t> modules: 0.689756 ms
+<t> queue: 0.002254 ms
+<t> maxSize: 0.04318 ms
+
+LOG from webpack.ModuleConcatenationPlugin
+<t> select relevant modules: 0.18778 ms
+<t> sort relevant modules: 0.019566 ms
+<t> find modules to concatenate: 0.90679 ms
+<t> sort concat configurations: 0.001162 ms
+<t> create concatenated modules: 1.027836 ms
++ 3 hidden lines
+
+LOG from webpack.FileSystemInfo
+    3 new snapshots created
+    0% root snapshot uncached (0 / 0)
+    0% children snapshot uncached (0 / 0)
+    0 entries tested
+    File info in cache: 188 timestamps 188 hashes 188 timestamp hash combinations
+    File timestamp hash combination snapshot optimization: 99% (558/561) entries shared via 1 shared snapshots (2 times referenced)
+    Directory info in cache: 0 timestamps 0 hashes 0 timestamp hash combinations
+    Managed items info in cache: 0 items
+
+2024-11-13 14:59:02: webpack 5.96.1 compiled successfully in 2009 ms (2f04f415f0948debf5b3)

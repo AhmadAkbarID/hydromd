@@ -1,0 +1,76 @@
+const axios = require("axios")
+
+async function igstalk(username, limit = 12){
+
+ try{
+
+  username = username.replace("@","").trim()
+
+  const { data } = await axios.get(
+   `https://i.instagram.com/api/v1/users/web_profile_info/?username=${username}`,
+   {
+    headers:{
+     "User-Agent":
+     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+     "x-ig-app-id": "936619743392459",
+     "accept": "*/*",
+     "accept-language": "en-US,en;q=0.9",
+     "referer": `https://www.instagram.com/${username}/`
+    }
+   }
+  )
+
+  const user = data.data.user
+
+  let result = {
+   status:true,
+   profile:{
+    name: user.full_name,
+    username: user.username,
+    bio: user.biography,
+    avatar: user.profile_pic_url_hd,
+    followers: user.edge_followed_by.count,
+    following: user.edge_follow.count,
+    posts: user.edge_owner_to_timeline_media.count,
+    verified: user.is_verified,
+    private: user.is_private
+   },
+   posts:[]
+  }
+
+  const media = user.edge_owner_to_timeline_media.edges.slice(0,limit)
+
+  for(let post of media){
+
+   let node = post.node
+
+   result.posts.push({
+    id: node.id,
+    shortcode: node.shortcode,
+    caption: node.edge_media_to_caption.edges[0]?.node.text || "",
+    likes: node.edge_liked_by.count,
+    comments: node.edge_media_to_comment.count,
+    thumbnail: node.thumbnail_src,
+    display: node.display_url,
+    isVideo: node.is_video,
+    url: `https://www.instagram.com/p/${node.shortcode}/`
+   })
+
+  }
+
+  return result
+
+ }catch(e){
+
+  console.log("ERROR IG:", e.response?.status)
+
+  return {
+   status:false,
+   message:"Instagram bloqueó la request o usuario no existe"
+  }
+
+ }
+
+}
+
+module.exports = { igstalk }

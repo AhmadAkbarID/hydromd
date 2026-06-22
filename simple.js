@@ -2,7 +2,6 @@ const {
     default: makeWASocket,
     makeWALegacySocket,
     extractMessageContent,
-    makeInMemoryStore,
     proto,
     prepareWAMessageMedia,
     downloadContentFromMessage,
@@ -23,9 +22,8 @@ const fs = require('fs')
 const path = require('path')
 let Jimp = require('jimp')
 const pino = require('pino')
-const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) })
 const { imageToWebp, videoToWebp, writeExifImg, writeExifVid } = require('./lib/exif')
-const ephemeral = { ephemeralExpiration: 8600 }
+const store = { groupMetadata: {}, contacts: {}, bind() {}, loadMessages() { return [] } }
 
 exports.makeWASocket = (connectionOptions, options = {}) => {
     let hydro = (global.opts['legacy'] ? makeWALegacySocket : makeWASocket)(connectionOptions)

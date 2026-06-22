@@ -1,0 +1,2 @@
+export declare const proAdvertiseMessageFirstPart = "\uD83D\uDEE1\uFE0F JavaScript Obfuscator Pro is now available \u2014 with powerful Virtual Machine-based obfuscation\n(bytecode virtualization, anti-decompilation, unique opcode and VM structure each compilation, and more).";
+export declare const proAdvertiseMessageSecondPart = "\uD83D\uDC49\uFE0F Get your API key at https://obfuscator.io and start using Virtual Machine obfuscation with javascript-obfuscator package.";
