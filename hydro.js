@@ -27149,7 +27149,7 @@ await hydro.sendMessage(m.chat, { react: { text: "⏱️",key: m.key,}})
 try {
     const data = await fetchJson(`https://btch.us.kg/openai?text=${encodeURIComponent(text)}`);
     if (data && data.result) {
-      await hydro.sendMessage(m.chat, { text: data.result, rich: true });
+      await hydro.sendMessage(m.chat, { text: '*Jawaban AI:*\n\n' + data.result + '\n\n_Semoga membantu!_', rich: true });
     } else {
       HydroAI(pushname, text);
   }
