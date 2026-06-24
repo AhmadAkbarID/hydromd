@@ -132,7 +132,6 @@ async function hydroInd() {
     await delay(5000)
     const { version } = await fetchLatestVersion()
     const { saveCreds, state } = await useMultiFileAuthState(global.sessionName)
-
     const hydro = makeWASocket({
         version,
         logger: pino({ level: 'silent' }),
