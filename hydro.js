@@ -44,7 +44,8 @@ const {
     makeQC,
     addExif,
     BALogo,
-    makeStoryIG
+    makeStoryIG,
+    makeIQC
 } = require('./lib/maker');
 const {
     searchDaerah
@@ -53,8 +54,42 @@ const {
     antilinkDetector
 } = require('./lib/protect');
 const {
-    gameCasinoSolo
-} = require('./lib/games')
+    gameCasinoSolo,
+    gameTebakLagu,
+    checkTebakLagu,
+    gameTebakKata,
+    checkTebakKata,
+    gameTebakGambar,
+    checkTebakGambar,
+    gameTebakTokoh,
+    checkTebakTokoh,
+    gameTekaTeki,
+    checkTekaTeki,
+    gameAsahOtak,
+    checkAsahOtak,
+    gameCakLontong,
+    checkCakLontong,
+    gameFamily100,
+    checkFamily100,
+    gameSiapaAku,
+    checkSiapaAku,
+    gameSusunKata,
+    checkSusunKata,
+    gameTebakBendera,
+    checkTebakBendera,
+    gameTebakKabupaten,
+    checkTebakKabupaten,
+    gameTebakKalimat,
+    checkTebakKalimat,
+    gameTebakKimia,
+    checkTebakKimia,
+    gameTebakLirik,
+    checkTebakLirik,
+    gameTebakTebakan,
+    checkTebakTebakan,
+    gameChess,
+    checkChess
+} = require('./lib/games');
 const {
     gameDaily
 } = require('./lib/rpg')
@@ -317,17 +352,22 @@ module.exports = hydro = async (hydro, m, chatUpdate, store) => {
 
         const isStatusMsg = (m.mtype === 'groupStatusMentionMessage' || m.mtype === 'groupStatusMessageV2');
 
+        if (m.key.fromMe) return;
+
         if (!isStatusMsg) {
             if (baseId.startsWith('BAE5') || baseId.length === 16) return;
 
-            let isOtherBot = false;
-            if (baseId.match(/[^0-9A-F]/gi)) isOtherBot = true;
-            if (baseId.length !== 32 && !baseId.startsWith('3EB0') && !baseId.startsWith('3A')) isOtherBot = true;
-            if (isOtherBot && !Ahmad && !m.key.fromMe) return;
+            const isAndroid = baseId.startsWith('3A');
+            const isIphone = baseId.startsWith('3EB0');
+            const isWeb = baseId.length === 32 && !baseId.match(/[^0-9A-F]/gi);
+            const isOwner = Ahmad;
+
+            const isValidUser = isAndroid || isIphone || isWeb || isOwner;
+            if (!isValidUser) return;
         }
 
         if (!global.db.settings.public) {
-            if (!Ahmad && !m.key.fromMe) return;
+            if (!Ahmad) return;
         }
 
         if (global.db.settings.onlygc && !m.isGroup && !Ahmad) return;
@@ -359,23 +399,20 @@ module.exports = hydro = async (hydro, m, chatUpdate, store) => {
         const isSticker = (type == 'stickerMessage')
 
         store.groupMetadata = store.groupMetadata || {};
-        const invalidMembers = [];
+        if (!global._groupFetchLastTime) global._groupFetchLastTime = 0;
 
         if (m.isGroup) {
-            for (const [gid, meta] of Object.entries(store.groupMetadata || {})) {
-                if (!meta.participants) continue;
-                const missing = meta.participants.filter(p => !p.jid && !p.lid && p.id);
-                if (missing.length) {
-                    invalidMembers.push({
-                        groupId: gid,
-                        groupName: meta.subject || "Tanpa Nama",
-                        members: missing
-                    });
-                }
-            }
+            const now = Date.now();
+            const cooldown = 5 * 60 * 1000; // 5 menit
+            const shouldFetch = Object.keys(store.groupMetadata).length === 0 && (now - global._groupFetchLastTime > cooldown);
 
-            if (Object.keys(store.groupMetadata).length === 0 || invalidMembers.length >= 1) {
-                store.groupMetadata = await hydro.groupFetchAllParticipating();
+            if (shouldFetch) {
+                try {
+                    store.groupMetadata = await hydro.groupFetchAllParticipating();
+                    global._groupFetchLastTime = now;
+                } catch (e) {
+                    console.log('groupFetchAllParticipating error:', e.message);
+                }
             }
         }
 
@@ -388,7 +425,16 @@ module.exports = hydro = async (hydro, m, chatUpdate, store) => {
         const participants = m.isGroup ? await groupMetadata.participants : ''
 
         if (m.isGroup && m.sender.endsWith("@lid")) {
-            m.sender = participants.find(p => p.lid === m.sender)?.jid || m.sender;
+            const matched = participants.find(p =>
+                p.lid === m.sender ||
+                p.lid === m.sender.split('@')[0] + '@lid'
+            );
+            const resolved = matched?.jid || matched?.id;
+            if (resolved && resolved.endsWith('@s.whatsapp.net')) {
+                m.sender = resolved;
+            } else {
+                return;
+            }
         }
 
         const groupAdmins = m.isGroup ? participants.filter((v) => v.admin !== null).map((i) => i.jid || i.id) : [];
@@ -457,6 +503,23 @@ module.exports = hydro = async (hydro, m, chatUpdate, store) => {
         initDatabase(m, isChannel);
         await antilinkDetector(hydro, m, { budy, type, isAdmins, Ahmad, isBotAdmins, sender, senderNumber });
         await handleAntibot(hydro, m, { isAdmins, isBotAdmins, Ahmad, sleep, replyfail, react });
+        await checkTebakLagu(hydro, m, budy, global.db);
+        await checkTebakKata(hydro, m, budy, global.db);
+        await checkTebakGambar(hydro, m, budy, global.db);
+        await checkTekaTeki(hydro, m, budy, global.db);
+        await checkAsahOtak(hydro, m, budy, global.db);
+        await checkCakLontong(hydro, m, budy, global.db);
+        await checkFamily100(hydro, m, budy, global.db);
+        await checkSiapaAku(hydro, m, budy, global.db);
+        await checkSusunKata(hydro, m, budy, global.db);
+        await checkTebakBendera(hydro, m, budy, global.db, { replyfail, replyquery, replytolak, replysuccess });
+        await checkTebakTokoh(hydro, m, budy, global.db, { replyfail, replyquery, replytolak, replysuccess });
+        await checkTebakKabupaten(hydro, m, budy, global.db, { replyfail, replyquery, replytolak, replysuccess });
+        await checkTebakKalimat(hydro, m, budy, global.db);
+        await checkTebakKimia(hydro, m, budy, global.db);
+        await checkTebakLirik(hydro, m, budy, global.db);
+        await checkTebakTebakan(hydro, m, budy, global.db);
+        await checkChess(hydro, m, budy, { replyfail, replytolak, replysuccess });
         const handledPending = await checkOwnerPending(hydro, m, { Ahmad, prefix, reply, replyfail, react });
         if (handledPending) return;
 
@@ -616,6 +679,15 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
             case 'cpanelmenu':
             case 'menucpanel': {
                 let teks = global.cpanelmenu(prefix);
+                let bet = getMenuList(prefix);
+                await listbut2(hydro, m, teks, bet);
+            }
+                break
+            case 'gamesmenu':
+            case 'menugames':
+            case 'menugame':
+            case 'gamemenu': {
+                let teks = global.gamesmenu(prefix);
                 let bet = getMenuList(prefix);
                 await listbut2(hydro, m, teks, bet);
             }
@@ -1001,6 +1073,25 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
                     } catch (err) {
                         let errorStr = String(err)
                         if (errorStr.includes('409')) {
+                        } else if (errorStr.includes('account_reachout_restricted')) {
+                            let sudahDalam = false;
+                            try {
+                                const botId = hydro.decodeJid(hydro.user.id);
+
+                                const cached = store.groupMetadata?.[groupId];
+                                if (cached?.participants) {
+                                    sudahDalam = cached.participants.some(p => hydro.decodeJid(p.id) === botId);
+                                }
+
+                                if (!sudahDalam) {
+                                    const freshMeta = await hydro.groupMetadata(groupId);
+                                    sudahDalam = freshMeta?.participants?.some(p => hydro.decodeJid(p.id) === botId) || false;
+                                }
+                            } catch {
+                                sudahDalam = false;
+                            }
+
+                            if (!sudahDalam) return replyfail('❌ Gagal bergabung! Bot direstrict oleh WhatsApp dan tidak terdeteksi di grup. Coba beberapa saat lagi.');
                         } else {
                             if (errorStr.includes('401')) return replyfail('❌ Gagal! Bot pernah di-kick dari grup tersebut.')
                             if (errorStr.includes('410')) return replyfail('❌ Gagal! Link grup telah direset oleh admin.')
@@ -3010,58 +3101,29 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
             }
                 break;
             case 'iqc': {
-                if (!text) return replyquery(`📌 Contoh Penggunaan:\n*${prefix + command} pesan*\n*${prefix + command} pesan|jam* ( opsional )\n*${prefix + command} pesan|baterai|sinyal|jam* ( opsional )\n\nContoh: *${prefix + command} Halo Sayangku*`);
+                if (!text) return replyquery(`📌 Contoh Penggunaan:\n*${prefix + command} pesan*\n*${prefix + command} pesan|jam* ( opsional )\n\nContoh: *${prefix + command} Halo Sayangku*`);
 
                 let cost = getLimitCost('iqc', 1);
                 let totalLimit = checkLimit(m.sender, Ahmad);
-
-                if (totalLimit !== "∞" && totalLimit < cost) {
-                    return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
-                }
+                if (totalLimit !== "∞" && totalLimit < cost) return replylimit(`Limit kamu kurang!\nButuh *${cost}* limit.\n> Sisa limit: *${totalLimit}*`);
 
                 let parts = text.split("|").map(s => s.trim());
                 let pesan = parts[0];
-                let baterai = 100;
-                let sinyal = 4;
-                let jam;
+                let jam = parts[1] || null;
 
                 if (!pesan) return replyquery(`❌ Pesan tidak boleh kosong!`);
-
-                if (parts.length === 2) {
-                    jam = parts[1];
-                } else if (parts.length === 3) {
-                    baterai = !isNaN(parts[1]) ? parseInt(parts[1]) : 100;
-                    sinyal = !isNaN(parts[2]) ? parseInt(parts[2]) : 4;
-                } else if (parts.length === 4) {
-                    baterai = !isNaN(parts[1]) ? parseInt(parts[1]) : 100;
-                    sinyal = !isNaN(parts[2]) ? parseInt(parts[2]) : 4;
-                    jam = parts[3];
-                }
-
-                if (baterai < 0) baterai = 0;
-                if (baterai > 100) baterai = 100;
-                if (sinyal < 1) sinyal = 1;
-                if (sinyal > 4) sinyal = 4;
+                if (jam && !jam.includes(':')) return replyquery('❌ Format jam salah! Gunakan titik dua (:), contoh: 12:00');
 
                 if (!jam) {
                     const now = new Date();
-                    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-                    const wib = new Date(utc + (7 * 3600000));
-                    const h = String(wib.getHours()).padStart(2, "0");
-                    const mnt = String(wib.getMinutes()).padStart(2, "0");
-                    jam = `${h}:${mnt}`;
+                    const wib = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (7 * 3600000));
+                    jam = `${String(wib.getHours()).padStart(2, '0')}:${String(wib.getMinutes()).padStart(2, '0')}`;
                 }
-
-                if (jam && !jam.includes(":")) return replyquery('❌ Format jam salah! Gunakan titik dua (:), contoh: 12:00');
 
                 await react('⏱️');
 
-                let apiUrl = `https://brat.siputzx.my.id/iphone-quoted?messageText=${encodeURIComponent(pesan)}&carrierName=TELKOMSEL&batteryPercentage=${baterai}&signalStrength=${sinyal}&time=${encodeURIComponent(jam)}`;
-
                 try {
-
-                    const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
-                    const buffer = Buffer.from(response.data);
+                    const buffer = await makeIQC({ pesan, jam });
 
                     await hydro.sendMessage(m.chat, { image: buffer }, { quoted: m });
 
@@ -3072,9 +3134,9 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
 
                     await react('✅');
                 } catch (err) {
-                    console.error(err);
+                    console.error('[IQC ERROR]', err);
                     await react('❌');
-                    replyfail('❌ Gagal membuat IQC dari server.');
+                    replyfail(mess.error.fitur);
                 }
             }
                 break;
@@ -4220,6 +4282,90 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
                 await react('✅')
             }
                 break
+            case 'tebaklagu': {
+                await react('🎮');
+                await gameTebakLagu(hydro, m, prefix, sleep, global.db);
+            }
+                break;
+            case 'tebakkata': {
+                await react('🎮');
+                await gameTebakKata(hydro, m, prefix, sleep, global.db);
+            }
+                break;
+            case 'tebakgambar': {
+                await react('🎮');
+                await gameTebakGambar(hydro, m, prefix, sleep, global.db, { replyfail, replyquery, replytolak, replysuccess });
+            }
+                break;
+            case 'tebaktokoh': {
+                await react('🎮');
+                await gameTebakTokoh(hydro, m, prefix, sleep, global.db, { replyfail, replyquery, replytolak, replysuccess });
+            }
+                break;
+            case 'tekateki': {
+                await react('🎮');
+                await gameTekaTeki(hydro, m, prefix, sleep, global.db);
+            }
+                break;
+            case 'asahotak': {
+                await react('🎮');
+                await gameAsahOtak(hydro, m, prefix, sleep, global.db);
+            }
+                break;
+            case 'caklontong': {
+                await react('🎮');
+                await gameCakLontong(hydro, m, prefix, sleep, global.db);
+            }
+                break;
+            case 'family100': {
+                await react('🎮');
+                await gameFamily100(hydro, m, prefix, sleep, global.db);
+            }
+                break;
+            case 'siapaaku': {
+                await react('🎮');
+                await gameSiapaAku(hydro, m, prefix, sleep, global.db);
+            }
+                break;
+            case 'susunkata': {
+                await react('🎮');
+                await gameSusunKata(hydro, m, prefix, sleep, global.db);
+            }
+                break;
+            case 'tebakbendera': {
+                await react('🎮');
+                await gameTebakBendera(hydro, m, prefix, sleep, global.db, { replyfail, replyquery, replytolak, replysuccess });
+            }
+                break;
+            case 'tebakkabupaten': {
+                await react('🎮');
+                await gameTebakKabupaten(hydro, m, prefix, sleep, global.db, { replyfail, replyquery, replytolak, replysuccess });
+            }
+                break;
+            case 'tebakkalimat': {
+                await react('🎮');
+                await gameTebakKalimat(hydro, m, prefix, sleep, global.db);
+            }
+                break;
+            case 'tebakkimia': {
+                await react('🎮');
+                await gameTebakKimia(hydro, m, prefix, sleep, global.db);
+            }
+                break;
+            case 'tebaklirik': {
+                await react('🎮');
+                await gameTebakLirik(hydro, m, prefix, sleep, global.db);
+            }
+                break;
+            case 'tebaktebakan': {
+                await react('🎮');
+                await gameTebakTebakan(hydro, m, prefix, sleep, global.db);
+            }
+                break;
+            case 'chess': case 'catur': case 'ct': {
+                await gameChess(hydro, m, prefix, args, command, { replyfail, replytolak, replyquery, replysuccess });
+            }
+                break
 
             // ====== RPG FEATURE ======
 
@@ -4294,6 +4440,91 @@ sᴜᴘᴘᴏʀᴛ ᴠᴘs/ᴘᴀɴᴇʟ
                         useLimit(m.sender, cost, Ahmad);
                         fs.writeFileSync('./database/database.json', JSON.stringify(global.db, null, 2));
                     }
+                }
+            }
+                break;
+            case 'get': case 'g': {
+                if (m.key.fromMe) return;
+                if (!text) return replyquery(`Kirim URL yang ingin diambil.\nContoh: *${prefix}get https://example.com/file.mp4*`);
+
+                const isUrl = (url) => url.match(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)/gi);
+
+                try {
+                    const url = text.trim();
+                    if (!isUrl(url)) return replytolak('Link tidak valid!');
+
+                    await react('⏳');
+
+                    const res = await require('axios').get(url, {
+                        responseType: 'arraybuffer',
+                        validateStatus: () => true
+                    });
+
+                    const headers = res.headers || {};
+                    const contentType = (headers['content-type'] || '').split(';')[0].toLowerCase();
+                    const contentDisp = headers['content-disposition'] || '';
+
+                    let filename = 'download';
+                    try {
+                        const u = new URL(url);
+                        const last = decodeURIComponent(u.pathname.split('/').filter(Boolean).pop() || '');
+                        if (last) filename = last;
+                    } catch { }
+                    const cdMatch = contentDisp.match(/filename\*?=(?:UTF-8'')"?([^";]+)/i);
+                    if (cdMatch) filename = decodeURIComponent(cdMatch[1].replace(/"/g, ''));
+                    if (!/\.[a-z0-9]{2,}$/i.test(filename) && contentType) {
+                        const ctExt = contentType.includes('/') ? contentType.split('/')[1] : 'bin';
+                        const safeExt = (ctExt || 'bin').replace(/[^a-z0-9]/gi, '');
+                        filename = `${filename}.${safeExt || 'bin'}`;
+                    }
+
+                    const buf = Buffer.from(res.data);
+                    const fileSizeMB = buf.length / (1024 * 1024);
+
+                    const sendAs = async (kind, extra = {}) => {
+                        return hydro.sendMessage(
+                            m.chat,
+                            { [kind]: buf, mimetype: contentType || 'application/octet-stream', fileName: filename, ...extra },
+                            { quoted: m }
+                        );
+                    };
+
+                    const extMatch = filename.match(/\.([a-z0-9]+)$/i);
+                    const urlExt = extMatch ? extMatch[1].toLowerCase() : null;
+
+                    const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff', 'svg'];
+                    const videoExts = ['mp4', 'mkv', 'avi', 'mov', 'webm', 'flv', 'wmv', '3gp'];
+                    const audioExts = ['mp3', 'ogg', 'wav', 'flac', 'aac', 'm4a', 'opus'];
+
+                    const isImageType = contentType.startsWith('image/') || imageExts.includes(urlExt);
+                    const isVideoType = contentType.startsWith('video/') || videoExts.includes(urlExt);
+                    const isAudioType = contentType.startsWith('audio/') || audioExts.includes(urlExt);
+                    const isTextType = !urlExt && (contentType.startsWith('text/') || contentType.includes('json') || contentType === '');
+
+                    if (isImageType) {
+                        await sendAs('image', { caption: filename });
+                    } else if (isVideoType) {
+                        if (fileSizeMB > 100) {
+                            await sendAs('document');
+                        } else {
+                            await sendAs('video');
+                        }
+                    } else if (isAudioType) {
+                        await sendAs('audio');
+                    } else if (isTextType) {
+                        let body;
+                        try { body = buf.toString('utf8'); }
+                        catch { body = '(Tidak dapat mendekode konten teks)'; }
+                        await reply(body);
+                    } else {
+                        await sendAs('document');
+                    }
+
+                    await react('✅');
+                } catch (e) {
+                    console.error('GET error:', e);
+                    await react('❌');
+                    replyfail('Gagal mengambil file dari URL tersebut.');
                 }
             }
                 break;

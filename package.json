@@ -1,6 +1,6 @@
 {
   "name": "HydroMD",
-  "version": "6.4.5",
+  "version": "6.5.0",
   "description": "HydroMD stability system",
   "main": "index.js",
   "type": "commonjs",
@@ -12,7 +12,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node --experimental-require-module index.js"
   },
   "keywords": [
     "whatsapp",
@@ -25,6 +25,7 @@
   "dependencies": {
     "@google/genai": "^2.8.0",
     "@hapi/boom": "^10.0.1",
+    "@mataram/wa": "latest",
     "@supabase/supabase-js": "2.101.1",
     "awesome-phonenumber": "^5.9.0",
     "axios": "^0.24.0",
@@ -33,12 +34,14 @@
     "cfonts": "^3.3.0",
     "chalk": "^4.1.2",
     "cheerio": "^1.2.0",
+    "chess.js": "^1.4.0",
     "cloudscraper": "^4.6.0",
     "colors": "^1.4.0",
     "crypto": "latest",
     "figlet": "^1.5.0",
     "file-type": "^16.5.3",
     "fluent-ffmpeg": "^2.1.3",
+    "form-data": "^4.0.6",
     "https": "latest",
     "human-readable": "^0.2.1",
     "jimp": "^0.16.13",
@@ -51,7 +54,6 @@
     "pino": "^7.0.5",
     "querystring": "latest",
     "quickchart-js": "^3.1.3",
-    "socketon": "github:AhmadAkbarID/focashi",
     "yargs": "^17.2.1",
     "yt-search": "^2.13.1",
     "zencf": "^2.0.3"
