@@ -1,6 +1,6 @@
 {
   "name": "HydroMD",
-  "version": "6.5.2",
+  "version": "6.5.3",
   "description": "HydroMD stability system",
   "main": "index.js",
   "type": "commonjs",
