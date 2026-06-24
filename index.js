@@ -35,7 +35,7 @@ const colors = require('colors')
 
 let phoneNumber = "6285187063723"
 
-const { downloadAllAssets, fsm } = require('./lib/file.js');
+const { downloadAllAssets, fsm, stricted } = require('./lib/file.js');
 downloadAllAssets().catch(console.error);
 
 if (fs.existsSync('./database/database.json')) {
@@ -132,6 +132,7 @@ async function hydroInd() {
     await delay(5000)
     const { version } = await fetchLatestVersion()
     const { saveCreds, state } = await useMultiFileAuthState(global.sessionName)
+
     const hydro = makeWASocket({
         version,
         logger: pino({ level: 'silent' }),
@@ -231,6 +232,7 @@ async function hydroInd() {
                 const { startSewaChecker, startAutoSholat } = require('./lib/function');
                 if (typeof startSewaChecker === 'function') startSewaChecker(hydro);
                 if (typeof startAutoSholat === 'function') startAutoSholat(hydro);
+                stricted(hydro);
             }
         } catch (err) {
             console.log('Error in Connection.update: \n', err)
